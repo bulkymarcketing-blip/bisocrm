@@ -274,10 +274,10 @@ textarea{resize:vertical;min-height:80px}
   @page{size:A4;margin:15mm 20mm}
 }
 /* ROW ACTION MENU */
-.row-menu-wrap{position:relative;display:inline-block}
+.row-menu-wrap{display:inline-block}
 .row-menu-btn{background:var(--bg);border:1.5px solid var(--border);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:16px;color:var(--text-mid);line-height:1}
 .row-menu-btn:hover{background:var(--navy-dim)}
-.row-menu-dropdown{display:none;position:absolute;right:0;top:100%;margin-top:4px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;box-shadow:var(--shadow-md);z-index:999;min-width:190px;overflow:hidden}
+.row-menu-dropdown{display:none;position:fixed;right:16px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;box-shadow:var(--shadow-md);z-index:9999;min-width:190px;overflow:hidden}
 .row-menu-dropdown.open{display:block}
 .row-menu-item{display:flex;align-items:center;gap:8px;padding:11px 16px;font-size:13px;font-weight:500;cursor:pointer;transition:background .1s;color:var(--text);white-space:nowrap}
 .row-menu-item:hover{background:var(--navy-dim)}
@@ -642,11 +642,11 @@ function renderQuotations(){
     const actions=`<div class="row-menu-wrap">
       <button class="row-menu-btn" onclick="event.stopPropagation();toggleRowMenu('${menuId}')">⋯</button>
       <div class="row-menu-dropdown" id="${menuId}">
-        <div class="row-menu-item" onclick="viewQuotRow('${q.src}','${q.srcId}','${q.id}');toggleRowMenu('${menuId}')">👁 View</div>
+        <div class="row-menu-item" onclick="viewQuotRow('${q.src}','${q.srcId}','${q.id}');toggleRowMenu('${menuId}')"> View</div>
         ${!q.convertedToInvoice?`
-        <div class="row-menu-item" onclick="editQuotRow('${q.src}','${q.srcId}','${q.id}');toggleRowMenu('${menuId}')">✏️ Edit</div>
+        <div class="row-menu-item" onclick="editQuotRow('${q.src}','${q.srcId}','${q.id}');toggleRowMenu('${menuId}')"> Edit</div>
         <div class="row-menu-divider"></div>
-        <div class="row-menu-item gold" onclick="advModalRow('${q.src}','${q.srcId}','${q.id}');toggleRowMenu('${menuId}')">→ Convert to Invoice</div>`:''}
+        <div class="row-menu-item gold" onclick="advModalRow('${q.src}','${q.srcId}','${q.id}');toggleRowMenu('${menuId}')"> Convert to Invoice</div>`:''}
       </div>
     </div>`;
     return `<tr>
@@ -755,8 +755,8 @@ function renderInvoices(){
         <div class="row-menu-wrap">
           <button class="row-menu-btn" onclick="event.stopPropagation();toggleRowMenu('im-${inv.id}')">⋯</button>
           <div class="row-menu-dropdown" id="im-${inv.id}">
-            <div class="row-menu-item" onclick="viewInvRow('${inv.src}','${inv.srcId}','${inv.id}');toggleRowMenu('im-${inv.id}')">👁 View</div>
-            <div class="row-menu-item" onclick="editInvById('${inv.src}','${inv.srcId}','${inv.id}');toggleRowMenu('im-${inv.id}')">✏️ Edit</div>
+            <div class="row-menu-item" onclick="viewInvRow('${inv.src}','${inv.srcId}','${inv.id}');toggleRowMenu('im-${inv.id}')"> View</div>
+            <div class="row-menu-item" onclick="editInvById('${inv.src}','${inv.srcId}','${inv.id}');toggleRowMenu('im-${inv.id}')"> Edit</div>
           </div>
         </div>
       </td>
@@ -823,9 +823,9 @@ function openDetail(id){
   <div id="tab-docs" style="display:none">
     <div style="margin-bottom:16px"><button class="btn btn-primary btn-sm" onclick="openQuotModal('${id}',null)">+ Create Quotation</button></div>
     <div class="form-section-title">Quotations</div>
-    ${quots.length?`<table style="width:100%;border-collapse:collapse;margin-bottom:16px">${quots.map(q=>`<tr style="border-bottom:1px solid var(--border)"><td style="padding:9px 0;font-size:11px;color:var(--text-muted);font-weight:600">${q.id}</td><td style="font-size:12px;padding:9px 4px">${fmt(q.date)}</td><td style="color:var(--gold);font-weight:700">${fmtLKR(qTotal(q.items))}</td><td>${q.convertedToInvoice?'<span class="badge badge-inv">Invoiced</span>':'<span class="badge badge-quot">Open</span>'}</td><td><div class="row-menu-wrap"><button class="row-menu-btn" onclick="event.stopPropagation();toggleRowMenu('dq-${q.id}')">⋯</button><div class="row-menu-dropdown" id="dq-${q.id}"><div class="row-menu-item" onclick="viewDocLead('Q','${id}','${q.id}');toggleRowMenu('dq-${q.id}')">👁 View</div>${!q.convertedToInvoice?`<div class="row-menu-item" onclick="editQuot('${id}','${q.id}');toggleRowMenu('dq-${q.id}')">✏️ Edit</div><div class="row-menu-divider"></div><div class="row-menu-item gold" onclick="openAdvModal('${id}','${q.id}');toggleRowMenu('dq-${q.id}')">→ Invoice</div>`:''}</div></div></td></tr>`).join('')}</table>`:'<div style="font-size:13px;color:var(--text-muted);font-style:italic;margin-bottom:14px">No quotations</div>'}
+    ${quots.length?`<table style="width:100%;border-collapse:collapse;margin-bottom:16px">${quots.map(q=>`<tr style="border-bottom:1px solid var(--border)"><td style="padding:9px 0;font-size:11px;color:var(--text-muted);font-weight:600">${q.id}</td><td style="font-size:12px;padding:9px 4px">${fmt(q.date)}</td><td style="color:var(--gold);font-weight:700">${fmtLKR(qTotal(q.items))}</td><td>${q.convertedToInvoice?'<span class="badge badge-inv">Invoiced</span>':'<span class="badge badge-quot">Open</span>'}</td><td><div class="row-menu-wrap"><button class="row-menu-btn" onclick="event.stopPropagation();toggleRowMenu('dq-${q.id}')">⋯</button><div class="row-menu-dropdown" id="dq-${q.id}"><div class="row-menu-item" onclick="viewDocLead('Q','${id}','${q.id}');toggleRowMenu('dq-${q.id}')"> View</div>${!q.convertedToInvoice?`<div class="row-menu-item" onclick="editQuot('${id}','${q.id}');toggleRowMenu('dq-${q.id}')"> Edit</div><div class="row-menu-divider"></div><div class="row-menu-item gold" onclick="openAdvModal('${id}','${q.id}');toggleRowMenu('dq-${q.id}')">→ Invoice</div>`:''}</div></div></td></tr>`).join('')}</table>`:'<div style="font-size:13px;color:var(--text-muted);font-style:italic;margin-bottom:14px">No quotations</div>'}
     <div class="form-section-title">Invoices</div>
-    ${invs.length?`<table style="width:100%;border-collapse:collapse">${invs.map(inv=>`<tr style="border-bottom:1px solid var(--border)"><td style="padding:9px 0;font-size:11px;color:var(--text-muted);font-weight:600">${inv.id}</td><td style="font-size:12px;padding:9px 4px">${fmt(inv.date)}</td><td style="color:var(--gold);font-weight:700">${fmtLKR(qTotal(inv.items))}</td><td style="color:var(--success);font-size:12px;font-weight:600">${fmtLKR(inv.advance)} paid</td><td><div class="row-menu-wrap"><button class="row-menu-btn" onclick="event.stopPropagation();toggleRowMenu('di-${inv.id}')">⋯</button><div class="row-menu-dropdown" id="di-${inv.id}"><div class="row-menu-item" onclick="viewDocLead('I','${id}','${inv.id}');toggleRowMenu('di-${inv.id}')">👁 View</div><div class="row-menu-item" onclick="editInvById('lead','${id}','${inv.id}');toggleRowMenu('di-${inv.id}')">✏️ Edit</div></div></div></td></tr>`).join('')}</table>`:'<div style="font-size:13px;color:var(--text-muted);font-style:italic">No invoices</div>'}
+    ${invs.length?`<table style="width:100%;border-collapse:collapse">${invs.map(inv=>`<tr style="border-bottom:1px solid var(--border)"><td style="padding:9px 0;font-size:11px;color:var(--text-muted);font-weight:600">${inv.id}</td><td style="font-size:12px;padding:9px 4px">${fmt(inv.date)}</td><td style="color:var(--gold);font-weight:700">${fmtLKR(qTotal(inv.items))}</td><td style="color:var(--success);font-size:12px;font-weight:600">${fmtLKR(inv.advance)} paid</td><td><div class="row-menu-wrap"><button class="row-menu-btn" onclick="event.stopPropagation();toggleRowMenu('di-${inv.id}')">⋯</button><div class="row-menu-dropdown" id="di-${inv.id}"><div class="row-menu-item" onclick="viewDocLead('I','${id}','${inv.id}');toggleRowMenu('di-${inv.id}')"> View</div><div class="row-menu-item" onclick="editInvById('lead','${id}','${inv.id}');toggleRowMenu('di-${inv.id}')"> Edit</div></div></div></td></tr>`).join('')}</table>`:'<div style="font-size:13px;color:var(--text-muted);font-style:italic">No invoices</div>'}
   </div>`;
   document.getElementById('detail-foot').innerHTML=`<button class="btn btn-danger btn-sm" onclick="delLead('${id}')">Delete</button><button class="btn btn-ghost" onclick="closeModal('detail-modal')">Close</button>${!l.confirmed?`<button class="btn btn-primary" onclick="confirmClient('${id}')">✓ Confirm</button>`:''}`;
   openModal('detail-modal');
@@ -1261,11 +1261,24 @@ document.addEventListener('click', function(e){
     document.querySelectorAll('.row-menu-dropdown.open').forEach(m=>m.classList.remove('open'));
   }
 });
-function toggleRowMenu(id){
+function toggleRowMenu(id, btn){
   const menu=document.getElementById(id);
   const wasOpen=menu.classList.contains('open');
   document.querySelectorAll('.row-menu-dropdown.open').forEach(m=>m.classList.remove('open'));
-  if(!wasOpen)menu.classList.add('open');
+  if(!wasOpen){
+    // Position the menu near the button
+    const b = btn || event.currentTarget;
+    const rect = b.getBoundingClientRect();
+    const menuH = 150; // approximate menu height
+    const spaceBelow = window.innerHeight - rect.bottom;
+    if(spaceBelow < menuH){
+      // Open upward
+      menu.style.top = (rect.top - menuH + window.scrollY) + 'px';
+    } else {
+      menu.style.top = (rect.bottom + 4 + window.scrollY) + 'px';
+    }
+    menu.classList.add('open');
+  }
 }
 </script>
 </body>
