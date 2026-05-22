@@ -19,9 +19,9 @@
 body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;min-height:100vh;overflow-x:hidden}
 .app{display:flex;min-height:100vh}
 .sidebar{width:240px;background:var(--navy);display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:0;left:0;height:100vh;z-index:100;transition:transform 0.3s}
-.main{margin-left:240px;flex:1;display:flex;flex-direction:column;min-height:100vh}
+.main{margin-left:240px;flex:1;display:flex;flex-direction:column;min-height:100vh;overflow:hidden;max-width:calc(100vw - 240px)}
 .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 1px 3px rgba(27,43,75,0.06)}
-.content{flex:1;padding:24px;max-width:1200px;width:100%}
+.content{flex:1;padding:24px;max-width:100%;width:100%;overflow-x:hidden}
 .brand{padding:20px 20px 16px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:12px}
 .brand-logo{width:38px;height:38px;object-fit:contain;filter:brightness(0) invert(1);opacity:.95}
 .brand-name{font-family:'Cinzel',serif;font-size:15px;color:#fff;letter-spacing:2px;line-height:1}
@@ -63,8 +63,9 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
 .stat-label{font-size:12px;color:var(--text-muted);font-weight:500}
 .stat-value{font-size:28px;font-weight:700;color:var(--navy);font-family:'Cinzel',serif;line-height:1}
 .stat-sub{font-size:11px;color:var(--text-muted);margin-top:4px}
-.pipeline{display:flex;gap:14px;overflow-x:auto;padding-bottom:12px}
-.stage-col{min-width:220px;flex-shrink:0}
+.pipeline{display:flex;gap:14px;overflow-x:auto;padding-bottom:12px;width:100%}
+.pipeline::-webkit-scrollbar{height:6px}.pipeline::-webkit-scrollbar-track{background:var(--border);border-radius:3px}.pipeline::-webkit-scrollbar-thumb{background:var(--text-muted);border-radius:3px}
+.stage-col{min-width:200px;width:calc(20% - 12px);flex-shrink:0}
 .stage-header{padding:10px 14px;border-radius:var(--r) var(--r) 0 0;display:flex;align-items:center;justify-content:space-between;border:1.5px solid var(--border);border-bottom:none}
 .stage-name{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px}
 .stage-count{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,0.7)}
@@ -313,6 +314,8 @@ textarea{resize:vertical;min-height:80px}
     <div class="nav-section">Finance</div>
     <div class="nav-item" onclick="sv('quotations');closeSidebar()" id="nav-quotations">◇ Quotations</div>
     <div class="nav-item" onclick="sv('invoices');closeSidebar()" id="nav-invoices">◆ Invoices</div>
+    <div class="nav-section">Finance</div>
+    <div class="nav-item" onclick="sv('finance');closeSidebar()" id="nav-finance">₹ Finance</div>
     <div class="nav-section">Settings</div>
     <div class="nav-item" onclick="sv('settings');closeSidebar()" id="nav-settings">⚙ Settings</div>
   </nav>
@@ -362,6 +365,21 @@ textarea{resize:vertical;min-height:80px}
 <div class="sheet" id="svc-sheet"><div class="sheet-handle"></div><div class="sheet-head" style="display:flex;align-items:center;justify-content:space-between"><div class="sheet-title">Add Service</div><button onclick="closeServiceSheet()" style="background:var(--bg);border:1.5px solid var(--border);border-radius:50%;width:30px;height:30px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-mid)">×</button></div><div class="sheet-search"><div class="sheet-search-wrap"><span class="sheet-search-icon">⌕</span><input class="sheet-search-input" type="text" id="svc-search" placeholder="Search… bridal, homecoming, bouquet…" oninput="filterSvc(this.value)" autocomplete="off"/></div></div><div class="sheet-list" id="svc-list"></div></div>
 <div class="sheet-overlay" id="theme-sheet-overlay" onclick="closeThemeSheet()"></div>
 <div class="sheet" id="theme-sheet"><div class="sheet-handle"></div><div class="sheet-head" style="display:flex;align-items:center;justify-content:space-between"><div class="sheet-title" id="theme-sheet-title">Select Theme</div><button onclick="closeThemeSheet()" style="background:var(--bg);border:1.5px solid var(--border);border-radius:50%;width:30px;height:30px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-mid)">×</button></div><div class="sheet-list" id="theme-list"></div></div>
+<!-- AMOUNT INPUT SHEET -->
+<div class="sheet-overlay" id="amt-sheet-overlay" onclick="closeAmountSheet()"></div>
+<div class="sheet" id="amt-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head" style="display:flex;align-items:center;justify-content:space-between">
+    <div class="sheet-title" id="amt-sheet-title">Enter Amount</div>
+    <button onclick="closeAmountSheet()" style="background:var(--bg);border:1.5px solid var(--border);border-radius:50%;width:30px;height:30px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
+  </div>
+  <div style="padding:20px">
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px" id="amt-from-label"></div>
+    <input type="number" id="amt-input" style="width:100%;padding:14px;font-size:20px;font-family:Inter,sans-serif;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);outline:none;text-align:right" placeholder="0" oninput="this.style.borderColor='var(--navy)'"/>
+    <button onclick="confirmAmount()" style="width:100%;margin-top:16px;background:var(--navy);color:#fff;border:none;border-radius:8px;padding:14px;font-size:15px;font-family:Inter,sans-serif;font-weight:600;cursor:pointer">Add to Quote</button>
+  </div>
+</div>
+
 <div class="sheet-overlay" id="cust-sheet-overlay" onclick="closeCustSheet()"></div>
 <div class="sheet" id="cust-sheet"><div class="sheet-handle"></div><div class="sheet-head" style="display:flex;align-items:center;justify-content:space-between"><div class="sheet-title">Select Customer</div><button onclick="closeCustSheet()" style="background:var(--bg);border:1.5px solid var(--border);border-radius:50%;width:30px;height:30px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-mid)">×</button></div><div class="sheet-search"><div class="sheet-search-wrap"><span class="sheet-search-icon">⌕</span><input class="sheet-search-input" type="text" id="cust-search-inp" placeholder="Search by name or phone…" oninput="filterCusts(this.value)"/></div></div><div class="sheet-list" id="cust-list"></div></div>
 
@@ -375,28 +393,37 @@ const STAGES = ['New Lead','Contacted','Consultation Booked','Consultation Done'
 const SC = ['sc0','sc1','sc2','sc3','sc4'];
 const THEMES = ['Kandyan','Modern Kandyan','Indian / Lehenga','Western'];
 const SVCS = [
-  {cat:'Bridal',      desc:'Bridal',                             baseUnit:125000, askTheme:true},
-  {cat:'Homecoming',  desc:'Homecoming',                         baseUnit:125000, askTheme:true},
-  {cat:'Going Away',  desc:'Going Away',                         baseUnit:65000,  askTheme:false},
-  {cat:'Bridesmaids', desc:'Bridesmaid',                         baseUnit:38000,  askTheme:false},
-  {cat:'Bridesmaids', desc:'Flower Girl',                        baseUnit:8000,   askTheme:false},
-  {cat:'Bridesmaids', desc:'Little Maid',                        baseUnit:10000,  askTheme:false},
-  {cat:'Add-Ons',     desc:'Personal Touch-Up',                  baseUnit:10000,  askTheme:false},
-  {cat:'Add-Ons',     desc:'Venue Touch-Up Standby',             baseUnit:20000,  askTheme:false},
-  {cat:'Add-Ons',     desc:'Kandyan Jewellery',                  baseUnit:20000,  askTheme:false},
-  {cat:'Add-Ons',     desc:'Fresh Bridal Bouquet',               baseUnit:25000,  askTheme:false},
-  {cat:'Add-Ons',     desc:'Bridesmaid Bouquet',                 baseUnit:12000,  askTheme:false},
-  {cat:'Tailoring',   desc:'Tailoring – Kandyan Saree (Bride)',  baseUnit:45000,  askTheme:false},
-  {cat:'Tailoring',   desc:'Tailoring – Kandyan Saree (BM)',     baseUnit:25000,  askTheme:false},
-  {cat:'Tailoring',   desc:'Tailoring – Indian Saree (Bride)',   baseUnit:35000,  askTheme:false},
-  {cat:'Tailoring',   desc:'Tailoring – Indian Saree (BM)',      baseUnit:25000,  askTheme:false},
-  {cat:'Tailoring',   desc:'Tailoring – Lehenga (Bride)',        baseUnit:35000,  askTheme:false},
-  {cat:'Tailoring',   desc:'Tailoring – Western Frock (Bride)',  baseUnit:65000,  askTheme:false},
-  {cat:'Tailoring',   desc:'Tailoring – Western Frock (BM)',     baseUnit:18000,  askTheme:false},
-  {cat:'Normal',      desc:'Full Dressing (Hair+Makeup+Draping)',baseUnit:7500,   askTheme:false},
-  {cat:'Normal',      desc:'Hair & Makeup',                      baseUnit:6000,   askTheme:false},
-  {cat:'Normal',      desc:'Hair or Makeup Only',                baseUnit:5000,   askTheme:false},
+  {cat:'Bridal',      desc:'Bridal',                             baseUnit:125000, askTheme:true,  askAmount:false},
+  {cat:'Homecoming',  desc:'Homecoming',                         baseUnit:125000, askTheme:true,  askAmount:false},
+  {cat:'Going Away',  desc:'Going Away',                         baseUnit:65000,  askTheme:false, askAmount:false},
+  {cat:'Bridesmaids', desc:'Bridesmaid',                         baseUnit:38000,  askTheme:false, askAmount:false},
+  {cat:'Bridesmaids', desc:'Flower Girl',                        baseUnit:8000,   askTheme:false, askAmount:false},
+  {cat:'Bridesmaids', desc:'Little Maid',                        baseUnit:10000,  askTheme:false, askAmount:false},
+  {cat:'Add-Ons',     desc:'Personal Touch-Up',                  baseUnit:10000,  askTheme:false, askAmount:false},
+  {cat:'Add-Ons',     desc:'Venue Touch-Up Standby',             baseUnit:20000,  askTheme:false, askAmount:false},
+  {cat:'Add-Ons',     desc:'Kandyan Jewellery',                  baseUnit:0,      askTheme:false, askAmount:true, fromPrice:20000},
+  {cat:'Add-Ons',     desc:'Fresh Bridal Bouquet',               baseUnit:0,      askTheme:false, askAmount:true, fromPrice:25000},
+  {cat:'Add-Ons',     desc:'Bridesmaid Bouquet',                 baseUnit:0,      askTheme:false, askAmount:true, fromPrice:12000},
+  {cat:'Tailoring',   desc:'Tailoring – Kandyan Saree (Bride)',  baseUnit:0,      askTheme:false, askAmount:true, fromPrice:45000},
+  {cat:'Tailoring',   desc:'Tailoring – Kandyan Saree (BM)',     baseUnit:0,      askTheme:false, askAmount:true, fromPrice:25000},
+  {cat:'Tailoring',   desc:'Tailoring – Indian Saree (Bride)',   baseUnit:0,      askTheme:false, askAmount:true, fromPrice:35000},
+  {cat:'Tailoring',   desc:'Tailoring – Indian Saree (BM)',      baseUnit:0,      askTheme:false, askAmount:true, fromPrice:25000},
+  {cat:'Tailoring',   desc:'Tailoring – Lehenga (Bride)',        baseUnit:0,      askTheme:false, askAmount:true, fromPrice:35000},
+  {cat:'Tailoring',   desc:'Tailoring – Western Frock (Bride)',  baseUnit:0,      askTheme:false, askAmount:true, fromPrice:65000},
+  {cat:'Tailoring',   desc:'Tailoring – Western Frock (BM)',     baseUnit:0,      askTheme:false, askAmount:true, fromPrice:18000},
+  {cat:'Normal',      desc:'Full Dressing (Hair+Makeup+Draping)',baseUnit:7500,   askTheme:false, askAmount:false},
+  {cat:'Normal',      desc:'Hair & Makeup',                      baseUnit:6000,   askTheme:false, askAmount:false},
+  {cat:'Normal',      desc:'Hair or Makeup Only',                baseUnit:5000,   askTheme:false, askAmount:false},
 ];
+
+// Get price from settings catalog or use default
+function getSvcPrice(desc){
+  const settings = getSettings();
+  const catalog = settings.linePrices || {};
+  if(catalog[desc] !== undefined) return catalog[desc];
+  const svc = SVCS.find(s=>s.desc===desc);
+  return svc ? (svc.baseUnit || svc.fromPrice || 0) : 0;
+}
 
 // Check and apply smart discounts as separate negative lines
 function applySmartDiscounts() {
@@ -507,13 +534,13 @@ function initials(n){return(n||'?').split(' ').map(w=>w[0]).join('').slice(0,2).
 // ── NAV ───────────────────────────────────────────────────────
 function sv(v){
   currentView=v;
-  ['pipeline','clients','customers','upcoming','quotations','invoices'].forEach(x=>{
+  ['pipeline','clients','customers','upcoming','quotations','invoices','finance','settings'].forEach(x=>{
     document.getElementById('nav-'+x)?.classList.remove('active');
     document.getElementById('mnav-'+x)?.classList.remove('active');
   });
   document.getElementById('nav-'+v)?.classList.add('active');
   document.getElementById('mnav-'+v)?.classList.add('active');
-  const titles={pipeline:'Lead Pipeline',clients:'Confirmed Clients',customers:'Customer Profiles',upcoming:'Upcoming Weddings',quotations:'Quotations',invoices:'Invoices',settings:'Settings'};
+  const titles={pipeline:'Lead Pipeline',clients:'Confirmed Clients',customers:'Customer Profiles',upcoming:'Upcoming Weddings',quotations:'Quotations',invoices:'Invoices',finance:'Finance',settings:'Settings'};
   document.getElementById('page-title').textContent=titles[v]||v;
   render();
 }
@@ -521,26 +548,189 @@ function handleSearch(){searchQuery=document.getElementById('search-input').valu
 function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('mobile-overlay').classList.add('open')}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('mobile-overlay').classList.remove('open')}
 function toggleMobileSearch(){const b=document.getElementById('mobile-search-bar');const v=b.style.display==='none';b.style.display=v?'block':'none';if(v)document.getElementById('search-input-mobile').focus()}
-function renderSettings(){
-  const s=getSettings();
+function renderFinance(){
+  // Gather all invoice data
+  const allInv=[];
+  leadsArr().forEach(l=>Object.values(l.invoices||{}).forEach(inv=>allInv.push({...inv,clientName:l.name,src:'lead'})));
+  custsArr().forEach(cu=>Object.values(cu.invoices||{}).forEach(inv=>allInv.push({...inv,clientName:cu.name,src:'customer'})));
+  allInv.sort((a,b)=>new Date(a.date)-new Date(b.date));
+
+  // Calculate totals
+  const totalRevenue=allInv.reduce((s,inv)=>s+qTotal(inv.items),0);
+  const totalCollected=allInv.reduce((s,inv)=>s+(inv.advance||0),0);
+  const totalBalance=totalRevenue-totalCollected;
+  const invoiceCount=allInv.length;
+
+  // Monthly breakdown
+  const monthly={};
+  allInv.forEach(inv=>{
+    const mo=inv.date?inv.date.slice(0,7):'Unknown';
+    if(!monthly[mo])monthly[mo]={revenue:0,collected:0,count:0};
+    monthly[mo].revenue+=qTotal(inv.items);
+    monthly[mo].collected+=(inv.advance||0);
+    monthly[mo].count++;
+  });
+  const months=Object.keys(monthly).sort();
+
+  // Recent payments
+  const recentInv=[...allInv].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,10);
+
   document.getElementById('main-content').innerHTML=`
-  <div class="table-wrap" style="max-width:600px">
-    <div class="table-hdr"><div class="table-hdr-title">Default Notes & Terms</div></div>
-    <div style="padding:20px">
-      <div class="form-group" style="margin-bottom:16px">
-        <label>Default Quote / Invoice Notes</label>
-        <textarea id="settings-notes" style="min-height:160px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:Inter,sans-serif;color:var(--text);outline:none;width:100%;resize:vertical">${s.defaultNotes||getDefaultNotes()}</textarea>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:5px">These notes appear on every quotation and invoice automatically. You can still edit them per-quote.</div>
-      </div>
-      <button class="btn btn-primary" onclick="saveSettingsFromUI()">Save Settings</button>
+  <!-- SUMMARY CARDS -->
+  <div class="stats-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px">
+    <div class="stat-card">
+      <div class="stat-top"><div><div class="stat-label">Total Revenue</div><div class="stat-value" style="font-size:20px">${fmtLKR(totalRevenue)}</div></div><div class="stat-icon stat-icon-gold">💰</div></div>
+      <div class="stat-sub">${invoiceCount} invoice${invoiceCount!==1?'s':''}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-top"><div><div class="stat-label">Collected</div><div class="stat-value" style="font-size:20px;color:var(--success)">${fmtLKR(totalCollected)}</div></div><div class="stat-icon stat-icon-green">✓</div></div>
+      <div class="stat-sub">${totalRevenue>0?Math.round(totalCollected/totalRevenue*100):0}% of total</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-top"><div><div class="stat-label">Balance Due</div><div class="stat-value" style="font-size:20px;color:var(--warning)">${fmtLKR(totalBalance)}</div></div><div class="stat-icon stat-icon-orange">⏳</div></div>
+      <div class="stat-sub">Outstanding</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-top"><div><div class="stat-label">Avg Invoice</div><div class="stat-value" style="font-size:20px">${invoiceCount>0?fmtLKR(Math.round(totalRevenue/invoiceCount)):'Rs 0'}</div></div><div class="stat-icon stat-icon-blue">📊</div></div>
+      <div class="stat-sub">Per client</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px">
+    <!-- MONTHLY BREAKDOWN -->
+    <div class="table-wrap">
+      <div class="table-hdr"><div class="table-hdr-title">Monthly Revenue</div></div>
+      ${months.length?`<table><thead><tr><th>Month</th><th>Invoices</th><th>Revenue</th><th>Collected</th></tr></thead><tbody>
+        ${months.map(mo=>{
+          const m=monthly[mo];
+          const pct=m.revenue>0?Math.round(m.collected/m.revenue*100):0;
+          const moLabel=new Date(mo+'-01').toLocaleDateString('en-GB',{month:'short',year:'numeric'});
+          return`<tr>
+            <td style="font-weight:600">${moLabel}</td>
+            <td style="text-align:center">${m.count}</td>
+            <td style="color:var(--gold);font-weight:600">${fmtLKR(m.revenue)}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:6px">
+                <div style="flex:1;height:4px;background:var(--border);border-radius:2px"><div style="width:${pct}%;height:100%;background:var(--success);border-radius:2px"></div></div>
+                <span style="font-size:11px;color:var(--success);font-weight:600;min-width:30px">${pct}%</span>
+              </div>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody></table>`:'<div class="empty" style="padding:40px"><div class="empty-text">No invoices yet</div></div>'}
+    </div>
+
+    <!-- OUTSTANDING BALANCES -->
+    <div class="table-wrap">
+      <div class="table-hdr"><div class="table-hdr-title">Outstanding Balances</div></div>
+      ${allInv.filter(inv=>qTotal(inv.items)-(inv.advance||0)>0).length?`
+      <table><thead><tr><th>Client</th><th>Invoice</th><th>Balance</th></tr></thead><tbody>
+        ${allInv.filter(inv=>qTotal(inv.items)-(inv.advance||0)>0).sort((a,b)=>(qTotal(b.items)-(b.advance||0))-(qTotal(a.items)-(a.advance||0))).slice(0,8).map(inv=>{
+          const bal=qTotal(inv.items)-(inv.advance||0);
+          const du=daysUntil(inv.date);
+          return`<tr>
+            <td><div style="font-weight:600;font-size:13px">${inv.clientName}</div></td>
+            <td style="font-size:11px;color:var(--text-muted)">${inv.id}</td>
+            <td style="font-weight:700;color:var(--warning)">${fmtLKR(bal)}</td>
+          </tr>`;
+        }).join('')}
+      </tbody></table>`:'<div class="empty" style="padding:40px"><div class="empty-text">No outstanding balances</div></div>'}
+    </div>
+  </div>
+
+  <!-- RECENT TRANSACTIONS -->
+  <div class="table-wrap">
+    <div class="table-hdr"><div class="table-hdr-title">All Invoices</div><div style="font-size:12px;color:var(--text-muted)">${allInv.length} total</div></div>
+    ${allInv.length?`<div style="overflow-x:auto"><table>
+      <thead><tr><th>Date</th><th>Client</th><th>Invoice</th><th>Total</th><th>Bespeaking</th><th>Balance</th><th>Status</th></tr></thead>
+      <tbody>${[...allInv].reverse().map(inv=>{
+        const tot=qTotal(inv.items);
+        const bespeak=inv.advance||0;
+        const bal=tot-bespeak;
+        const pct=tot>0?Math.round(bespeak/tot*100):0;
+        const statusColor=pct>=100?'var(--success)':pct>0?'var(--warning)':'var(--danger)';
+        const statusLabel=pct>=100?'Paid':pct>0?'Partial':'Unpaid';
+        return`<tr>
+          <td style="font-size:12px">${fmt(inv.date)}</td>
+          <td class="client-name">${inv.clientName}</td>
+          <td style="font-size:11px;color:var(--text-muted)">${inv.id}</td>
+          <td style="font-weight:700;color:var(--gold)">${fmtLKR(tot)}</td>
+          <td style="color:var(--success);font-weight:600">${fmtLKR(bespeak)}</td>
+          <td style="font-weight:600">${fmtLKR(Math.max(0,bal))}</td>
+          <td><span class="badge" style="background:${statusColor}22;color:${statusColor}">${statusLabel}</span></td>
+        </tr>`;
+      }).join('')}
+      </tbody>
+    </table></div>`:'<div class="empty" style="padding:60px"><div class="empty-text">No financial data yet</div></div>'}
+  </div>`;
+}
+
+function renderSettings(tab){
+  const s=getSettings();
+  const activeTab=tab||'invoice';
+  const linePrices=s.linePrices||{};
+  
+  const invoiceTab=`
+    <div class="form-group" style="margin-bottom:20px">
+      <label>Default Notes / Terms</label>
+      <textarea id="s-notes" style="min-height:140px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:Inter,sans-serif;color:var(--text);outline:none;width:100%;resize:vertical">${(s.defaultNotes||getDefaultNotes()).replace(/</g,'&lt;')}</textarea>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:5px">Appears on every quotation and invoice. Editable per-document.</div>
+    </div>
+    <div class="form-group" style="margin-bottom:20px">
+      <label>Company Logo URL (optional)</label>
+      <input type="text" id="s-logo" value="${s.logoUrl||''}" placeholder="https://... or leave blank"/>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:5px">Paste a URL to your logo image. It will appear on quotes and invoices.</div>
+    </div>
+    <button class="btn btn-primary" onclick="saveInvoiceSettings()">Save Invoice Settings</button>`;
+
+  const pricesTab=`
+    <div style="margin-bottom:14px;font-size:13px;color:var(--text-muted)">Prices set here override the defaults when adding line items to a quote. Leave blank to use default.</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${SVCS.filter(sv=>sv.askAmount||sv.baseUnit>0).map(sv=>`
+      <div style="display:flex;align-items:center;gap:12px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 14px">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:var(--navy)">${sv.desc}</div>
+          <div style="font-size:11px;color:var(--text-muted)">${sv.cat} · Default: Rs ${(sv.baseUnit||sv.fromPrice||0).toLocaleString()}</div>
+        </div>
+        <input type="number" id="price-${sv.desc.replace(/[^a-z0-9]/gi,'_')}" value="${linePrices[sv.desc]||''}" placeholder="${sv.baseUnit||sv.fromPrice||0}" style="width:120px;text-align:right;background:var(--white);border:1.5px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:Inter,sans-serif;color:var(--text);outline:none"/>
+      </div>`).join('')}
+    </div>
+    <button class="btn btn-primary" style="margin-top:16px" onclick="savePriceSettings()">Save Prices</button>`;
+
+  document.getElementById('main-content').innerHTML=`
+  <div style="max-width:640px">
+    <div class="tabs" style="margin-bottom:20px">
+      <div class="tab ${activeTab==='invoice'?'active':''}" onclick="renderSettings('invoice')">Invoice Settings</div>
+      <div class="tab ${activeTab==='prices'?'active':''}" onclick="renderSettings('prices')">Line Item Prices</div>
+    </div>
+    <div class="table-wrap">
+      <div class="modal-body">${activeTab==='invoice'?invoiceTab:pricesTab}</div>
     </div>
   </div>`;
 }
 
+function saveInvoiceSettings(){
+  const notes=document.getElementById('s-notes')?.value||'';
+  const logo=document.getElementById('s-logo')?.value||'';
+  saveSettings({...getSettings(),defaultNotes:notes,logoUrl:logo});
+  showNotif('Invoice settings saved!');
+}
+
+function savePriceSettings(){
+  const s=getSettings();
+  const linePrices=s.linePrices||{};
+  SVCS.filter(sv=>sv.askAmount||sv.baseUnit>0).forEach(sv=>{
+    const key='price-'+sv.desc.replace(/[^a-z0-9]/gi,'_');
+    const el=document.getElementById(key);
+    if(el&&el.value) linePrices[sv.desc]=parseFloat(el.value)||0;
+    else delete linePrices[sv.desc];
+  });
+  saveSettings({...s,linePrices});
+  showNotif('Prices saved!');
+}
+
 function saveSettingsFromUI(){
-  const notes=document.getElementById('settings-notes')?.value||'';
-  saveSettings({...getSettings(),defaultNotes:notes});
-  showNotif('Settings saved!');
+  saveInvoiceSettings();
 }
 
 function render(){
@@ -550,6 +740,7 @@ function render(){
   else if(currentView==='upcoming')renderUpcoming();
   else if(currentView==='quotations')renderQuotations();
   else if(currentView==='invoices')renderInvoices();
+  else if(currentView==='finance')renderFinance();
   else if(currentView==='settings')renderSettings();
 }
 function openModal(id){document.getElementById(id)?.classList.add('open')}
@@ -637,7 +828,7 @@ function renderQuotations(){
   const filt=allQ.filter(q=>searchQuery?q.srcName.toLowerCase().includes(searchQuery):true);
   const rows=filt.map(q=>{
     const tot=qTotal(q.items);
-    const status=q.convertedToInvoice?'<span class="badge badge-inv">Invoiced</span>':'<span class="badge badge-quot">Open</span>';
+    const status=q.convertedToInvoice?'<span class="badge badge-inv">Invoiced</span>':q.sent?'<span class="badge" style="background:#DCFCE7;color:#15803D">Sent</span>':'<span class="badge badge-quot">Open</span>';
     const menuId='qm-'+q.id;
     const actions=`<div class="row-menu-wrap">
       <button class="row-menu-btn" onclick="event.stopPropagation();toggleRowMenu('${menuId}')">⋯</button>
@@ -676,6 +867,18 @@ function renderQuotations(){
 }
 
 // Helper functions for quotation list actions
+async function markQuotSent(src, srcId, quotId){
+  const path = src==='lead' ? '/leads/'+srcId+'/quotations/'+quotId : '/customers/'+srcId+'/quotes/'+quotId;
+  try{
+    await fbPatch(path, {sent:true});
+    const obj = src==='lead' ? leads[srcId] : customers[srcId];
+    const q = src==='lead' ? obj?.quotations?.[quotId] : obj?.quotes?.[quotId];
+    if(q) q.sent = true;
+    showNotif('Quotation marked as sent');
+    renderQuotations();
+  }catch(e){showNotif('Error: '+e.message)}
+}
+
 function viewQuotRow(src, srcId, quotId){
   const obj=src==='lead'?leads[srcId]:customers[srcId];if(!obj)return;
   const doc=src==='lead'?obj.quotations?.[quotId]:obj.quotes?.[quotId];if(!doc)return;
@@ -693,13 +896,17 @@ function advModalRow(src, srcId, quotId){
   document.getElementById('adv-sub').textContent='For: '+obj.name;
   document.getElementById('adv-body').innerHTML=`
   <div class="detail-grid" style="margin-bottom:16px">
-    <div class="detail-item"><div class="detail-label">Total</div><div class="detail-value hi" style="font-size:18px;color:var(--gold)">${fmtLKR(tot)}</div></div>
+    <div class="detail-item"><div class="detail-label">Quotation Total</div><div class="detail-value hi" style="font-size:18px;color:var(--gold)">${fmtLKR(tot)}</div></div>
     <div class="detail-item"><div class="detail-label">Ref</div><div class="detail-value">${q.id}</div></div>
   </div>
   <div class="form-grid">
-    <div class="form-group"><label>Advance Amount (Rs) *</label><input type="number" id="adv-amt" min="0" value="${src==='lead'?(leads[srcId]?.advance||50000):50000}"/></div>
+    <div class="form-group"><label>Bespeaking Fee (Rs) *</label><input type="number" id="adv-amt" min="0" value="50000" placeholder="50000"/></div>
     <div class="form-group"><label>Date</label><input type="date" id="adv-date" value="${new Date().toISOString().slice(0,10)}"/></div>
-    <div class="form-group span2"><label>Invoice Notes</label><textarea id="adv-notes" placeholder="Thank you for choosing Biso by Dinushi…"></textarea></div>
+    <div class="form-group span2"><label>Invoice Notes</label><textarea id="adv-notes">${getDefaultNotes()}</textarea></div>
+  </div>
+  <div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:12px;font-size:12px;color:var(--text-muted);margin-top:8px">
+    Balance due: <strong style="color:var(--navy)" id="adv-balance-preview">${fmtLKR(tot-50000)}</strong>
+    <input type="range" min="0" max="${tot}" value="50000" style="width:100%;margin-top:8px" oninput="document.getElementById('adv-amt').value=this.value;document.getElementById('adv-balance-preview').textContent=fmtLKR(${tot}-parseFloat(this.value))"/>
   </div>`;
   document.getElementById('adv-foot').innerHTML=`
     <button class="btn btn-ghost" onclick="closeModal('advance-modal')">Cancel</button>
@@ -929,11 +1136,13 @@ function closeServiceSheet(){document.getElementById('svc-sheet-overlay').classL
 function filterSvc(q){
   const s=q.toLowerCase().trim();
   const f=s?SVCS.filter(sv=>sv.desc.toLowerCase().includes(s)||sv.cat.toLowerCase().includes(s)):SVCS;
-  document.getElementById('svc-list').innerHTML=f.map(sv=>`<div class="sheet-item" onclick="selectSvc('${sv.desc.replace(/'/g,"\'")}',${sv.baseUnit},'${sv.cat}',${sv.askTheme})"><div><div class="sheet-item-name">${sv.desc}</div><div class="sheet-item-meta">${sv.cat}</div></div><div class="sheet-item-price">${fmtLKR(sv.baseUnit)}</div></div>`).join('')+`<div class="sheet-add-custom" onclick="addCustomSvc('${q.replace(/'/g,"\'")}')"><span style="color:var(--gold);font-weight:600;font-size:13px">+ Add "${q||'custom'}" as custom line</span></div>`;
+  document.getElementById('svc-list').innerHTML=f.map(sv=>`<div class="sheet-item" onclick="selectSvc('${sv.desc.replace(/'/g,"\'")}',${sv.baseUnit||0},'${sv.cat}',${sv.askTheme},${sv.askAmount||false},${sv.fromPrice||0})"><div><div class="sheet-item-name">${sv.desc}</div><div class="sheet-item-meta">${sv.cat}</div></div><div class="sheet-item-price">${sv.askAmount?'From '+fmtLKR(sv.fromPrice||0):fmtLKR(sv.baseUnit)}</div></div>`).join('')+`<div class="sheet-add-custom" onclick="addCustomSvc('${q.replace(/'/g,"\'")}')"><span style="color:var(--gold);font-weight:600;font-size:13px">+ Add "${q||'custom'}" as custom line</span></div>`;
 }
-function selectSvc(desc,unit,cat,askTheme){
+function selectSvc(desc,unit,cat,askTheme,askAmount,fromPrice){
   closeServiceSheet();
-  const smartUnit = smartPrice(desc, QB.items);
+  const settingsPrice=getSvcPrice(desc);
+  const smartUnit=settingsPrice>0?settingsPrice:smartPrice(desc,QB.items);
+  if(askAmount&&settingsPrice===0){QB.pendingSvc={desc,unit:0,cat,askTheme,fromPrice:fromPrice||0};showAmountSheet(desc,fromPrice||0,askTheme);return;}
   if(askTheme){
     QB.pendingSvc={desc,unit:smartUnit,cat};
     // Will call applySmartDiscounts after theme selected
@@ -950,6 +1159,40 @@ function confirmSvcTheme(theme){
   renderQB();
 }
 function closeThemeSheet(){document.getElementById('theme-sheet-overlay').classList.remove('open');document.getElementById('theme-sheet').classList.remove('open')}
+
+function showAmountSheet(desc, fromPrice, askTheme){
+  document.getElementById('amt-sheet-title').textContent = desc;
+  document.getElementById('amt-from-label').textContent = fromPrice>0 ? 'Starting from Rs '+fromPrice.toLocaleString() : 'Enter the amount for this service';
+  document.getElementById('amt-input').value = fromPrice>0 ? fromPrice : '';
+  document.getElementById('amt-sheet-overlay').classList.add('open');
+  document.getElementById('amt-sheet').classList.add('open');
+  setTimeout(()=>document.getElementById('amt-input').focus(),300);
+}
+
+function closeAmountSheet(){
+  document.getElementById('amt-sheet-overlay').classList.remove('open');
+  document.getElementById('amt-sheet').classList.remove('open');
+  QB.pendingSvc=null;
+}
+
+function confirmAmount(){
+  const amt = parseFloat(document.getElementById('amt-input').value)||0;
+  if(amt<=0){showNotif('Please enter an amount.');return;}
+  closeAmountSheet();
+  const s = QB.pendingSvc; if(!s) return;
+  s.unit = amt;
+  if(s.askTheme){
+    QB.pendingSvc = s;
+    document.getElementById('theme-sheet-title').textContent = 'Select Theme for '+s.cat;
+    document.getElementById('theme-list').innerHTML = THEMES.map(t=>`<div class="theme-option" onclick="confirmSvcTheme('${t}')"><div class="theme-radio"></div><div class="theme-label">${t}</div></div>`).join('');
+    setTimeout(()=>{document.getElementById('theme-sheet-overlay').classList.add('open');document.getElementById('theme-sheet').classList.add('open')},200);
+  } else {
+    QB.items.push({desc:s.desc,unit:s.unit,qty:1,disc:0,cat:s.cat,key:uid()});
+    QB.pendingSvc=null;
+    applySmartDiscounts();
+    renderQB();
+  }
+}
 function addCustomSvc(raw){closeServiceSheet();QB.items.push({desc:raw||'Custom service',unit:0,qty:1,disc:0,cat:'Custom',key:uid()});applySmartDiscounts();renderQB()}
 
 // ── CUSTOMER SHEET ────────────────────────────────────────────
@@ -1139,57 +1382,117 @@ function viewDocDirect(type,l,doc){
   const items=Object.values(doc.items||{});
   const tot=qTotal(doc.items);
   const isInv=type==='I';
-  const bal=isInv?tot-(doc.advance||0):null;
+  const bespeak=isInv?(doc.advance||0):0;
+  const bal=isInv?tot-bespeak:null;
   document.getElementById('doc-preview-title').textContent=isInv?'Invoice':'Quotation';
 
-  const docHtml=`<div id="print-area" style="background:#fff;color:#111;font-family:Inter,sans-serif;font-size:13px;max-width:720px;margin:0 auto;padding:32px 40px">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #1B2B4B">
+  // Get logo from settings
+  const settings=getSettings();
+  const logoHtml=settings.logoUrl
+    ?`<img src="${settings.logoUrl}" style="height:60px;object-fit:contain" alt="Biso"/>`
+    :`<div style="font-family:Cormorant Garamond,serif;font-size:22px;font-weight:700;color:#1B2B4B;letter-spacing:2px">BISO</div>`;
+
+  const docHtml=`<div id="print-area" style="background:#fff;color:#1B2B4B;font-family:Inter,Arial,sans-serif;font-size:13px;max-width:740px;margin:0 auto;padding:36px 44px">
+
+  <!-- HEADER -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px">
     <div>
-      <div style="font-weight:700;font-size:14px;color:#1B2B4B;margin-bottom:4px">BISO (PVT) LTD</div>
-      <div style="font-size:11px;color:#555;line-height:1.7">79 Minuwangoda Road, Negombo<br/>Sri Lanka<br/>bisostyling@gmail.com<br/>+94 70 755 0221</div>
+      ${logoHtml}
+      <div style="margin-top:10px;font-size:11px;color:#666;line-height:1.8">
+        BISO (PVT) LTD<br/>
+        79 Minuwangoda Road, Negombo<br/>
+        Sri Lanka<br/>
+        bisostyling@gmail.com &nbsp;|&nbsp; +94 70 755 0221
+      </div>
     </div>
     <div style="text-align:right">
-      <div style="font-size:28px;color:#1B2B4B;letter-spacing:3px;font-weight:300">${isInv?'INVOICE':'QUOTE'}</div>
-      <div style="font-size:13px;font-weight:700;color:#C9A84C;margin-top:4px"># ${doc.id}</div>
-      <div style="font-size:11px;color:#777;margin-top:3px">Date: ${fmt(doc.date)}</div>
-      ${!isInv?`<div style="font-size:11px;color:#e74c3c">Expiry: ${fmt(doc.expiry)}</div>`:''}
+      <div style="font-family:Cormorant Garamond,serif;font-size:32px;font-weight:400;color:#1B2B4B;letter-spacing:2px">${isInv?'INVOICE':'QUOTE'}</div>
+      <div style="font-size:13px;font-weight:700;color:#1B2B4B;margin-top:6px"># ${doc.id}</div>
     </div>
   </div>
-  <div style="margin-bottom:20px">
-    <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Bill To</div>
-    <div style="font-weight:700;font-size:15px;color:#1B2B4B">${l.name}</div>
-    ${l.phone?`<div style="font-size:12px;color:#555;margin-top:2px">${l.phone}</div>`:''}
-    ${l.weddingDate?`<div style="font-size:12px;color:#555;margin-top:2px">Wedding Date: ${fmt(l.weddingDate)}</div>`:''}
+
+  <!-- DIVIDER -->
+  <div style="height:1px;background:#e0e4ed;margin-bottom:20px"></div>
+
+  <!-- BILL TO + DATES -->
+  <div style="display:flex;justify-content:space-between;margin-bottom:24px">
+    <div>
+      <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:600">Bill To</div>
+      <div style="font-weight:700;font-size:15px;color:#1B2B4B">${l.name}</div>
+      ${l.phone?`<div style="font-size:12px;color:#555;margin-top:3px">${l.phone}</div>`:''}
+      ${l.weddingDate?`<div style="font-size:12px;color:#555;margin-top:2px">Wedding: ${fmt(l.weddingDate)}</div>`:''}
+    </div>
+    <div style="text-align:right">
+      <table style="font-size:12px;color:#555;border-collapse:collapse">
+        <tr><td style="padding:3px 0;color:#888;padding-right:16px">${isInv?'Invoice Date':'Quote Date'}</td><td style="font-weight:600;color:#1B2B4B">${fmt(doc.date)}</td></tr>
+        ${!isInv?`<tr><td style="padding:3px 0;color:#888;padding-right:16px">Expiry Date</td><td style="font-weight:600;color:#e53e3e">${fmt(doc.expiry)}</td></tr>`:''}
+      </table>
+    </div>
   </div>
+
+  <!-- LINE ITEMS TABLE -->
   <table style="width:100%;border-collapse:collapse;margin-bottom:0">
-    <thead><tr style="background:#f5f6fa">
-      <th style="padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#888;border-bottom:2px solid #e0e4ed;font-weight:600">#</th>
-      <th style="padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#888;border-bottom:2px solid #e0e4ed;font-weight:600">Item & Description</th>
-      <th style="padding:10px 12px;text-align:center;font-size:11px;text-transform:uppercase;color:#888;border-bottom:2px solid #e0e4ed;font-weight:600">Qty</th>
-      <th style="padding:10px 12px;text-align:right;font-size:11px;text-transform:uppercase;color:#888;border-bottom:2px solid #e0e4ed;font-weight:600">Rate</th>
-      <th style="padding:10px 12px;text-align:right;font-size:11px;text-transform:uppercase;color:#888;border-bottom:2px solid #e0e4ed;font-weight:600">Amount</th>
-    </tr></thead>
-    <tbody>${items.map((it,i)=>{const line=calcLine(it);return`<tr><td style="padding:12px;border-bottom:1px solid #f0f2f8;color:#888;font-size:12px">${i+1}</td><td style="padding:12px;border-bottom:1px solid #f0f2f8"><div style="font-size:13px;color:#1B2B4B;font-weight:500">${it.desc}</div>${it.disc>0?`<div style="font-size:11px;color:#C9A84C">Discount: ${it.disc}%</div>`:''}</td><td style="padding:12px;border-bottom:1px solid #f0f2f8;text-align:center">${it.qty}</td><td style="padding:12px;border-bottom:1px solid #f0f2f8;text-align:right">${Number(it.unit).toLocaleString()}.00</td><td style="padding:12px;border-bottom:1px solid #f0f2f8;text-align:right;font-weight:600">${Number(line).toLocaleString()}.00</td></tr>`}).join('')}</tbody>
+    <thead>
+      <tr style="border-bottom:2px solid #1B2B4B">
+        <th style="padding:10px 8px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:#888;font-weight:600">#</th>
+        <th style="padding:10px 8px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:#888;font-weight:600">Item & Description</th>
+        <th style="padding:10px 8px;text-align:center;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:#888;font-weight:600">Qty</th>
+        <th style="padding:10px 8px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:#888;font-weight:600">Rate</th>
+        <th style="padding:10px 8px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:#888;font-weight:600">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${items.map((it,i)=>{
+        const line=calcLine(it);
+        const isDisc=it.autoDiscount||line<0;
+        return`<tr style="border-bottom:1px solid #f0f2f8">
+          <td style="padding:12px 8px;font-size:12px;color:#aaa">${i+1}</td>
+          <td style="padding:12px 8px">
+            <div style="font-size:13px;color:#1B2B4B;font-weight:500">${it.desc}</div>
+            ${it.disc>0?`<div style="font-size:11px;color:#C9A84C;margin-top:2px">Discount ${it.disc}%</div>`:''}
+          </td>
+          <td style="padding:12px 8px;text-align:center;font-size:13px;color:#555">${it.qty}</td>
+          <td style="padding:12px 8px;text-align:right;font-size:13px;color:#555">${isDisc?'–':Number(it.unit).toLocaleString()+'.00'}</td>
+          <td style="padding:12px 8px;text-align:right;font-size:13px;font-weight:600;color:${isDisc?'#e53e3e':'#1B2B4B'}">${isDisc?'('+Number(Math.abs(line)).toLocaleString()+'.00)':Number(line).toLocaleString()+'.00'}</td>
+        </tr>`;
+      }).join('')}
+    </tbody>
   </table>
-  <div style="display:flex;justify-content:flex-end;margin-bottom:24px">
-    <div style="width:260px">
-      <div style="display:flex;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #e0e4ed;font-size:13px;color:#555"><span>Sub Total</span><span>${Number(tot).toLocaleString()}.00</span></div>
-      ${isInv?`<div style="display:flex;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #e0e4ed;font-size:13px"><span style="color:#555">Advance Paid</span><span style="color:#38A169">(${Number(doc.advance||0).toLocaleString()}.00)</span></div>`:''}
-      <div style="display:flex;justify-content:space-between;padding:10px 12px;background:#f5f6fa;font-size:14px;font-weight:700"><span>Total</span><span>LKR ${Number(isInv&&bal>=0?bal:tot).toLocaleString()}.00</span></div>
+
+  <!-- TOTALS -->
+  <div style="display:flex;justify-content:flex-end;margin-top:0;margin-bottom:20px">
+    <div style="width:280px">
+      <div style="display:flex;justify-content:space-between;padding:8px 8px;border-bottom:1px solid #f0f2f8;font-size:13px;color:#555">
+        <span>Sub Total</span><span>${Number(tot).toLocaleString()}.00</span>
+      </div>
+      ${isInv&&bespeak>0?`<div style="display:flex;justify-content:space-between;padding:8px 8px;border-bottom:1px solid #f0f2f8;font-size:13px">
+        <span style="color:#555">Bespeaking Fee</span><span style="color:#38A169">(${Number(bespeak).toLocaleString()}.00)</span>
+      </div>`:''}
+      <div style="display:flex;justify-content:space-between;padding:10px 8px;font-size:14px;font-weight:700;border-top:2px solid #1B2B4B;margin-top:2px">
+        <span>Total</span><span>LKR ${Number(isInv?Math.max(0,bal):tot).toLocaleString()}.00</span>
+      </div>
     </div>
   </div>
-  ${doc.notes?`<div style="margin-bottom:20px"><div style="font-size:12px;font-weight:600;color:#555;margin-bottom:6px;border-bottom:1px solid #eee;padding-bottom:6px">Notes</div><div style="font-size:12px;color:#555;line-height:1.8">${doc.notes.replace(/\n/g,'<br/>')}</div></div>`:''}
-  <div style="border-top:1px solid #e0e4ed;padding-top:12px;display:flex;justify-content:space-between;align-items:center">
-    <div style="font-size:11px;font-weight:700;color:#1B2B4B;letter-spacing:1px">BISO (PVT) LTD</div>
-    <div style="font-size:11px;color:#C9A84C;font-style:italic">Every queen deserves to be seen.</div>
+
+  <!-- NOTES -->
+  ${doc.notes?`
+  <div style="margin-bottom:20px">
+    <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Notes</div>
+    <div style="font-size:12px;color:#666;line-height:1.8">${doc.notes.replace(/\n/g,'<br/>')}</div>
+  </div>`:''}
+
+  <!-- FOOTER -->
+  <div style="border-top:1px solid #e0e4ed;padding-top:12px;margin-top:8px;display:flex;justify-content:space-between;align-items:center">
+    <div style="font-size:10px;color:#aaa">BISO (PVT) LTD &nbsp;·&nbsp; 79 Minuwangoda Road, Negombo</div>
+    <div style="font-size:11px;color:#C9A84C;font-family:Cormorant Garamond,serif;font-style:italic">Every queen deserves to be seen.</div>
   </div>
 </div>`;
 
   document.getElementById('doc-preview-body').innerHTML=docHtml;
   document.getElementById('doc-preview-foot').innerHTML=`
     <button class="btn btn-ghost" onclick="closeModal('doc-preview-modal')">Close</button>
-    <button class="btn btn-outline" onclick="printDoc()">🖨 Save as PDF</button>
-    <button class="btn btn-gold" onclick="shareWA('${(l.phone||'')}','${l.name}','${type}','${doc.id}',${tot})">💬 WhatsApp</button>`;
+    <button class="btn btn-outline" onclick="printDoc()">Save as PDF</button>
+    <button class="btn btn-gold" onclick="shareWA('${(l.phone||'')}','${l.name}','${type}','${doc.id}',${tot})">WhatsApp</button>`;
   openModal('doc-preview-modal');
 }
 
