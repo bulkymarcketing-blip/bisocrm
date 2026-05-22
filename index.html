@@ -277,7 +277,7 @@ textarea{resize:vertical;min-height:80px}
 .row-menu-wrap{position:relative;display:inline-block}
 .row-menu-btn{background:var(--bg);border:1.5px solid var(--border);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:16px;color:var(--text-mid);line-height:1}
 .row-menu-btn:hover{background:var(--navy-dim)}
-.row-menu-dropdown{display:none;position:absolute;right:0;top:100%;margin-top:4px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;box-shadow:var(--shadow-md);z-index:999;min-width:160px;overflow:hidden}
+.row-menu-dropdown{display:none;position:absolute;right:0;top:100%;margin-top:4px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;box-shadow:var(--shadow-md);z-index:999;min-width:190px;overflow:hidden}
 .row-menu-dropdown.open{display:block}
 .row-menu-item{display:flex;align-items:center;gap:8px;padding:11px 16px;font-size:13px;font-weight:500;cursor:pointer;transition:background .1s;color:var(--text);white-space:nowrap}
 .row-menu-item:hover{background:var(--navy-dim)}
@@ -669,7 +669,7 @@ function renderQuotations(){
       </div>
     </div>
     ${filt.length?`<div style="overflow-x:auto"><table>
-      <thead><tr><th>Ref</th><th>For</th><th class="hide-mobile">Date</th><th class="hide-mobile">Expires</th><th>Total</th><th>Status</th><th></th></tr></thead>
+      <thead><tr><th>Ref</th><th>For</th><th>Date</th><th class="hide-mobile">Expires</th><th>Total</th><th>Status</th><th></th></tr></thead>
       <tbody>${rows}</tbody>
     </table></div>`:'<div class="empty" style="padding:60px"><div class="empty-text">No quotations yet.</div></div>'}
   </div>`;
