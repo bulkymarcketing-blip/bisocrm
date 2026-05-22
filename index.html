@@ -19,9 +19,9 @@
 body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;min-height:100vh;overflow-x:hidden}
 .app{display:flex;min-height:100vh}
 .sidebar{width:240px;background:var(--navy);display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:0;left:0;height:100vh;z-index:100;transition:transform 0.3s}
-.main{margin-left:240px;flex:1;display:flex;flex-direction:column;min-height:100vh;overflow:hidden;max-width:calc(100vw - 240px)}
-.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 1px 3px rgba(27,43,75,0.06)}
-.content{flex:1;padding:24px;max-width:100%;width:100%;overflow-x:hidden}
+.main{margin-left:240px;flex:1;display:flex;flex-direction:column;min-height:100vh;min-width:0;overflow-x:hidden}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 1px 3px rgba(27,43,75,0.06);width:100%;box-sizing:border-box}
+.content{flex:1;padding:24px;width:100%;overflow-x:hidden;box-sizing:border-box}
 .brand{padding:20px 20px 16px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:12px}
 .brand-logo{width:38px;height:38px;object-fit:contain;filter:brightness(0) invert(1);opacity:.95}
 .brand-name{font-family:'Cinzel',serif;font-size:15px;color:#fff;letter-spacing:2px;line-height:1}
@@ -52,7 +52,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
 .search-wrap input{background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:8px 12px 8px 36px;color:var(--text);font-size:13px;width:220px;outline:none;transition:all .15s;font-family:'Inter',sans-serif}
 .search-wrap input:focus{border-color:var(--navy);background:var(--white)}
 .search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px;pointer-events:none}
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;width:100%}
 .stat-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:18px 20px;box-shadow:var(--shadow)}
 .stat-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .stat-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
@@ -65,7 +65,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
 .stat-sub{font-size:11px;color:var(--text-muted);margin-top:4px}
 .pipeline{display:flex;gap:14px;overflow-x:auto;padding-bottom:12px;width:100%}
 .pipeline::-webkit-scrollbar{height:6px}.pipeline::-webkit-scrollbar-track{background:var(--border);border-radius:3px}.pipeline::-webkit-scrollbar-thumb{background:var(--text-muted);border-radius:3px}
-.stage-col{min-width:200px;width:calc(20% - 12px);flex-shrink:0}
+.stage-col{min-width:200px;flex-shrink:0}
 .stage-header{padding:10px 14px;border-radius:var(--r) var(--r) 0 0;display:flex;align-items:center;justify-content:space-between;border:1.5px solid var(--border);border-bottom:none}
 .stage-name{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px}
 .stage-count{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,0.7)}
@@ -250,16 +250,16 @@ textarea{resize:vertical;min-height:80px}
   .mobile-overlay{display:block;opacity:0;pointer-events:none;transition:opacity .3s}.mobile-overlay.open{opacity:1;pointer-events:all}
   .hamburger{display:flex}
   .content{padding:12px;padding-bottom:80px}
-  .stats-row{grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-  .stat-card{padding:12px 14px}.stat-value{font-size:22px}
-  .topbar{padding:10px 14px}.page-title{font-size:14px}
+  .stats-row{grid-template-columns:1fr 1fr!important;gap:10px;margin-bottom:14px}
+  .stat-card{padding:12px 14px}.stat-value{font-size:20px}
+  .topbar{padding:10px 14px;gap:8px}.page-title{font-size:14px;white-space:nowrap}
   .topbar-right .search-wrap{display:none}
   .modal{max-height:96vh;border-radius:20px 20px 0 0;position:fixed;bottom:0;left:0;right:0;max-width:100%}
   .modal-overlay{align-items:flex-end;padding:0}
   .form-grid{grid-template-columns:1fr}.form-group.span2{grid-column:span 1}
   .detail-grid{grid-template-columns:1fr 1fr}
-  .pipeline{flex-direction:column;overflow-x:visible;gap:10px}
-  .stage-col{min-width:unset;width:100%}
+  .pipeline{flex-direction:column!important;overflow-x:visible!important;gap:10px}
+  .stage-col{min-width:unset!important;width:100%!important}
   .hide-mobile{display:none}
   table{font-size:12px}th,td{padding:10px}
 }
@@ -331,7 +331,7 @@ textarea{resize:vertical;min-height:80px}
     <div class="topbar-right">
       <div class="search-wrap"><span class="search-icon">⌕</span><input type="text" placeholder="Search..." id="search-input" oninput="handleSearch()"/></div>
       <button class="btn-icon" id="mobile-search-btn" style="display:none" onclick="toggleMobileSearch()">⌕</button>
-      <button class="btn btn-primary" onclick="openAddModal()">+ Add</button>
+      <button class="btn btn-primary" onclick="openAddModal()" style="white-space:nowrap;flex-shrink:0">+ Add</button>
     </div>
   </div>
   <div id="mobile-search-bar" style="display:none;padding:10px 14px;background:var(--surface);border-bottom:1.5px solid var(--border)">
