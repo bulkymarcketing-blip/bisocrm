@@ -205,9 +205,11 @@ textarea{resize:vertical;min-height:80px}
 .notif.show{transform:translateY(0);opacity:1}
 .mnav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surf);border-top:1.5px solid var(--border);z-index:200;padding:5px 0 env(safe-area-inset-bottom,5px)}
 .mni{display:flex;justify-content:space-around}
-.mn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 8px;cursor:pointer;color:var(--muted);font-size:9px;font-weight:500;min-width:48px}
+.mn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 8px;cursor:pointer;color:var(--muted);font-size:9px;font-weight:600;min-width:48px;letter-spacing:.3px}
 .mn.active{color:var(--navy)}
-.mnic{font-size:18px;line-height:1}
+.mn.active .mnic svg{stroke:var(--navy)}
+.mnic{line-height:0;display:flex;align-items:center;justify-content:center}
+.mnic svg{width:20px;height:20px;stroke:var(--muted);stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .mov{display:none;position:fixed;inset:0;background:rgba(27,43,75,0.4);z-index:99}
 .empty{text-align:center;padding:48px 16px;color:var(--muted)}
 .ei{font-size:32px;margin-bottom:8px;opacity:.5}
@@ -250,6 +252,7 @@ textarea{resize:vertical;min-height:80px}
 <div class="overlay" id="pdf-modal"><div class="modal mlg"><div class="mhd"><div><div class="mt" id="pdf-t">Document</div></div><button class="mc" onclick="CM('pdf-modal')">×</button></div><div class="mbdy" id="pdf-b"></div><div class="mft" id="pdf-f"></div></div></div>
 <div class="overlay" id="adv-modal"><div class="modal msm"><div class="mhd"><div><div class="mt">Convert to Invoice</div><div class="msb" id="adv-s"></div></div><button class="mc" onclick="CM('adv-modal')">×</button></div><div class="mbdy" id="adv-b"></div><div class="mft" id="adv-f"></div></div></div>
 <div class="overlay" id="einv-modal"><div class="modal msm"><div class="mhd"><div><div class="mt">Edit Invoice</div><div class="msb" id="einv-s"></div></div><button class="mc" onclick="CM('einv-modal')">×</button></div><div class="mbdy" id="einv-b"></div><div class="mft" id="einv-f"></div></div></div>
+<div class="overlay" id="pay-modal"><div class="modal msm"><div class="mhd"><div><div class="mt">Add Payment</div><div class="msb" id="pay-s"></div></div><button class="mc" onclick="CM('pay-modal')">x</button></div><div class="mbdy" id="pay-b"></div><div class="mft" id="pay-f"></div></div></div>
 <div class="overlay" id="cust-modal"><div class="modal"><div class="mhd"><div><div class="mt" id="cm-t"></div><div class="msb" id="cm-s"></div></div><button class="mc" onclick="CM('cust-modal')">×</button></div><div class="mbdy" id="cm-b"></div><div class="mft" id="cm-f"></div></div></div>
 <div class="overlay" id="ncust-modal"><div class="modal msm"><div class="mhd"><div><div class="mt">New Customer</div></div><button class="mc" onclick="CM('ncust-modal')">×</button></div><div class="mbdy"><div class="fg"><div class="fi"><label>Full Name *</label><input type="text" id="nc-n"/></div><div class="fi"><label>WhatsApp *</label><input type="text" id="nc-p"/></div><div class="fi"><label>Email</label><input type="email" id="nc-e"/></div><div class="fi"><label>Wedding Date</label><input type="date" id="nc-w"/></div><div class="fi"><label>Venue</label><input type="text" id="nc-v"/></div><div class="fi"><label>Bridesmaids</label><input type="number" id="nc-b" min="0" value="0"/></div><div class="fi s2"><label>Notes</label><textarea id="nc-nt"></textarea></div></div></div><div class="mft"><button class="btn btn-ghost" onclick="CM('ncust-modal')">Cancel</button><button class="btn btn-primary" onclick="saveNC()">Save</button></div></div></div>
 <div class="sov" id="svc-ov" onclick="CS('svc')"></div><div class="sheet" id="svc-sheet"><div class="shdl"></div><div class="shd"><div class="sht">Add Service</div><button class="shc" onclick="CS('svc')">×</button></div><div class="ssw"><span class="ssi">⌕</span><input class="ss" type="text" id="svc-q" placeholder="Search services…" oninput="filterSvcs(this.value)" autocomplete="off"/></div><div class="sl" id="svc-list"></div></div>
@@ -287,14 +290,14 @@ const SVCS=[
   {c:'Normal',d:'Hair or Makeup Only',b:5000,aT:false,aA:false}
 ];
 const NAV=[
-  {id:'pipeline',lbl:'Pipeline',ic:'Pipeline',sec:'Sales'},
-  {id:'clients',lbl:'Confirmed',ic:'Confirmed',sec:null},
-  {id:'customers',lbl:'Profiles',ic:'Profiles',sec:null},
-  {id:'upcoming',lbl:'Upcoming',ic:'Upcoming',sec:'Schedule'},
-  {id:'quotations',lbl:'Quotations',ic:'Quotations',sec:'Finance'},
-  {id:'invoices',lbl:'Invoices',ic:'Invoices',sec:null},
-  {id:'finance',lbl:'Finance',ic:'Finance',sec:null},
-  {id:'settings',lbl:'Settings',ic:'Settings',sec:'Settings'}
+  {id:'pipeline',lbl:'Pipeline',ic:'<svg viewBox=\"0 0 24 24\"><rect x=\"3\" y=\"4\" width=\"5\" height=\"16\" rx=\"1\"/><rect x=\"10\" y=\"4\" width=\"5\" height=\"10\" rx=\"1\"/><rect x=\"17\" y=\"4\" width=\"4\" height=\"7\" rx=\"1\"/></svg>',sec:'Sales'},
+  {id:'clients',lbl:'Confirmed',ic:'<svg viewBox=\"0 0 24 24\"><path d=\"M12 2 14 8h6l-5 4 2 7-5-4-5 4 2-7-5-4h6z\"/></svg>',sec:null},
+  {id:'customers',lbl:'Profiles',ic:'<svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M4 21c0-4 4-7 8-7s8 3 8 7\"/></svg>',sec:null},
+  {id:'upcoming',lbl:'Upcoming',ic:'<svg viewBox=\"0 0 24 24\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><line x1=\"3\" y1=\"10\" x2=\"21\" y2=\"10\"/><line x1=\"8\" y1=\"3\" x2=\"8\" y2=\"7\"/><line x1=\"16\" y1=\"3\" x2=\"16\" y2=\"7\"/></svg>',sec:'Schedule'},
+  {id:'quotations',lbl:'Quotations',ic:'<svg viewBox=\"0 0 24 24\"><path d=\"M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z\"/><polyline points=\"14 3 14 9 20 9\"/><line x1=\"8\" y1=\"13\" x2=\"16\" y2=\"13\"/><line x1=\"8\" y1=\"17\" x2=\"13\" y2=\"17\"/></svg>',sec:'Finance'},
+  {id:'invoices',lbl:'Invoices',ic:'<svg viewBox=\"0 0 24 24\"><path d=\"M19 4H5a1 1 0 0 0-1 1v16l3-2 2 2 3-2 3 2 2-2 3 2V5a1 1 0 0 0-1-1z\"/><line x1=\"8\" y1=\"10\" x2=\"16\" y2=\"10\"/><line x1=\"8\" y1=\"14\" x2=\"13\" y2=\"14\"/></svg>',sec:null},
+  {id:'finance',lbl:'Finance',ic:'<svg viewBox=\"0 0 24 24\"><line x1=\"12\" y1=\"2\" x2=\"12\" y2=\"22\"/><path d=\"M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6\"/></svg>',sec:null},
+  {id:'settings',lbl:'Settings',ic:'<svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z\"/></svg>',sec:'Settings'}
 ];
 const TITLES={pipeline:'Lead Pipeline',clients:'Confirmed Clients',customers:'Customer Profiles',upcoming:'Upcoming Weddings',quotations:'Quotations',invoices:'Invoices',finance:'Finance',settings:'Settings'};
 let leads={},custs={},view='pipeline',q='';
@@ -545,9 +548,13 @@ async function markSent(src,sId,qId){
 function openIDoc(src,sId,iId){
   var obj=src==='lead'?leads[sId]:custs[sId];if(!obj)return;
   var inv=(obj.invoices||{})[iId];if(!inv)return;
-  var tot=qTot(inv.items);var bp=inv.advance||0;var bal=tot-bp;
+  var tot=qTot(inv.items);var bp=inv.advance||0;
+  var pays=Object.values(inv.payments||{});
+  var paySum=pays.reduce(function(s,p){return s+(parseFloat(p.amount)||0);},0);
+  var paid=bp+paySum;
+  var bal=tot-paid;
   var items=Object.values(inv.items||{});
-  var pct=tot>0?Math.round(bp/tot*100):0;
+  var pct=tot>0?Math.round(paid/tot*100):0;
   var sc=pct>=100?'var(--success)':pct>0?'var(--warn)':'var(--danger)';
   var sl=pct>=100?'PAID':pct>0?'PARTIAL':'UNPAID';
   document.getElementById('doc-t').textContent=inv.id;
@@ -557,17 +564,86 @@ function openIDoc(src,sId,iId){
     ih+='<div class="ir" style="'+bb+'"><div><div class="in">'+it.desc+'</div><div class="im">'+it.qty+' x '+Number(it.unit).toLocaleString()+'</div></div><div class="ia">LKR '+Number(line).toLocaleString()+'.00</div></div>';
   });
   var bpr=bp>0?'<div class="ifr"><span style="color:var(--muted)">Bespeaking Fee</span><span style="color:var(--success)">(LKR '+Number(bp).toLocaleString()+'.00)</span></div>':'';
+  var ph='';
+  pays.forEach(function(p){ph+='<div class="ifr"><span style="color:var(--muted)">Payment '+fmt(p.date)+(p.method?' · '+p.method:'')+'</span><span style="color:var(--success)">(LKR '+Number(p.amount).toLocaleString()+'.00)</span></div>';});
+  var payLog='';
+  if(pays.length){
+    var pr='';
+    pays.sort(function(a,b){return new Date(b.date)-new Date(a.date);}).forEach(function(p){
+      pr+='<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border)"><div><div style="font-size:13px;font-weight:600;color:var(--navy)">'+fmt(p.date)+(p.method?' · '+p.method:'')+'</div>'+(p.note?'<div style="font-size:11px;color:var(--muted);margin-top:2px">'+p.note+'</div>':'')+'</div><div style="display:flex;align-items:center;gap:8px"><div style="font-size:13px;font-weight:700;color:var(--success)">'+fR(p.amount)+'</div><button onclick="delPay(\''+src+'\',\''+sId+'\',\''+iId+'\',\''+p.id+'\')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:2px 6px">x</button></div></div>';
+    });
+    payLog='<div class="ic" style="margin-top:14px"><div style="padding:11px 14px;background:var(--bg);border-bottom:1.5px solid var(--border);font-size:11px;font-weight:700;color:var(--navy);letter-spacing:.5px;text-transform:uppercase">Payments Log</div>'+pr+'</div>';
+  }
   var nh=inv.notes?'<div class="nc"><div class="nl">Notes</div><div class="nt">'+inv.notes.replace(/\n/g,'<br/>')+'</div></div>':'';
   document.getElementById('doc-b').innerHTML=
     '<div class="dh"><div class="dha">LKR '+Number(tot).toLocaleString()+'.00</div><div class="dhn">'+obj.name+'</div><div class="dhm">'+fmt(inv.date)+'</div><div style="margin-top:6px"><span style="background:'+sc+'22;color:'+sc+';font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">'+sl+'</span></div></div>'
-    +'<div class="da" style="grid-template-columns:1fr 1fr">'
+    +'<div class="da" style="grid-template-columns:1fr 1fr 1fr">'
+    +'<button class="dab pr" onclick="openAddPay(\''+src+'\',\''+sId+'\',\''+iId+'\')" ><span class="dai">+</span>Add Payment</button>'
     +'<button class="dab" onclick="viewPDF(\'I\',\''+src+'\',\''+sId+'\',\''+iId+'\')" ><span class="dai">PDF</span>PDF</button>'
-    +'<button class="dab" onclick="openEInv(\''+src+'\',\''+sId+'\',\''+iId+'\')" ><span class="dai">Edit</span>Edit Balance</button>'
+    +'<button class="dab" onclick="openEInv(\''+src+'\',\''+sId+'\',\''+iId+'\')" ><span class="dai">Edit</span>Notes</button>'
     +'</div>'
-    +'<div class="ic">'+ih+'<div class="ifoot"><div class="ifr"><span style="color:var(--muted)">Sub Total</span><span>LKR '+Number(tot).toLocaleString()+'.00</span></div>'+bpr+'<div class="ifr" style="font-size:15px;font-weight:700;color:var(--navy);border-top:1px solid var(--border);padding-top:5px"><span>Balance Due</span><span>LKR '+Number(Math.max(0,bal)).toLocaleString()+'.00</span></div></div></div>'
+    +'<div class="ic">'+ih+'<div class="ifoot"><div class="ifr"><span style="color:var(--muted)">Sub Total</span><span>LKR '+Number(tot).toLocaleString()+'.00</span></div>'+bpr+ph+'<div class="ifr" style="font-size:15px;font-weight:700;color:var(--navy);border-top:1px solid var(--border);padding-top:5px;margin-top:3px"><span>Balance Due</span><span>LKR '+Number(Math.max(0,bal)).toLocaleString()+'.00</span></div></div></div>'
+    +payLog
     +nh;
   document.getElementById('doc-f').innerHTML='<button class="btn btn-ghost" onclick="CM(\'doc-modal\')">Close</button>';
   OM('doc-modal');
+}
+function openAddPay(src,sId,iId){
+  var obj=src==='lead'?leads[sId]:custs[sId];if(!obj)return;
+  var inv=(obj.invoices||{})[iId];if(!inv)return;
+  var tot=qTot(inv.items);var bp=inv.advance||0;
+  var paySum=Object.values(inv.payments||{}).reduce(function(s,p){return s+(parseFloat(p.amount)||0);},0);
+  var bal=Math.max(0,tot-bp-paySum);
+  document.getElementById('pay-s').textContent=obj.name+' · '+iId;
+  document.getElementById('pay-b').innerHTML=
+    '<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;display:flex;justify-content:space-between"><div><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:3px">Balance Due</div><div style="font-size:22px;font-weight:700;color:var(--warn)">'+fR(bal)+'</div></div><div style="text-align:right;font-size:11px;color:var(--muted);align-self:flex-end">Total '+fR(tot)+'<br/>Paid '+fR(bp+paySum)+'</div></div>'
+    +'<div class="fg"><div class="fi"><label>Amount (Rs) *</label><input type="number" id="pay-amt" min="1" value="'+bal+'"/></div><div class="fi"><label>Date</label><input type="date" id="pay-date" value="'+(new Date().toISOString().slice(0,10))+'"/></div><div class="fi s2"><label>Method</label><select id="pay-method"><option value="">— Select —</option><option>Cash</option><option>Bank Transfer</option><option>Card</option><option>Cheque</option><option>Other</option></select></div><div class="fi s2"><label>Note (optional)</label><input type="text" id="pay-note" placeholder="Reference, comments…"/></div></div>';
+  document.getElementById('pay-f').innerHTML='<button class="btn btn-ghost" onclick="CM(\'pay-modal\')">Cancel</button><button class="btn btn-primary" onclick="addPay(\''+src+'\',\''+sId+'\',\''+iId+'\')" >Record Payment</button>';
+  CM('doc-modal');OM('pay-modal');
+}
+async function addPay(src,sId,iId){
+  var amt=parseFloat((document.getElementById('pay-amt')||{}).value)||0;
+  if(amt<=0){notif('Enter a valid amount.');return;}
+  var date=(document.getElementById('pay-date')||{}).value||new Date().toISOString().slice(0,10);
+  var method=(document.getElementById('pay-method')||{}).value||'';
+  var note=(document.getElementById('pay-note')||{}).value||'';
+  var pid='p-'+uid();
+  var pay={id:pid,amount:amt,date:date,method:method,note:note,createdAt:new Date().toISOString()};
+  var path=src==='lead'?'/leads/'+sId+'/invoices/'+iId+'/payments':'/customers/'+sId+'/invoices/'+iId+'/payments';
+  try{
+    await fbP(path,{[pid]:pay});
+    var obj=src==='lead'?leads[sId]:custs[sId];
+    if(obj&&obj.invoices&&obj.invoices[iId]){
+      obj.invoices[iId].payments=obj.invoices[iId].payments||{};
+      obj.invoices[iId].payments[pid]=pay;
+    }
+    // Update lead balance if lead-attached
+    if(src==='lead'&&leads[sId]){
+      var newBal=Math.max(0,(leads[sId].balance||0)-amt);
+      var newAdv=(leads[sId].advance||0)+amt;
+      await fbP('/leads/'+sId,{advance:newAdv,balance:newBal});
+      leads[sId].advance=newAdv;leads[sId].balance=newBal;
+    }
+    CM('pay-modal');notif('Payment recorded!');openIDoc(src,sId,iId);render();
+  }catch(e){notif('Error: '+e.message);}
+}
+async function delPay(src,sId,iId,pid){
+  if(!confirm('Delete this payment?'))return;
+  var obj=src==='lead'?leads[sId]:custs[sId];if(!obj||!obj.invoices||!obj.invoices[iId])return;
+  var pay=(obj.invoices[iId].payments||{})[pid];if(!pay)return;
+  var amt=parseFloat(pay.amount)||0;
+  var path=src==='lead'?'/leads/'+sId+'/invoices/'+iId+'/payments/'+pid:'/customers/'+sId+'/invoices/'+iId+'/payments/'+pid;
+  try{
+    await fbD(path);
+    delete obj.invoices[iId].payments[pid];
+    if(src==='lead'&&leads[sId]){
+      var newAdv=Math.max(0,(leads[sId].advance||0)-amt);
+      var newBal=(leads[sId].balance||0)+amt;
+      await fbP('/leads/'+sId,{advance:newAdv,balance:newBal});
+      leads[sId].advance=newAdv;leads[sId].balance=newBal;
+    }
+    notif('Payment deleted.');openIDoc(src,sId,iId);render();
+  }catch(e){notif('Error: '+e.message);}
 }
 function openEInv(src,sId,iId){
   var obj=src==='lead'?leads[sId]:custs[sId];if(!obj)return;
