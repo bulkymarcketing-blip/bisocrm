@@ -329,13 +329,13 @@ function buildNav(){
   let h='',ls='';
   NAV.forEach(function(n){
     if(n.sec&&n.sec!==ls){h+='<div class="nav-sec">'+n.sec+'</div>';ls=n.sec;}
-    h+='<div class="nav-item'+(view===n.id?' active':'')+'' onclick="sv(\''+n.id+'\');closeSB()">'+n.lbl+'</div>';
+    h+='<div class="nav-item'+(view===n.id?' active':'')+'" onclick="sv(\''+n.id+'\');closeSB()">'+n.lbl+'</div>';
   });
   document.getElementById('SN').innerHTML=h;
   var mob=['pipeline','clients','customers','quotations','invoices'];
   document.getElementById('MN').innerHTML=mob.map(function(id){
     var n=NAV.find(function(x){return x.id===id;});
-    return '<div class="mn'+(view===id?' active':'')+'' onclick="sv(\''+id+'\')">'+'<span class="mnic">'+n.ic+'</span>'+n.lbl+'</div>';
+    return '<div class="mn'+(view===id?' active':'')+'" onclick="sv(\''+id+'\')">'+'<span class="mnic">'+n.ic+'</span>'+n.lbl+'</div>';
   }).join('');
 }
 function sv(v){view=v;buildNav();document.getElementById('PT').textContent=TITLES[v]||v;render();}
@@ -1073,9 +1073,9 @@ function rSettings(tab){
   document.getElementById('MC').innerHTML=
     '<div style="max-width:620px">'
     +'<div class="tabs" style="margin-bottom:18px">'
-    +'<div class="tab '+(at==='invoice'?'active':'')+'' onclick="rSettings(\'invoice\')">Invoice Settings</div>'
-    +'<div class="tab '+(at==='prices'?'active':'')+'' onclick="rSettings(\'prices\')">Line Item Prices</div>'
-    +'<div class="tab '+(at==='data'?'active':'')+'' onclick="rSettings(\'data\')">Test Data</div>'
+    +'<div class="tab '+(at==='invoice'?'active':'')+'" onclick="rSettings(\'invoice\')">Invoice Settings</div>'
+    +'<div class="tab '+(at==='prices'?'active':'')+'" onclick="rSettings(\'prices\')">Line Item Prices</div>'
+    +'<div class="tab '+(at==='data'?'active':'')+'" onclick="rSettings(\'data\')">Test Data</div>'
     +'</div>'
     +'<div class="card"><div class="mbdy">'+(at==='invoice'?it:at==='prices'?pt:dt)+'</div></div>'
     +'</div>';
