@@ -343,7 +343,57 @@ textarea{resize:vertical;min-height:80px}
 <div class="sheet-overlay" id="theme-sheet-overlay" onclick="closeThemeSheet()"></div>
 <div class="sheet" id="theme-sheet"><div class="sheet-handle"></div><div class="sheet-head"><div class="sheet-title" id="theme-sheet-title">Select Theme</div></div><div class="sheet-list" id="theme-list"></div></div>
 <div class="sheet-overlay" id="cust-sheet-overlay" onclick="closeCustSheet()"></div>
-<div class="sheet" id="cust-sheet"><div class="sheet-handle"></div><div class="sheet-head"><div class="sheet-title">Select Customer</div></div><div class="sheet-search"><div class="sheet-search-wrap"><span class="sheet-search-icon">⌕</span><input class="sheet-search-input" type="text" id="cust-search-inp" placeholder="Search by name or phone…" oninput="filterCusts(this.value)"/></div></div><div class="sheet-list" id="cust-list"></div></div>
+<div class="sheet" id="cust-sheet"><div class="sheet-handle"></div><div class="sheet-head"><div class="sheet-title">Select Customer</div></div><div class="sheet-search"><div class="sheet-search-wrap"><span class="sheet-search-icon">⌕</span><input class="sheet-search-input" type="text" id="cust-search-inp" placeholder="Search by name or phone…" oninput="filterCusts(this.value)"/></div></div><div class="sheet-list" id="cust-list"></div>
+<!-- doc detail modal -->
+<div class="modal-overlay" id="doc-modal">
+  <div class="modal modal-wide"><div class="modal-head"><div><div class="modal-title" id="doc-title"></div></div><button class="modal-close" onclick="closeModal('doc-modal')">×</button></div><div class="modal-body" id="doc-body"></div><div class="modal-foot" id="doc-foot"></div></div>
+</div>
+
+<!-- pdf preview modal -->
+<div class="modal-overlay" id="pdf-modal">
+  <div class="modal modal-wide"><div class="modal-head"><div><div class="modal-title" id="pdf-title">Document</div></div><button class="modal-close" onclick="closeModal('pdf-modal')">×</button></div><div class="modal-body" id="pdf-body"></div><div class="modal-foot" id="pdf-foot"></div></div>
+</div>
+
+<!-- edit invoice modal -->
+<div class="modal-overlay" id="edit-inv-modal">
+  <div class="modal modal-sm"><div class="modal-head"><div><div class="modal-title">Edit Invoice</div><div class="modal-sub" id="einv-sub"></div></div><button class="modal-close" onclick="closeModal('edit-inv-modal')">×</button></div><div class="modal-body" id="einv-body"></div><div class="modal-foot" id="einv-foot"></div></div>
+</div>
+
+<!-- customer profile modal -->
+<div class="modal-overlay" id="cust-modal">
+  <div class="modal"><div class="modal-head"><div><div class="modal-title" id="custm-title"></div><div class="modal-sub" id="custm-sub"></div></div><button class="modal-close" onclick="closeModal('cust-modal')">×</button></div><div class="modal-body" id="custm-body"></div><div class="modal-foot" id="custm-foot"></div></div>
+</div>
+
+<!-- new customer modal -->
+<div class="modal-overlay" id="new-cust-modal">
+  <div class="modal modal-sm"><div class="modal-head"><div><div class="modal-title">New Customer</div></div><button class="modal-close" onclick="closeModal('new-cust-modal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Full Name *</label><input type="text" id="nc-name"/></div>
+        <div class="form-group"><label>WhatsApp *</label><input type="text" id="nc-phone"/></div>
+        <div class="form-group"><label>Email</label><input type="email" id="nc-email"/></div>
+        <div class="form-group"><label>Wedding Date</label><input type="date" id="nc-wedding"/></div>
+        <div class="form-group"><label>Venue</label><input type="text" id="nc-venue"/></div>
+        <div class="form-group"><label>Bridesmaids</label><input type="number" id="nc-bm" min="0" value="0"/></div>
+        <div class="form-group span2"><label>Notes</label><textarea id="nc-notes"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal('new-cust-modal')">Cancel</button><button class="btn btn-primary" onclick="saveNewCustomer()">Save</button></div>
+  </div>
+</div>
+
+<!-- amount sheet -->
+<div class="sheet-overlay" id="amt-overlay" onclick="closeSheet('amt')"></div>
+<div class="sheet" id="amt-sheet" style="max-height:50vh">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head"><div class="sheet-title" id="amt-title">Enter Amount</div><button class="sheet-close" onclick="closeSheet('amt')">×</button></div>
+  <div style="padding:20px">
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px" id="amt-hint"></div>
+    <input type="number" id="amt-input" style="width:100%;padding:14px;font-size:22px;font-family:Inter,sans-serif;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);outline:none;text-align:right" placeholder="0"/>
+    <button onclick="confirmAmt()" style="width:100%;margin-top:14px;background:var(--navy);color:#fff;border:none;border-radius:8px;padding:14px;font-size:15px;font-family:Inter,sans-serif;font-weight:600;cursor:pointer">Add to Quote</button>
+  </div>
+</div>
+</div>
 
 <div class="notif" id="notif"></div>
 
@@ -844,6 +894,491 @@ async function saveLead(){
   const lead={id:uid(),name,phone:(document.getElementById('f-phone')?.value||'').trim(),email:(document.getElementById('f-email')?.value||'').trim(),source:document.getElementById('f-source')?.value||'whatsapp',stage:parseInt(document.getElementById('f-stage')?.value||'0'),weddingDate:document.getElementById('f-date')?.value||'',package:document.getElementById('f-package')?.value||'',notes:(document.getElementById('f-notes')?.value||'').trim(),bridesmaids:parseInt(document.getElementById('f-bm')?.value||'0'),createdAt:new Date().toISOString(),confirmed:false,advance:0,balance:0,venue:'',appointments:{},quotations:{},invoices:{}};
   try{await fbSet('/leads/'+lead.id,lead);leads[lead.id]=lead;closeModal('lead-modal');showNotif('Lead added: '+name);render()}catch(e){showNotif('Error: '+e.message)}
 }
+
+
+// ── SETTINGS ──────────────────────────────────────────────
+function getSettings(){try{return JSON.parse(localStorage.getItem('biso_settings')||'{}');}catch{return {};}}
+function saveSettings(s){localStorage.setItem('biso_settings',JSON.stringify(s));}
+function getDefaultNotes(){return getSettings().defaultNotes||'An additional Venue Dressing Fee will apply if the bride wishes to be dressed at her chosen location. This service is subject to availability.\n\nBespeaking fee of Rs 50,000 is due upon reception of the quotation to reserve the date. Bespeaking fee is non-refundable and will be deducted from the final bill.\n\nFinal payment is due on the day of service.';}
+function getSvcPrice(desc){const lp=getSettings().linePrices||{};if(lp[desc]!==undefined&&lp[desc]>0)return lp[desc];const s=SVCS.find(x=>x.desc===desc);return s?s.base:0;}
+function applySmartDiscounts(){
+  QB.items=QB.items.filter(i=>!i.autoDisc);
+  const hasB=QB.items.some(i=>i.cat==='Bridal');
+  const hasH=QB.items.some(i=>i.cat==='Homecoming');
+  if(hasB&&hasH){QB.items.push({desc:'Homecoming Package Discount',unit:-30000,qty:1,disc:0,cat:'Discount',autoDisc:true,key:'disc-hc'});}
+}
+function getSmartPrice(desc){
+  const sp=getSvcPrice(desc);if(sp>0)return sp;
+  const hasB=QB.items.some(i=>i.cat==='Bridal');
+  const hasH=QB.items.some(i=>i.cat==='Homecoming');
+  const bmCount=QB.items.filter(i=>i.desc==='Bridesmaid').reduce((s,i)=>s+(i.qty||1),0);
+  if(desc==='Homecoming')return hasB?95000:125000;
+  if(desc==='Going Away')return(hasB&&hasH&&bmCount>=2)?60000:65000;
+  if(desc==='Bridesmaid')return(hasB&&hasH)?35000:38000;
+  const s=SVCS.find(x=>x.desc===desc);return s?s.base:0;
+}
+
+// ── QUOTATIONS LIST ────────────────────────────────────────
+function renderQuotations(){
+  const allQ=[];
+  leadsArr().forEach(l=>Object.values(l.quotations||{}).forEach(qt=>{if(!qt.convertedToInvoice)allQ.push({...qt,srcName:l.name,srcId:l.id,src:'lead'});}));
+  custsArr().forEach(c=>Object.values(c.quotes||{}).forEach(qt=>{if(!qt.convertedToInvoice)allQ.push({...qt,srcName:c.name,srcId:c.id,src:'customer'});}));
+  allQ.sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const filt=allQ.filter(qt=>q?qt.srcName.toLowerCase().includes(q):true);
+  let rows='';
+  filt.forEach(qt=>{
+    const tot=qTotal(qt.items);
+    const sc=qt.sent?'badge-sent':'badge-open';
+    const sl=qt.sent?'SENT':'DRAFT';
+    rows+='<div class="list-row" onclick="openQuotDetail(\''+qt.src+'\',\''+qt.srcId+'\',\''+qt.id+'\')"><div style="flex:1;min-width:0"><div class="list-row-name">'+qt.srcName+'</div><div class="list-row-meta">'+fmt(qt.date)+' &nbsp;•&nbsp; '+qt.id+'</div><div style="margin-top:5px"><span class="badge '+sc+'">'+sl+'</span></div></div><div style="text-align:right;flex-shrink:0"><div class="list-row-amount">LKR '+Number(tot).toLocaleString()+'.00</div><div class="list-row-chevron">›</div></div></div>';
+  });
+  document.getElementById('main-content').innerHTML='<div class="table-wrap"><div class="table-hdr"><div class="table-hdr-title">Quotations</div><div style="display:flex;gap:10px;align-items:center"><div style="font-size:12px;color:var(--muted)">'+filt.length+' open</div><button class="btn btn-primary btn-sm" onclick="openQM(null,null)">+ New</button></div></div>'+(filt.length?rows:'<div class="empty" style="padding:60px"><div class="empty-text">No open quotations</div></div>')+'</div>';
+}
+
+// ── INVOICES LIST ──────────────────────────────────────────
+function renderInvoices(){
+  const allI=[];
+  leadsArr().forEach(l=>Object.values(l.invoices||{}).forEach(inv=>allI.push({...inv,srcName:l.name,srcId:l.id,src:'lead'})));
+  custsArr().forEach(c=>Object.values(c.invoices||{}).forEach(inv=>allI.push({...inv,srcName:c.name,srcId:c.id,src:'customer'})));
+  allI.sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const filt=allI.filter(inv=>q?inv.srcName.toLowerCase().includes(q):true);
+  let rows='';
+  filt.forEach(inv=>{
+    const tot=qTotal(inv.items);const bespeak=inv.advance||0;const bal=tot-bespeak;
+    const pct=tot>0?Math.round(bespeak/tot*100):0;
+    const sc=pct>=100?'var(--success)':pct>0?'var(--warn)':'var(--danger)';
+    const sl=pct>=100?'PAID':pct>0?'PARTIAL':'UNPAID';
+    rows+='<div class="list-row" onclick="openInvDetail(\''+inv.src+'\',\''+inv.srcId+'\',\''+inv.id+'\')"><div style="flex:1;min-width:0"><div class="list-row-name">'+inv.srcName+'</div><div class="list-row-meta">'+fmt(inv.date)+' &nbsp;•&nbsp; '+inv.id+'</div><div style="margin-top:5px;display:flex;align-items:center;gap:8px"><span style="font-size:11px;font-weight:700;color:'+sc+'">'+sl+'</span>'+(bal>0?'<span style="font-size:11px;color:var(--muted)">Balance LKR '+Number(bal).toLocaleString()+'.00</span>':'')+'</div></div><div style="text-align:right;flex-shrink:0"><div class="list-row-amount">LKR '+Number(tot).toLocaleString()+'.00</div><div class="list-row-chevron">›</div></div></div>';
+  });
+  document.getElementById('main-content').innerHTML='<div class="table-wrap"><div class="table-hdr"><div class="table-hdr-title">Invoices</div><div style="font-size:12px;color:var(--muted)">'+filt.length+' invoice'+(filt.length!==1?'s':'')+'</div></div>'+(filt.length?rows:'<div class="empty" style="padding:60px"><div class="empty-text">No invoices yet</div></div>')+'</div>';
+}
+
+// ── QUOTE DETAIL ───────────────────────────────────────────
+function openQuotDetail(src,srcId,quotId){
+  const obj=src==='lead'?leads[srcId]:customers[srcId];if(!obj)return;
+  const qt=src==='lead'?obj.quotations?.[quotId]:obj.quotes?.[quotId];if(!qt)return;
+  const tot=qTotal(qt.items);const items=Object.values(qt.items||{});
+  document.getElementById('doc-title').textContent=qt.id;
+  let itemsHtml='';
+  items.forEach((it,i)=>{
+    const line=calcLine(it);const bb=i<items.length-1?'border-bottom:1px solid var(--border);':'';
+    itemsHtml+='<div class="item-row" style="'+bb+'"><div><div class="item-name">'+it.desc+'</div><div class="item-meta">'+it.qty+'.0 x '+Number(it.unit).toLocaleString()+'.00'+(it.disc>0?' · Disc '+it.disc+'%':'')+'</div></div><div class="item-amount">LKR '+Number(line).toLocaleString()+'.00</div></div>';
+  });
+  const notesHtml=qt.notes?'<div class="notes-card"><div class="notes-label">Notes</div><div class="notes-text">'+qt.notes.replace(/\n/g,'<br/>')+'</div></div>':'';
+  const sentBadge=qt.sent?'<div style="margin-top:8px"><span class="badge badge-sent">SENT</span></div>':'';
+  document.getElementById('doc-body').innerHTML=
+    '<div class="detail-hero"><div class="detail-hero-amount">LKR '+Number(tot).toLocaleString()+'.00</div><div class="detail-hero-name">'+obj.name+'</div><div class="detail-hero-meta">'+fmt(qt.date)+'</div>'+sentBadge+'</div>'+
+    '<div class="detail-actions" style="grid-template-columns:repeat(4,1fr)">'+
+    '<button class="detail-action-btn" onclick="editQuot(\''+src+'\',\''+srcId+'\',\''+quotId+'\')"><span class="detail-action-icon">✏️</span>Edit</button>'+
+    '<button class="detail-action-btn" onclick="openPDF(\'Q\',\''+src+'\',\''+srcId+'\',\''+quotId+'\')"><span class="detail-action-icon">📄</span>View PDF</button>'+
+    '<button class="detail-action-btn primary" onclick="openAdvModal(\''+src+'\',\''+srcId+'\',\''+quotId+'\')"><span class="detail-action-icon">→</span>Invoice</button>'+
+    '<button class="detail-action-btn" onclick="moreQuotOpts(\''+src+'\',\''+srcId+'\',\''+quotId+'\','+!!qt.sent+')"><span class="detail-action-icon">⋯</span>More</button>'+
+    '</div>'+
+    '<div class="items-card">'+itemsHtml+'<div class="items-footer"><div class="items-footer-row"><span style="color:var(--muted)">Sub Total</span><span>LKR '+Number(tot).toLocaleString()+'.00</span></div><div class="items-footer-row" style="font-size:15px;font-weight:700;color:var(--navy)"><span>Total</span><span>LKR '+Number(tot).toLocaleString()+'.00</span></div></div></div>'+
+    notesHtml;
+  document.getElementById('doc-foot').innerHTML='<button class="btn btn-ghost" onclick="closeModal(\'doc-modal\')">Close</button>';
+  openModal('doc-modal');
+}
+function moreQuotOpts(src,srcId,quotId,sent){if(!sent){if(confirm('Mark this quotation as sent to client?')){markQuotSent(src,srcId,quotId);}}else{showNotif('Already marked as sent.');}}
+async function markQuotSent(src,srcId,quotId){
+  const path=src==='lead'?'/leads/'+srcId+'/quotations/'+quotId:'/customers/'+srcId+'/quotes/'+quotId;
+  try{
+    await fbPatch(path,{sent:true});
+    if(src==='lead'&&leads[srcId]?.quotations?.[quotId])leads[srcId].quotations[quotId].sent=true;
+    if(src==='customer'&&customers[srcId]?.quotes?.[quotId])customers[srcId].quotes[quotId].sent=true;
+    showNotif('Marked as sent ✓');closeModal('doc-modal');renderQuotations();
+  }catch(e){showNotif('Error: '+e.message);}
+}
+
+// ── INVOICE DETAIL ─────────────────────────────────────────
+function openInvDetail(src,srcId,invId){
+  const obj=src==='lead'?leads[srcId]:customers[srcId];if(!obj)return;
+  const inv=obj.invoices?.[invId];if(!inv)return;
+  const tot=qTotal(inv.items);const bespeak=inv.advance||0;const bal=tot-bespeak;
+  const items=Object.values(inv.items||{});
+  const pct=tot>0?Math.round(bespeak/tot*100):0;
+  const sc=pct>=100?'var(--success)':pct>0?'var(--warn)':'var(--danger)';
+  const sl=pct>=100?'PAID':pct>0?'PARTIAL':'UNPAID';
+  document.getElementById('doc-title').textContent=inv.id;
+  let itemsHtml='';
+  items.forEach((it,i)=>{
+    const line=calcLine(it);const bb=i<items.length-1?'border-bottom:1px solid var(--border);':'';
+    itemsHtml+='<div class="item-row" style="'+bb+'"><div><div class="item-name">'+it.desc+'</div><div class="item-meta">'+it.qty+'.0 x '+Number(it.unit).toLocaleString()+'.00'+(it.disc>0?' · Disc '+it.disc+'%':'')+'</div></div><div class="item-amount">LKR '+Number(line).toLocaleString()+'.00</div></div>';
+  });
+  const besPeakRow=bespeak>0?'<div class="items-footer-row"><span style="color:var(--muted)">Bespeaking Fee</span><span style="color:var(--success)">(LKR '+Number(bespeak).toLocaleString()+'.00)</span></div>':'';
+  const notesHtml=inv.notes?'<div class="notes-card"><div class="notes-label">Notes</div><div class="notes-text">'+inv.notes.replace(/\n/g,'<br/>')+'</div></div>':'';
+  document.getElementById('doc-body').innerHTML=
+    '<div class="detail-hero"><div class="detail-hero-amount">LKR '+Number(tot).toLocaleString()+'.00</div><div class="detail-hero-name">'+obj.name+'</div><div class="detail-hero-meta">'+fmt(inv.date)+'</div><div style="margin-top:8px"><span style="background:'+sc+'22;color:'+sc+';font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">'+sl+'</span></div></div>'+
+    '<div class="detail-actions" style="grid-template-columns:1fr 1fr">'+
+    '<button class="detail-action-btn" onclick="openPDF(\'I\',\''+src+'\',\''+srcId+'\',\''+invId+'\')"><span class="detail-action-icon">📄</span>View PDF</button>'+
+    '<button class="detail-action-btn" onclick="openEditInv(\''+src+'\',\''+srcId+'\',\''+invId+'\')"><span class="detail-action-icon">✏️</span>Edit Balance</button>'+
+    '</div>'+
+    '<div class="items-card">'+itemsHtml+'<div class="items-footer"><div class="items-footer-row"><span style="color:var(--muted)">Sub Total</span><span>LKR '+Number(tot).toLocaleString()+'.00</span></div>'+besPeakRow+'<div class="items-footer-row" style="font-size:15px;font-weight:700;color:var(--navy);border-top:1px solid var(--border);padding-top:6px"><span>Balance Due</span><span>LKR '+Number(Math.max(0,bal)).toLocaleString()+'.00</span></div></div></div>'+
+    notesHtml;
+  document.getElementById('doc-foot').innerHTML='<button class="btn btn-ghost" onclick="closeModal(\'doc-modal\')">Close</button>';
+  openModal('doc-modal');
+}
+function openEditInv(src,srcId,invId){
+  const obj=src==='lead'?leads[srcId]:customers[srcId];if(!obj)return;
+  const inv=obj.invoices?.[invId];if(!inv)return;
+  const tot=qTotal(inv.items);const bal=tot-(inv.advance||0);
+  document.getElementById('einv-sub').textContent=obj.name+' · '+invId;
+  document.getElementById('einv-body').innerHTML=
+    '<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:12px;margin-bottom:16px"><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:3px">Invoice Total</div><div style="font-size:20px;font-weight:700;color:var(--gold)">'+fmtLKR(tot)+'</div></div>'+
+    '<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:3px">Bespeaking Fee</div><div style="font-size:16px;font-weight:700;color:var(--success)">'+fmtLKR(inv.advance||0)+'</div></div><span style="font-size:11px;color:var(--muted);background:var(--border);padding:3px 8px;border-radius:20px">Locked</span></div>'+
+    '<input type="hidden" id="einv-amt" value="'+(inv.advance||0)+'"/>'+
+    '<div class="form-grid"><div class="form-group"><label>Invoice Date</label><input type="date" id="einv-date" value="'+(inv.date||'')+'"/></div><div class="form-group"><label>Balance Due</label><input type="text" value="'+fmtLKR(Math.max(0,bal))+'" readonly style="background:var(--bg);color:var(--muted)"/></div><div class="form-group span2"><label>Notes</label><textarea id="einv-notes">'+(inv.notes||'')+'</textarea></div></div>';
+  document.getElementById('einv-foot').innerHTML='<button class="btn btn-ghost" onclick="closeModal(\'edit-inv-modal\')">Cancel</button><button class="btn btn-primary" onclick="saveEditInv(\''+src+'\',\''+srcId+'\',\''+invId+'\')">Save</button>';
+  closeModal('doc-modal');openModal('edit-inv-modal');
+}
+async function saveEditInv(src,srcId,invId){
+  const notes=document.getElementById('einv-notes')?.value||'';
+  const date=document.getElementById('einv-date')?.value||'';
+  const path=src==='lead'?'/leads/'+srcId+'/invoices/'+invId:'/customers/'+srcId+'/invoices/'+invId;
+  try{
+    await fbPatch(path,{notes,date});
+    const obj=src==='lead'?leads[srcId]:customers[srcId];
+    if(obj?.invoices?.[invId]){obj.invoices[invId].notes=notes;obj.invoices[invId].date=date;}
+    closeModal('edit-inv-modal');showNotif('Invoice updated!');render();
+  }catch(e){showNotif('Error: '+e.message);}
+}
+
+// ── ADVANCE / CONVERT TO INVOICE ───────────────────────────
+function openAdvModal(src,srcId,quotId){
+  const obj=src==='lead'?leads[srcId]:customers[srcId];if(!obj)return;
+  const qt=src==='lead'?obj.quotations?.[quotId]:obj.quotes?.[quotId];if(!qt)return;
+  const tot=qTotal(qt.items);
+  document.getElementById('adv-sub').textContent=obj.name;
+  document.getElementById('adv-body').innerHTML=
+    '<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;display:flex;justify-content:space-between"><div><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:3px">Quotation Total</div><div style="font-size:20px;font-weight:700;color:var(--gold)">'+fmtLKR(tot)+'</div></div><div style="font-size:11px;color:var(--muted);align-self:flex-end">'+qt.id+'</div></div>'+
+    '<div class="form-grid"><div class="form-group"><label>Bespeaking Fee (Rs) *</label><input type="number" id="adv-amt" min="0" value="50000"/></div><div class="form-group"><label>Invoice Date</label><input type="date" id="adv-date" value="'+(new Date().toISOString().slice(0,10))+'"/></div><div class="form-group span2"><label>Notes</label><textarea id="adv-notes">'+getDefaultNotes()+'</textarea></div></div>'+
+    '<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--muted);margin-top:8px">Balance after bespeaking fee: <strong id="adv-bal" style="color:var(--navy)">'+fmtLKR(tot-50000)+'</strong></div>';
+  document.getElementById('adv-foot').innerHTML='<button class="btn btn-ghost" onclick="closeModal(\'advance-modal\')">Cancel</button><button class="btn btn-outline" onclick="previewAdvInv(\''+src+'\',\''+srcId+'\',\''+quotId+'\')">Preview</button><button class="btn btn-primary" onclick="convertToInv(\''+src+'\',\''+srcId+'\',\''+quotId+'\')">Save & Confirm</button>';
+  setTimeout(()=>{const el=document.getElementById('adv-amt');if(el)el.oninput=function(){const b=document.getElementById('adv-bal');if(b)b.textContent=fmtLKR(tot-(parseFloat(this.value)||0));};},100);
+  closeModal('doc-modal');openModal('advance-modal');
+}
+function previewAdvInv(src,srcId,quotId){
+  const obj=src==='lead'?leads[srcId]:customers[srcId];if(!obj)return;
+  const qt=src==='lead'?obj.quotations?.[quotId]:obj.quotes?.[quotId];if(!qt)return;
+  const advAmt=parseFloat(document.getElementById('adv-amt')?.value)||0;
+  const notes=document.getElementById('adv-notes')?.value||'';
+  const fl={name:obj.name,phone:obj.phone||'',email:obj.email||'',weddingDate:obj.weddingDate||''};
+  openPDFDirect('I',fl,{id:invNum(),date:new Date().toISOString().slice(0,10),items:qt.items,advance:advAmt,notes});
+}
+async function convertToInv(src,srcId,quotId){
+  const obj=src==='lead'?leads[srcId]:customers[srcId];if(!obj)return;
+  const qt=src==='lead'?obj.quotations?.[quotId]:obj.quotes?.[quotId];if(!qt)return;
+  const advAmt=parseFloat(document.getElementById('adv-amt')?.value)||0;
+  const notes=document.getElementById('adv-notes')?.value||'';
+  const date=document.getElementById('adv-date')?.value||new Date().toISOString().slice(0,10);
+  const items={...qt.items};const tot=qTotal(items);
+  const inv={id:invNum(),date,items,advance:advAmt,notes};
+  try{
+    const patch={};
+    if(src==='lead'){
+      patch['quotations/'+quotId+'/convertedToInvoice']=true;
+      patch['invoices/'+inv.id]=inv;
+      patch['advance']=advAmt;patch['balance']=tot-advAmt;patch['confirmed']=true;patch['stage']=5;
+      await fbPatch('/leads/'+srcId,patch);
+      if(!leads[srcId])leads[srcId]={};
+      leads[srcId].confirmed=true;leads[srcId].stage=5;leads[srcId].advance=advAmt;leads[srcId].balance=tot-advAmt;
+      if(leads[srcId].quotations?.[quotId])leads[srcId].quotations[quotId].convertedToInvoice=true;
+      leads[srcId].invoices=leads[srcId].invoices||{};leads[srcId].invoices[inv.id]=inv;
+    }else{
+      await fbPatch('/customers/'+srcId,{'quotes/'+quotId+'/convertedToInvoice':true,['invoices/'+inv.id]:inv});
+      if(customers[srcId]?.quotes?.[quotId])customers[srcId].quotes[quotId].convertedToInvoice=true;
+      customers[srcId].invoices=customers[srcId].invoices||{};customers[srcId].invoices[inv.id]=inv;
+    }
+    const wDate=src==='lead'?(leads[srcId]?.weddingDate||''):(customers[srcId]?.weddingDate||'');
+    const existCust=custsArr().find(c=>c.phone&&c.phone===obj.phone);
+    if(existCust){
+      const cp={};cp['invoices/'+inv.id]=inv;if(wDate)cp['anniversary']=wDate;
+      await fbPatch('/customers/'+existCust.id,cp);
+      customers[existCust.id].invoices=customers[existCust.id].invoices||{};customers[existCust.id].invoices[inv.id]=inv;
+      if(wDate)customers[existCust.id].anniversary=wDate;
+    }else if(src==='lead'){
+      const cid='cust-'+uid();
+      const nc={id:cid,name:obj.name,phone:obj.phone||'',email:obj.email||'',weddingDate:wDate,anniversary:wDate,venue:obj.venue||'',bridesmaids:obj.bridesmaids||0,notes:'',createdAt:new Date().toISOString(),quotes:{[quotId]:qt},invoices:{[inv.id]:inv}};
+      await fbSet('/customers/'+cid,nc);customers[cid]=nc;
+    }
+    closeModal('advance-modal');showNotif('Invoice created! 🎉');render();
+  }catch(e){showNotif('Error: '+e.message);}
+}
+
+// ── PDF ────────────────────────────────────────────────────
+function openPDF(type,src,srcId,docId){
+  const obj=src==='lead'?leads[srcId]:customers[srcId];if(!obj)return;
+  const doc=type==='Q'?(src==='lead'?obj.quotations?.[docId]:obj.quotes?.[docId]):(obj.invoices?.[docId]);if(!doc)return;
+  const fl={name:obj.name,phone:obj.phone||'',email:obj.email||'',weddingDate:obj.weddingDate||''};
+  openPDFDirect(type,fl,doc);
+}
+function openPDFDirect(type,l,doc){
+  const items=Object.values(doc.items||{});const tot=qTotal(doc.items);
+  const isInv=type==='I';const bespeak=isInv?(doc.advance||0):0;const bal=isInv?tot-bespeak:null;
+  const settings=getSettings();
+  const logoHtml=settings.logoUrl?'<img src="'+settings.logoUrl+'" style="height:60px;object-fit:contain" alt="Biso"/>'
+    :'<div style="font-weight:700;font-size:16px;color:#1B2B4B;letter-spacing:2px">BISO</div>';
+  let itemRows='';
+  items.forEach((it,i)=>{
+    const line=calcLine(it);const isDisc=it.autoDisc||line<0;
+    const rv=isDisc?'—':Number(it.unit).toLocaleString()+'.00';
+    const as=isDisc?'color:#e53e3e':'color:#1B2B4B';
+    const av=isDisc?'('+Number(Math.abs(line)).toLocaleString()+'.00)':Number(line).toLocaleString()+'.00';
+    const dn=it.disc>0?'<div style="font-size:11px;color:#C9A84C;margin-top:2px">Discount '+it.disc+'%</div>':'';
+    itemRows+='<tr style="border-bottom:1px solid #f0f2f8"><td style="padding:12px 8px;font-size:12px;color:#aaa">'+(i+1)+'</td><td style="padding:12px 8px"><div style="font-size:13px;color:#1B2B4B;font-weight:500">'+it.desc+'</div>'+dn+'</td><td style="padding:12px 8px;text-align:center;font-size:13px;color:#555">'+it.qty+'</td><td style="padding:12px 8px;text-align:right;font-size:13px;color:#555">'+rv+'</td><td style="padding:12px 8px;text-align:right;font-size:13px;font-weight:600;'+as+'">'+av+'</td></tr>';
+  });
+  let totalsHtml='<div style="display:flex;justify-content:space-between;padding:8px 8px;border-bottom:1px solid #f0f2f8;font-size:13px;color:#555"><span>Sub Total</span><span>'+Number(tot).toLocaleString()+'.00</span></div>';
+  if(isInv&&bespeak>0)totalsHtml+='<div style="display:flex;justify-content:space-between;padding:8px 8px;border-bottom:1px solid #f0f2f8;font-size:13px"><span style="color:#555">Bespeaking Fee</span><span style="color:#38A169">('+Number(bespeak).toLocaleString()+'.00)</span></div>';
+  const finalAmt=isInv?Math.max(0,bal):tot;
+  totalsHtml+='<div style="display:flex;justify-content:space-between;padding:10px 8px;font-size:14px;font-weight:700;border-top:2px solid #1B2B4B;margin-top:2px"><span>Total</span><span>LKR '+Number(finalAmt).toLocaleString()+'.00</span></div>';
+  const notesHtml=doc.notes?'<div style="margin-bottom:20px"><div style="font-size:12px;font-weight:600;color:#555;margin-bottom:8px;border-bottom:1px solid #eee;padding-bottom:6px">Notes</div><div style="font-size:12px;color:#666;line-height:1.8">'+doc.notes.replace(/\n/g,'<br/>')+'</div></div>':'';
+  const expiryHtml=!isInv?'<div style="font-size:11px;color:#e74c3c">Expiry: '+fmt(doc.expiry)+'</div>':'';
+  const docHtml='<div id="print-area" style="background:#fff;color:#1B2B4B;font-family:Inter,Arial,sans-serif;font-size:13px;max-width:740px;margin:0 auto;padding:36px 44px">'+
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px"><div>'+logoHtml+'<div style="margin-top:10px;font-size:11px;color:#666;line-height:1.8">BISO (PVT) LTD<br/>79 Minuwangoda Road, Negombo<br/>Sri Lanka<br/>bisostyling@gmail.com | +94 70 755 0221</div></div><div style="text-align:right"><div style="font-size:32px;color:#1B2B4B;letter-spacing:3px;font-weight:300">'+(isInv?'INVOICE':'QUOTE')+'</div><div style="font-size:13px;font-weight:700;color:#1B2B4B;margin-top:6px"># '+doc.id+'</div><div style="font-size:11px;color:#777;margin-top:3px">Date: '+fmt(doc.date)+'</div>'+expiryHtml+'</div></div>'+
+    '<div style="height:1px;background:#e0e4ed;margin-bottom:20px"></div>'+
+    '<div style="display:flex;justify-content:space-between;margin-bottom:24px"><div><div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:600">Bill To</div><div style="font-weight:700;font-size:15px;color:#1B2B4B">'+l.name+'</div>'+(l.phone?'<div style="font-size:12px;color:#555;margin-top:3px">'+l.phone+'</div>':'')+(l.weddingDate?'<div style="font-size:12px;color:#555;margin-top:2px">Wedding: '+fmt(l.weddingDate)+'</div>':'')+'</div><div style="text-align:right"><table style="font-size:12px;color:#555;border-collapse:collapse"><tr><td style="padding:3px 0;color:#888;padding-right:16px">'+(isInv?'Invoice Date':'Quote Date')+'</td><td style="font-weight:600;color:#1B2B4B">'+fmt(doc.date)+'</td></tr></table></div></div>'+
+    '<table style="width:100%;border-collapse:collapse;margin-bottom:0"><thead><tr style="border-bottom:2px solid #1B2B4B"><th style="padding:10px 8px;text-align:left;font-size:11px;text-transform:uppercase;color:#888;font-weight:600">#</th><th style="padding:10px 8px;text-align:left;font-size:11px;text-transform:uppercase;color:#888;font-weight:600">Item & Description</th><th style="padding:10px 8px;text-align:center;font-size:11px;text-transform:uppercase;color:#888;font-weight:600">Qty</th><th style="padding:10px 8px;text-align:right;font-size:11px;text-transform:uppercase;color:#888;font-weight:600">Rate</th><th style="padding:10px 8px;text-align:right;font-size:11px;text-transform:uppercase;color:#888;font-weight:600">Amount</th></tr></thead><tbody>'+itemRows+'</tbody></table>'+
+    '<div style="display:flex;justify-content:flex-end;margin-bottom:20px"><div style="width:280px">'+totalsHtml+'</div></div>'+
+    notesHtml+
+    '<div style="border-top:1px solid #e0e4ed;padding-top:12px;margin-top:8px;display:flex;justify-content:space-between;align-items:center"><div style="font-size:10px;color:#aaa">BISO (PVT) LTD · 79 Minuwangoda Road, Negombo</div><div style="font-size:11px;color:#C9A84C;font-style:italic">Every queen deserves to be seen.</div></div></div>';
+  document.getElementById('pdf-title').textContent=(isInv?'Invoice':'Quote')+' - '+doc.id;
+  document.getElementById('pdf-body').innerHTML=docHtml;
+  document.getElementById('pdf-foot').innerHTML='<button class="btn btn-ghost" onclick="closeModal(\'pdf-modal\')">Close</button><button class="btn btn-outline" onclick="printPDF()">Save as PDF</button><button class="btn btn-gold" onclick="shareWA(\''+l.phone+'\',\''+l.name+'\',\''+(isInv?'Invoice':'Quote')+'\',\''+doc.id+'\','+tot+')">WhatsApp</button>';
+  openModal('pdf-modal');
+}
+function printPDF(){
+  const pa=document.getElementById('print-area');if(!pa)return;
+  const title=document.getElementById('pdf-title')?.textContent||'Biso Document';
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>'+title+'</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Inter,Arial,sans-serif;background:#fff}@page{size:A4;margin:12mm 15mm}</style></head><body>'+pa.innerHTML+'</body></html>';
+  const blob=new Blob([html],{type:'text/html'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.target='_blank';a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),5000);
+}
+function shareWA(phone,name,type,docId,total){
+  const clean=(phone||'').replace(/[^0-9]/g,'');
+  if(!clean){showNotif('No phone number saved. Add one to customer profile.');return;}
+  const msg='Dear '+name+',%0A%0APlease find your '+type+' (Ref: '+docId+') from Biso by Dinushi.%0A%0ATotal: '+fmtLKR(total)+'%0A%0A%F0%9F%93%9E +94 70 755 0221%0A%F0%9F%93%A7 bisostyling@gmail.com%0A%0AEvery queen deserves to be seen. %F0%9F%91%91';
+  window.open('https://wa.me/'+clean+'?text='+msg,'_blank');
+}
+
+// ── QUOTATION BUILDER ──────────────────────────────────────
+function openQM(leadId,custId){
+  QB={leadId,custId,items:[],notes:getDefaultNotes(),pendingSvc:null,editId:null};
+  if(leadId&&leads[leadId]){const l=leads[leadId];const ex=custsArr().find(c=>c.phone&&c.phone===l.phone);if(ex)QB.custId=ex.id;}
+  document.getElementById('qm-sub').textContent=leadId&&leads[leadId]?'For: '+leads[leadId].name:'New Quotation';
+  renderQB();
+  document.getElementById('qm-foot').innerHTML='<button class="btn btn-ghost" onclick="closeModal(\'quot-modal\')">Cancel</button><button class="btn btn-outline" onclick="previewQB()">Preview</button><button class="btn btn-primary" onclick="saveQB()">Save Quotation</button>';
+  openModal('quot-modal');
+}
+function editQuot(src,srcId,quotId){
+  const obj=src==='lead'?leads[srcId]:customers[srcId];if(!obj)return;
+  const qt=src==='lead'?obj.quotations?.[quotId]:obj.quotes?.[quotId];if(!qt)return;
+  QB={leadId:src==='lead'?srcId:null,custId:null,items:Object.values(qt.items||{}),notes:qt.notes||'',pendingSvc:null,editId:{src,srcId,quotId}};
+  const ex=custsArr().find(c=>c.phone&&c.phone===obj.phone);
+  if(ex)QB.custId=ex.id;else if(src==='customer')QB.custId=srcId;
+  document.getElementById('qm-sub').textContent='Editing: '+obj.name;
+  renderQB();
+  document.getElementById('qm-foot').innerHTML='<button class="btn btn-ghost" onclick="closeModal(\'quot-modal\')">Cancel</button><button class="btn btn-outline" onclick="previewQB()">Preview</button><button class="btn btn-primary" onclick="updateQB()">Update Quotation</button>';
+  closeModal('doc-modal');openModal('quot-modal');
+}
+function renderQB(){
+  const cust=QB.custId?customers[QB.custId]:null;
+  const total=QB.items.reduce((s,it)=>s+calcLine(it),0);
+  const custHtml=cust
+    ?'<div class="qb-cust-sel"><div class="qb-avatar">'+initials(cust.name)+'</div><div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--navy)">'+cust.name+'</div><div style="font-size:12px;color:var(--muted)">'+(cust.phone||'')+'</div></div><button class="btn btn-ghost btn-xs" onclick="openSheet(\'cust\')">Change</button></div>'
+    :'<div class="qb-row" onclick="openSheet(\'cust\')"><div class="qb-row-label">Select Customer</div><div class="qb-row-value muted">Tap to select</div><div class="qb-arrow">›</div></div>';
+  let linesHtml='';
+  QB.items.forEach((it,i)=>{
+    const line=calcLine(it);
+    const rmBtn=it.autoDisc
+      ?'<span style="font-size:11px;color:var(--muted);align-self:flex-end;padding-bottom:9px">auto</span>'
+      :'<button class="qb-line-del" onclick="removeQBItem(\''+(it.key||i)+'\')">✕</button>';
+    linesHtml+='<div class="qb-line"><div class="qb-line-name">'+it.desc+'</div><div class="qb-line-sub">'+(it.cat||'Custom')+(it.theme?' · '+it.theme:'')+'</div><div class="qb-line-inputs"><div class="qb-col"><span class="qb-col-label">Qty</span><input class="qb-input" type="number" value="'+(it.qty||1)+'" min="1" style="width:60px;text-align:center" oninput="QB.items['+i+'].qty=parseFloat(this.value)||1;rerenderQBTotals()"/></div><div class="qb-col"><span class="qb-col-label">Unit (Rs)</span><input class="qb-input" type="number" value="'+(it.unit||0)+'" style="width:100px;text-align:right" oninput="QB.items['+i+'].unit=parseFloat(this.value)||0;rerenderQBTotals()"/></div><div class="qb-col"><span class="qb-col-label">Disc %</span><input class="qb-input" type="number" value="'+(it.disc||0)+'" min="0" max="100" style="width:60px;text-align:center" oninput="QB.items['+i+'].disc=parseFloat(this.value)||0;rerenderQBTotals()"/></div><div class="qb-line-amount" id="qb-amt-'+i+'">'+fmtLKR(line)+'</div>'+rmBtn+'</div></div>';
+  });
+  document.getElementById('qm-body').innerHTML=
+    '<div style="max-width:600px;margin:0 auto">'+
+    '<div class="qb-section"><div class="qb-sec-hdr"><div class="qb-sec-title">Customer</div></div>'+custHtml+'</div>'+
+    '<div class="qb-section"><div class="qb-sec-hdr"><div class="qb-sec-title">Services</div>'+(QB.items.length?'<div style="font-size:12px;color:var(--muted)">'+QB.items.length+' item'+(QB.items.length!==1?'s':'')+'</div>':'')+'</div>'+linesHtml+'<div class="qb-add-line" onclick="openSheet(\'svc\')"><div class="qb-add-circle">+</div><div class="qb-add-label">Add new line</div></div></div>'+
+    (QB.items.length?'<div class="qb-section"><div class="qb-sec-hdr" style="justify-content:flex-end"><div class="qb-total-val grand" id="qb-grand">'+fmtLKR(total)+'</div></div></div>':'')+
+    '<div class="qb-section"><div style="padding:14px 18px"><textarea id="qb-notes" style="width:100%;min-height:70px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:Inter,sans-serif;color:var(--text);outline:none;resize:vertical" placeholder="Notes / Terms…">'+(QB.notes||getDefaultNotes())+'</textarea></div></div>'+
+    '</div>';
+}
+function rerenderQBTotals(){
+  QB.items.forEach((it,i)=>{const el=document.getElementById('qb-amt-'+i);if(el)el.textContent=fmtLKR(calcLine(it));});
+  const total=QB.items.reduce((s,it)=>s+calcLine(it),0);
+  const gt=document.getElementById('qb-grand');if(gt)gt.textContent=fmtLKR(total);
+}
+function removeQBItem(key){QB.items=QB.items.filter(it=>(it.key||'')!==key&&!it.autoDisc);applySmartDiscounts();renderQB();}
+
+// ── SERVICE SHEET ──────────────────────────────────────────
+function openSheet(type){
+  QB.notes=document.getElementById('qb-notes')?.value||QB.notes;
+  document.getElementById(type+'-overlay').classList.add('open');
+  document.getElementById(type+'-sheet').classList.add('open');
+  if(type==='svc'){document.getElementById('svc-search').value='';filterSvcs('');setTimeout(()=>document.getElementById('svc-search').focus(),300);}
+  if(type==='cust'){document.getElementById('cust-search').value='';filterCusts('');setTimeout(()=>document.getElementById('cust-search').focus(),300);}
+  if(type==='amt')setTimeout(()=>document.getElementById('amt-input').focus(),300);
+}
+function closeSheet(type){document.getElementById(type+'-overlay').classList.remove('open');document.getElementById(type+'-sheet').classList.remove('open');}
+function filterSvcs(sq){
+  const s=sq.toLowerCase().trim();
+  const filtered=s?SVCS.filter(sv=>sv.desc.toLowerCase().includes(s)||sv.cat.toLowerCase().includes(s)):SVCS;
+  let html='';
+  filtered.forEach(sv=>{
+    const lp=getSvcPrice(sv.desc);
+    const pl=(sv.askAmt&&lp===sv.base)?'From '+fmtLKR(sv.base):fmtLKR(lp||sv.base);
+    html+='<div class="sheet-item" onclick="selectSvc(\''+sv.desc.replace(/'/g,"\\'")+'\','+sv.base+',\''+sv.cat+'\','+sv.askTheme+','+sv.askAmt+')"><div><div class="sheet-item-name">'+sv.desc+'</div><div class="sheet-item-meta">'+sv.cat+'</div></div><div class="sheet-item-price">'+pl+'</div></div>';
+  });
+  html+='<div class="sheet-add-custom" onclick="addCustomLine(\''+(sq||'').replace(/'/g,"\\'")+'\')"><span style="color:var(--gold);font-weight:600;font-size:13px">+ Add "'+(sq||'custom')+'" as custom line</span></div>';
+  document.getElementById('svc-list').innerHTML=html;
+}
+function selectSvc(desc,base,cat,askTheme,askAmt){
+  closeSheet('svc');
+  const price=getSvcPrice(desc);const smartP=getSmartPrice(desc);
+  if(askAmt&&price===base){
+    QB.pendingSvc={desc,unit:base,cat,askTheme};
+    document.getElementById('amt-title').textContent=desc;
+    document.getElementById('amt-hint').textContent='Starting from '+fmtLKR(base);
+    document.getElementById('amt-input').value=base;
+    setTimeout(()=>openSheet('amt'),200);return;
+  }
+  const finalUnit=price>0?price:smartP;
+  if(askTheme){
+    QB.pendingSvc={desc,unit:finalUnit,cat};
+    document.getElementById('theme-title').textContent='Theme for '+cat;
+    let tHtml='';THEMES.forEach(t=>{tHtml+='<div class="theme-option" onclick="confirmTheme(\''+t+'\')"><div class="theme-radio"></div><div class="theme-label">'+t+'</div></div>';});
+    document.getElementById('theme-list').innerHTML=tHtml;
+    setTimeout(()=>openSheet('theme'),200);
+  }else{
+    QB.items.push({desc,unit:finalUnit,qty:1,disc:0,cat,key:uid()});
+    applySmartDiscounts();renderQB();
+  }
+}
+function confirmAmt(){
+  const amt=parseFloat(document.getElementById('amt-input').value)||0;
+  if(amt<=0){showNotif('Please enter an amount.');return;}
+  closeSheet('amt');const s=QB.pendingSvc;if(!s)return;s.unit=amt;
+  if(s.askTheme){
+    document.getElementById('theme-title').textContent='Theme for '+s.cat;
+    let tHtml='';THEMES.forEach(t=>{tHtml+='<div class="theme-option" onclick="confirmTheme(\''+t+'\')"><div class="theme-radio"></div><div class="theme-label">'+t+'</div></div>';});
+    document.getElementById('theme-list').innerHTML=tHtml;
+    setTimeout(()=>openSheet('theme'),200);
+  }else{
+    QB.items.push({desc:s.desc,unit:s.unit,qty:1,disc:0,cat:s.cat,key:uid()});
+    QB.pendingSvc=null;applySmartDiscounts();renderQB();
+  }
+}
+function confirmTheme(theme){
+  closeSheet('theme');const s=QB.pendingSvc;if(!s)return;
+  QB.items.push({desc:s.desc+' – '+theme,unit:s.unit,qty:1,disc:0,cat:s.cat,theme,key:uid()});
+  QB.pendingSvc=null;applySmartDiscounts();renderQB();
+}
+function addCustomLine(raw){closeSheet('svc');QB.items.push({desc:raw||'Custom service',unit:0,qty:1,disc:0,cat:'Custom',key:uid()});renderQB();}
+function filterCusts(sq){
+  const s=sq.toLowerCase();
+  const all=custsArr().filter(c=>!s||c.name.toLowerCase().includes(s)||(c.phone||'').includes(s));
+  let html='';
+  all.forEach(c=>{html+='<div class="cust-item" onclick="selectCust(\''+c.id+'\')">'+'<div class="qb-avatar" style="width:38px;height:38px;font-size:14px">'+initials(c.name)+'</div>'+'<div><div style="font-size:13px;font-weight:600;color:var(--navy)">'+c.name+'</div><div style="font-size:11px;color:var(--muted)">'+(c.phone||'')+'</div></div></div>';});
+  html+='<div class="cust-new" onclick="closeSheet(\'cust\');window._custCb=function(c){QB.custId=c.id;renderQB()};openNewCustModal()"><div class="cust-new-icon">+</div><div><div style="font-size:13px;font-weight:600;color:var(--gold)">Create New Customer</div><div style="font-size:11px;color:var(--muted)">Add new profile</div></div></div>';
+  document.getElementById('cust-list').innerHTML=html;
+}
+function selectCust(id){closeSheet('cust');QB.custId=id;QB.notes=document.getElementById('qb-notes')?.value||QB.notes;renderQB();}
+function previewQB(){
+  QB.notes=document.getElementById('qb-notes')?.value||'';
+  const cust=QB.custId?customers[QB.custId]:null;
+  const fl=cust?{name:cust.name,phone:cust.phone||'',email:cust.email||'',weddingDate:cust.weddingDate||''}:{name:'Preview',phone:'',email:'',weddingDate:''};
+  const items={};QB.items.forEach(it=>{const k=it.key||uid();items[k]={...it,key:k};});
+  openPDFDirect('Q',fl,{id:quotNum(),date:new Date().toISOString().slice(0,10),expiry:expiryDate(),items,notes:QB.notes});
+}
+async function saveQB(){
+  QB.notes=document.getElementById('qb-notes')?.value||'';
+  if(!QB.custId&&!QB.leadId){showNotif('Please select a customer first.');return;}
+  if(QB.items.length===0){showNotif('Please add at least one service.');return;}
+  const items={};QB.items.forEach(it=>{const k=it.key||uid();items[k]={...it,key:k};});
+  const qt={id:quotNum(),date:new Date().toISOString().slice(0,10),expiry:expiryDate(),items,notes:QB.notes,convertedToInvoice:false,sent:false};
+  try{
+    if(QB.custId){await fbPatch('/customers/'+QB.custId+'/quotes',{[qt.id]:qt});customers[QB.custId]=customers[QB.custId]||{};customers[QB.custId].quotes=customers[QB.custId].quotes||{};customers[QB.custId].quotes[qt.id]=qt;}
+    if(QB.leadId){
+      await fbPatch('/leads/'+QB.leadId+'/quotations',{[qt.id]:qt});
+      leads[QB.leadId].quotations=leads[QB.leadId].quotations||{};leads[QB.leadId].quotations[qt.id]=qt;
+      if((leads[QB.leadId].stage||0)<4){await fbPatch('/leads/'+QB.leadId,{stage:4});leads[QB.leadId].stage=4;}
+    }else if(QB.custId){
+      const cust=customers[QB.custId];
+      const exLead=leadsArr().find(l=>l.phone&&cust&&l.phone===cust.phone&&!l.confirmed);
+      if(exLead){await fbPatch('/leads/'+exLead.id+'/quotations',{[qt.id]:qt});exLead.quotations=exLead.quotations||{};exLead.quotations[qt.id]=qt;await fbPatch('/leads/'+exLead.id,{stage:4});exLead.stage=4;}
+      else if(cust){const nid=uid();const nl={id:nid,name:cust.name,phone:cust.phone||'',email:cust.email||'',source:'walk-in',stage:4,weddingDate:cust.weddingDate||'',package:'Custom',notes:'Auto-created from quote '+qt.id,bridesmaids:cust.bridesmaids||0,createdAt:new Date().toISOString(),confirmed:false,advance:0,balance:0,venue:cust.venue||'',appointments:{},quotations:{[qt.id]:qt},invoices:{}};await fbSet('/leads/'+nid,nl);leads[nid]=nl;showNotif('Lead created for '+cust.name);}
+    }
+    closeModal('quot-modal');showNotif('Quotation saved!');if(QB.leadId)openDetail(QB.leadId);render();
+  }catch(e){showNotif('Error: '+e.message);}
+}
+async function updateQB(){
+  QB.notes=document.getElementById('qb-notes')?.value||'';
+  if(QB.items.length===0){showNotif('Please add at least one service.');return;}
+  const{src,srcId,quotId}=QB.editId;
+  const items={};QB.items.forEach(it=>{const k=it.key||uid();items[k]={...it,key:k};});
+  const path=src==='lead'?'/leads/'+srcId+'/quotations/'+quotId:'/customers/'+srcId+'/quotes/'+quotId;
+  try{
+    await fbPatch(path,{items,notes:QB.notes});
+    const obj=src==='lead'?leads[srcId]:customers[srcId];
+    if(obj){const q=src==='lead'?obj.quotations?.[quotId]:obj.quotes?.[quotId];if(q){q.items=items;q.notes=QB.notes;}}
+    closeModal('quot-modal');showNotif('Quotation updated!');render();
+  }catch(e){showNotif('Error: '+e.message);}
+}
+
+// ── FINANCE ────────────────────────────────────────────────
+function renderFinance(){
+  const allInv=[];
+  leadsArr().forEach(l=>Object.values(l.invoices||{}).forEach(inv=>allInv.push({...inv,clientName:l.name})));
+  custsArr().forEach(c=>Object.values(c.invoices||{}).forEach(inv=>allInv.push({...inv,clientName:c.name})));
+  allInv.sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const totalRev=allInv.reduce((s,inv)=>s+qTotal(inv.items),0);
+  const totalCol=allInv.reduce((s,inv)=>s+(inv.advance||0),0);
+  const count=allInv.length;
+  const monthly={};
+  allInv.forEach(inv=>{const mo=inv.date?inv.date.slice(0,7):'Unknown';if(!monthly[mo])monthly[mo]={revenue:0,collected:0,count:0};monthly[mo].revenue+=qTotal(inv.items);monthly[mo].collected+=(inv.advance||0);monthly[mo].count++;});
+  const months=Object.keys(monthly).sort();
+  let mRows='';
+  months.forEach(mo=>{const m=monthly[mo];const pct=m.revenue>0?Math.round(m.collected/m.revenue*100):0;const lbl=new Date(mo+'-01').toLocaleDateString('en-GB',{month:'short',year:'numeric'});mRows+='<tr><td style="font-weight:600">'+lbl+'</td><td style="text-align:center">'+m.count+'</td><td style="color:var(--gold);font-weight:600">'+fmtLKR(m.revenue)+'</td><td><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;height:4px;background:var(--border);border-radius:2px"><div style="width:'+pct+'%;height:100%;background:var(--success);border-radius:2px"></div></div><span style="font-size:11px;color:var(--success);font-weight:600;min-width:30px">'+pct+'%</span></div></td></tr>';});
+  const outstanding=allInv.filter(inv=>qTotal(inv.items)-(inv.advance||0)>0).sort((a,b)=>(qTotal(b.items)-(b.advance||0))-(qTotal(a.items)-(a.advance||0))).slice(0,8);
+  let oRows='';outstanding.forEach(inv=>{const bal=qTotal(inv.items)-(inv.advance||0);oRows+='<tr><td><div style="font-weight:600;font-size:13px">'+inv.clientName+'</div></td><td style="font-size:11px;color:var(--muted)">'+inv.id+'</td><td style="font-weight:700;color:var(--warn)">'+fmtLKR(bal)+'</td></tr>';});
+  let lRows='';
+  [...allInv].reverse().forEach(inv=>{const tot=qTotal(inv.items);const b=inv.advance||0;const bal=tot-b;const pct2=tot>0?Math.round(b/tot*100):0;const sc=pct2>=100?'var(--success)':pct2>0?'var(--warn)':'var(--danger)';const sl=pct2>=100?'Paid':pct2>0?'Partial':'Unpaid';lRows+='<tr><td style="font-size:12px">'+fmt(inv.date)+'</td><td class="client-name">'+inv.clientName+'</td><td style="font-size:11px;color:var(--muted)">'+inv.id+'</td><td style="font-weight:700;color:var(--gold)">'+fmtLKR(tot)+'</td><td style="color:var(--success);font-weight:600">'+fmtLKR(b)+'</td><td style="font-weight:600">'+fmtLKR(Math.max(0,bal))+'</td><td><span class="badge" style="background:'+sc+'22;color:'+sc+'">'+sl+'</span></td></tr>';});
+  document.getElementById('main-content').innerHTML=
+    '<div class="stats-row">'+
+    statCard('Total Revenue',fmtLKR(totalRev),count+' invoices','💰','stat-icon-gold')+
+    statCard('Collected',fmtLKR(totalCol),(totalRev>0?Math.round(totalCol/totalRev*100):0)+'% of total','✓','stat-icon-green')+
+    statCard('Balance Due',fmtLKR(totalRev-totalCol),'Outstanding','⏳','stat-icon-orange')+
+    statCard('Avg Invoice',count>0?fmtLKR(Math.round(totalRev/count)):'Rs 0','Per client','📊','stat-icon-blue')+
+    '</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px">'+
+    '<div class="table-wrap"><div class="table-hdr"><div class="table-hdr-title">Monthly Revenue</div></div>'+(months.length?'<table><thead><tr><th>Month</th><th>Invoices</th><th>Revenue</th><th>Collected</th></tr></thead><tbody>'+mRows+'</tbody></table>':'<div class="empty" style="padding:40px"><div class="empty-text">No invoices yet</div></div>')+'</div>'+
+    '<div class="table-wrap"><div class="table-hdr"><div class="table-hdr-title">Outstanding Balances</div></div>'+(outstanding.length?'<table><thead><tr><th>Client</th><th>Invoice</th><th>Balance</th></tr></thead><tbody>'+oRows+'</tbody></table>':'<div class="empty" style="padding:40px"><div class="empty-text">All paid up</div></div>')+'</div>'+
+    '</div>'+
+    '<div class="table-wrap"><div class="table-hdr"><div class="table-hdr-title">Invoice Ledger</div><div style="font-size:12px;color:var(--muted)">'+count+' total</div></div>'+(count?'<div style="overflow-x:auto"><table><thead><tr><th>Date</th><th>Client</th><th>Invoice</th><th>Total</th><th>Bespeaking</th><th>Balance</th><th>Status</th></tr></thead><tbody>'+lRows+'</tbody></table></div>':'<div class="empty" style="padding:60px"><div class="empty-text">No invoices yet</div></div>')+'</div>';
+}
+
+// ── SETTINGS ───────────────────────────────────────────────
+function renderSettings(tab){
+  const s=getSettings();const activeTab=tab||'invoice';const lp=s.linePrices||{};
+  let priceItems='';
+  SVCS.filter(sv=>sv.askAmt||sv.base>0).forEach(sv=>{
+    const pid='price-'+sv.desc.replace(/[^a-z0-9]/gi,'_');const val=lp[sv.desc]||'';const def=sv.base||0;
+    priceItems+='<div style="display:flex;align-items:center;gap:12px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 14px"><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+sv.desc+'</div><div style="font-size:11px;color:var(--muted)">'+sv.cat+' · Default: Rs '+def.toLocaleString()+'</div></div><input type="number" id="'+pid+'" value="'+val+'" placeholder="'+def+'" style="width:120px;text-align:right;background:var(--white);border:1.5px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:Inter,sans-serif;color:var(--text);outline:none"/></div>';
+  });
+  const invTabHtml='<div class="form-group" style="margin-bottom:20px"><label>Default Notes / Terms</label><textarea id="s-notes" style="min-height:140px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:Inter,sans-serif;color:var(--text);outline:none;width:100%;resize:vertical">'+(s.defaultNotes||getDefaultNotes()).replace(/</g,'&lt;')+'</textarea><div style="font-size:11px;color:var(--muted);margin-top:5px">Appears on every quote and invoice. Editable per-document.</div></div><div class="form-group" style="margin-bottom:20px"><label>Company Logo URL</label><input type="text" id="s-logo" value="'+(s.logoUrl||'')+'" placeholder="https://... paste image URL"/><div style="font-size:11px;color:var(--muted);margin-top:5px">Appears on PDFs.</div></div><button class="btn btn-primary" onclick="saveInvSettings()">Save Invoice Settings</button>';
+  const pricesTabHtml='<div style="margin-bottom:14px;font-size:13px;color:var(--muted)">Override default prices. Leave blank to use default.</div><div style="display:flex;flex-direction:column;gap:10px">'+priceItems+'</div><button class="btn btn-primary" style="margin-top:16px" onclick="savePriceSettings()">Save Prices</button>';
+  const clearTabHtml='<div style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:10px;padding:20px;margin-bottom:20px"><div style="font-size:14px;font-weight:600;color:var(--danger);margin-bottom:8px">⚠ Clear Test Data</div><div style="font-size:13px;color:var(--text2);margin-bottom:16px">Permanently deletes all leads, customers, quotations and invoices. Settings and prices will be kept. Use before launch to start fresh.</div><button class="btn btn-danger" onclick="clearTestData()">Delete All Test Data</button></div>';
+  document.getElementById('main-content').innerHTML=
+    '<div style="max-width:640px"><div class="tabs" style="margin-bottom:20px">'+
+    '<div class="tab '+(activeTab==='invoice'?'active':'')+'" onclick="renderSettings(\'invoice\')">Invoice Settings</div>'+
+    '<div class="tab '+(activeTab==='prices'?'active':'')+'" onclick="renderSettings(\'prices\')">Line Item Prices</div>'+
+    '<div class="tab '+(activeTab==='data'?'active':'')+'" onclick="renderSettings(\'data\')">Test Data</div>'+
+    '</div><div class="table-wrap"><div class="modal-body">'+(activeTab==='invoice'?invTabHtml:activeTab==='prices'?pricesTabHtml:clearTabHtml)+'</div></div></div>';
+}
+function saveInvSettings(){const notes=document.getElementById('s-notes')?.value||'';const logo=document.getElementById('s-logo')?.value||'';saveSettings({...getSettings(),defaultNotes:notes,logoUrl:logo});showNotif('Invoice settings saved!');}
+function savePriceSettings(){const s=getSettings();const lp=s.linePrices||{};SVCS.filter(sv=>sv.askAmt||sv.base>0).forEach(sv=>{const pid='price-'+sv.desc.replace(/[^a-z0-9]/gi,'_');const el=document.getElementById(pid);if(el&&el.value&&parseFloat(el.value)>0)lp[sv.desc]=parseFloat(el.value);else delete lp[sv.desc];});saveSettings({...s,linePrices:lp});showNotif('Prices saved!');}
+async function clearTestData(){if(!confirm('DELETE ALL leads, customers, quotes and invoices? Cannot be undone.'))return;if(!confirm('Are you absolutely sure?'))return;try{await fbSet('/leads',null);await fbSet('/customers',null);leads={};customers={};showNotif('All test data cleared.');render();}catch(e){showNotif('Error: '+e.message);}}
 
 // ── INIT ──────────────────────────────────────────────────────
 (function(){
