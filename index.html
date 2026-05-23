@@ -841,28 +841,17 @@ function renderQuotations(){
 
   const rows=filt.map(q=>{
     const tot=qTotal(q.items);
-    const menuId='qm-'+q.id;
-    const statusBadge=q.sent
-      ?'<span style="font-size:11px;font-weight:600;color:#15803D">SENT</span>'
-      :'<span style="font-size:11px;font-weight:600;color:#1D4ED8">DRAFT</span>';
-    return`<div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="viewQuotRow('${q.src}','${q.srcId}','${q.id}')">
+    const statusColor=q.sent?'#15803D':'#6B7280';
+    const statusLabel=q.sent?'SENT':'DRAFT';
+    return`<div style="padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--navy-dim)'" onmouseout="this.style.background=''" onclick="openQuotDetail('${q.src}','${q.srcId}','${q.id}')">
       <div style="flex:1;min-width:0">
         <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:3px">${q.srcName}</div>
         <div style="font-size:12px;color:var(--text-muted)">${fmt(q.date)} &nbsp;•&nbsp; ${q.id}</div>
-        <div style="margin-top:4px">${statusBadge}</div>
+        <div style="margin-top:5px"><span style="font-size:11px;font-weight:700;color:${statusColor};letter-spacing:.5px">${statusLabel}</span></div>
       </div>
-      <div style="display:flex;align-items:center;gap:12px;flex-shrink:0">
-        <div style="font-size:15px;font-weight:700;color:var(--navy);text-align:right">LKR ${Number(tot).toLocaleString()}.00</div>
-        <div class="row-menu-wrap">
-          <button class="row-menu-btn" onclick="event.stopPropagation();toggleRowMenu('${menuId}')">⋯</button>
-          <div class="row-menu-dropdown" id="${menuId}">
-            <div class="row-menu-item" onclick="viewQuotRow('${q.src}','${q.srcId}','${q.id}');toggleRowMenu('${menuId}')">View</div>
-            <div class="row-menu-item" onclick="editQuotRow('${q.src}','${q.srcId}','${q.id}');toggleRowMenu('${menuId}')">Edit</div>
-            <div class="row-menu-item" onclick="markQuotSent('${q.src}','${q.srcId}','${q.id}');toggleRowMenu('${menuId}')">${q.sent?'✓ Sent':'Mark as Sent'}</div>
-            <div class="row-menu-divider"></div>
-            <div class="row-menu-item gold" onclick="advModalRow('${q.src}','${q.srcId}','${q.id}');toggleRowMenu('${menuId}')">→ Convert to Invoice</div>
-          </div>
-        </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:16px;font-weight:700;color:var(--navy)">LKR ${Number(tot).toLocaleString()}.00</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:3px">›</div>
       </div>
     </div>`;
   }).join('');
@@ -879,6 +868,87 @@ function renderQuotations(){
     ${filt.length?rows:'<div class="empty" style="padding:60px"><div class="empty-text">No open quotations</div></div>'}
   </div>`;
 }
+
+// Open quote detail view (like Zoho Books)
+function openQuotDetail(src, srcId, quotId){
+  const obj=src==='lead'?leads[srcId]:customers[srcId]; if(!obj)return;
+  const q=src==='lead'?obj.quotations?.[quotId]:obj.quotes?.[quotId]; if(!q)return;
+  const tot=qTotal(q.items); const items=Object.values(q.items||{});
+  const fakeL={name:obj.name,phone:obj.phone||'',email:obj.email||'',weddingDate:obj.weddingDate||''};
+
+  document.getElementById('doc-preview-title').textContent=q.id;
+  document.getElementById('doc-preview-body').innerHTML=`
+  <!-- AMOUNT HERO -->
+  <div style="text-align:center;padding:24px 20px 16px;background:var(--bg);border-radius:10px;margin-bottom:20px">
+    <div style="font-size:28px;font-weight:700;color:var(--navy)">LKR ${Number(tot).toLocaleString()}.00</div>
+    <div style="font-size:14px;color:var(--text-muted);margin-top:4px">${obj.name}</div>
+    <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${q.id} &nbsp;•&nbsp; ${fmt(q.date)}</div>
+    ${q.sent?'<div style="margin-top:8px"><span style="background:#DCFCE7;color:#15803D;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.5px">SENT</span></div>':''}
+  </div>
+
+  <!-- ACTION BUTTONS -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px">
+    <button onclick="editQuotRow('${src}','${srcId}','${quotId}')" style="background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:14px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--navy)">
+      <span style="font-size:20px">✏️</span>Edit
+    </button>
+    <button onclick="viewQuotPDF('${src}','${srcId}','${quotId}')" style="background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:14px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--navy)">
+      <span style="font-size:20px">📄</span>View PDF
+    </button>
+    <button onclick="advModalRow('${src}','${srcId}','${quotId}')" style="background:var(--navy);border:none;border-radius:10px;padding:14px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;font-weight:500;color:#fff">
+      <span style="font-size:20px">→</span>Invoice
+    </button>
+    <button onclick="moreQuotActions('${src}','${srcId}','${quotId}','${q.sent||false}')" style="background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:14px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--navy)">
+      <span style="font-size:20px">⋯</span>More
+    </button>
+  </div>
+
+  <!-- LINE ITEMS -->
+  <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px">
+    ${items.map((it,i)=>{const line=calcLine(it);return`
+    <div style="padding:14px 16px;border-bottom:1px solid var(--border)${i===items.length-1?';border-bottom:none':''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div style="font-size:14px;font-weight:600;color:var(--navy);flex:1">${it.desc}</div>
+        <div style="font-size:14px;font-weight:700;color:var(--navy);flex-shrink:0;margin-left:12px">LKR ${Number(line).toLocaleString()}.00</div>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:3px">${it.qty}.0 × ${Number(it.unit).toLocaleString()}.00${it.disc>0?' · Disc '+it.disc+'%':''}</div>
+    </div>`}).join('')}
+    <!-- SUBTOTAL -->
+    <div style="padding:12px 16px;background:var(--bg);border-top:1.5px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text-muted);margin-bottom:6px"><span>Sub Total</span><span>LKR ${Number(tot).toLocaleString()}.00</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;color:var(--navy)"><span>Total</span><span>LKR ${Number(tot).toLocaleString()}.00</span></div>
+    </div>
+  </div>
+
+  <!-- NOTES -->
+  ${q.notes?`<div style="background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
+    <div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Notes</div>
+    <div style="font-size:13px;color:var(--text-mid);line-height:1.7">${q.notes.replace(/
+/g,'<br/>')}</div>
+  </div>`:''}`;
+
+  document.getElementById('doc-preview-foot').innerHTML=`<button class="btn btn-ghost" onclick="closeModal('doc-preview-modal')">Close</button>`;
+  openModal('doc-preview-modal');
+}
+
+function viewQuotPDF(src,srcId,quotId){
+  const obj=src==='lead'?leads[srcId]:customers[srcId]; if(!obj)return;
+  const q=src==='lead'?obj.quotations?.[quotId]:obj.quotes?.[quotId]; if(!q)return;
+  const fakeL={name:obj.name,phone:obj.phone||'',email:obj.email||'',weddingDate:obj.weddingDate||''};
+  closeModal('doc-preview-modal');
+  setTimeout(()=>viewDocDirect('Q',fakeL,q),200);
+}
+
+function moreQuotActions(src,srcId,quotId,sent){
+  const isSent=sent==='true'||sent===true;
+  if(!isSent){
+    if(confirm('Mark this quotation as sent?')){
+      markQuotSent(src,srcId,quotId);
+    }
+  } else {
+    showNotif('This quotation has already been marked as sent.');
+  }
+}
+
 
 function viewQuotRow(src, srcId, quotId){
   const obj=src==='lead'?leads[srcId]:customers[srcId];if(!obj)return;
@@ -952,44 +1022,105 @@ function renderInvoices(){
   const filt=allI.filter(inv=>searchQuery?inv.srcName.toLowerCase().includes(searchQuery):true);
 
   const rows=filt.map(inv=>{
-    const tot=qTotal(inv.items);
-    const bespeak=inv.advance||0;
-    const bal=tot-bespeak;
+    const tot=qTotal(inv.items); const bespeak=inv.advance||0; const bal=tot-bespeak;
     const pct=tot>0?Math.round(bespeak/tot*100):0;
-    const menuId='im-'+inv.id;
     const statusColor=pct>=100?'#15803D':pct>0?'#D97706':'#DC2626';
     const statusLabel=pct>=100?'PAID':pct>0?'PARTIAL':'UNPAID';
-    return`<div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="viewInvRow('${inv.src}','${inv.srcId}','${inv.id}')">
+    return`<div style="padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--navy-dim)'" onmouseout="this.style.background=''" onclick="openInvDetail('${inv.src}','${inv.srcId}','${inv.id}')">
       <div style="flex:1;min-width:0">
         <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:3px">${inv.srcName}</div>
         <div style="font-size:12px;color:var(--text-muted)">${fmt(inv.date)} &nbsp;•&nbsp; ${inv.id}</div>
-        <div style="margin-top:4px;display:flex;align-items:center;gap:8px">
-          <span style="font-size:11px;font-weight:600;color:${statusColor}">${statusLabel}</span>
-          ${bal>0?`<span style="font-size:11px;color:var(--text-muted)">Balance: LKR ${Number(bal).toLocaleString()}.00</span>`:''}
+        <div style="margin-top:5px;display:flex;align-items:center;gap:8px">
+          <span style="font-size:11px;font-weight:700;color:${statusColor};letter-spacing:.5px">${statusLabel}</span>
+          ${bal>0?`<span style="font-size:11px;color:var(--text-muted)">Balance LKR ${Number(bal).toLocaleString()}.00</span>`:''}
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:12px;flex-shrink:0">
-        <div style="font-size:15px;font-weight:700;color:var(--navy);text-align:right">LKR ${Number(tot).toLocaleString()}.00</div>
-        <div class="row-menu-wrap">
-          <button class="row-menu-btn" onclick="event.stopPropagation();toggleRowMenu('${menuId}')">⋯</button>
-          <div class="row-menu-dropdown" id="${menuId}">
-            <div class="row-menu-item" onclick="viewInvRow('${inv.src}','${inv.srcId}','${inv.id}');toggleRowMenu('${menuId}')">View</div>
-            <div class="row-menu-item" onclick="editInvById('${inv.src}','${inv.srcId}','${inv.id}');toggleRowMenu('${menuId}')">Edit</div>
-          </div>
-        </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:16px;font-weight:700;color:var(--navy)">LKR ${Number(tot).toLocaleString()}.00</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:3px">›</div>
       </div>
     </div>`;
   }).join('');
 
   document.getElementById('main-content').innerHTML=`
   <div class="table-wrap">
-    <div class="table-hdr">
-      <div class="table-hdr-title">Invoices</div>
-      <div style="font-size:12px;color:var(--text-muted)">${filt.length} invoice${filt.length!==1?'s':''}</div>
-    </div>
+    <div class="table-hdr"><div class="table-hdr-title">Invoices</div><div style="font-size:12px;color:var(--text-muted)">${filt.length} invoice${filt.length!==1?'s':''}</div></div>
     ${filt.length?rows:'<div class="empty" style="padding:60px"><div class="empty-text">No invoices yet</div></div>'}
   </div>`;
 }
+
+// Open invoice detail view
+function openInvDetail(src,srcId,invId){
+  const obj=src==='lead'?leads[srcId]:customers[srcId]; if(!obj)return;
+  const inv=obj.invoices?.[invId]; if(!inv)return;
+  const tot=qTotal(inv.items); const bespeak=inv.advance||0; const bal=tot-bespeak;
+  const items=Object.values(inv.items||{});
+  const pct=tot>0?Math.round(bespeak/tot*100):0;
+  const statusColor=pct>=100?'#15803D':pct>0?'#D97706':'#DC2626';
+  const statusLabel=pct>=100?'PAID':pct>0?'PARTIAL':'UNPAID';
+
+  document.getElementById('doc-preview-title').textContent=inv.id;
+  document.getElementById('doc-preview-body').innerHTML=`
+  <!-- AMOUNT HERO -->
+  <div style="text-align:center;padding:24px 20px 16px;background:var(--bg);border-radius:10px;margin-bottom:20px">
+    <div style="font-size:28px;font-weight:700;color:var(--navy)">LKR ${Number(tot).toLocaleString()}.00</div>
+    <div style="font-size:14px;color:var(--text-muted);margin-top:4px">${obj.name}</div>
+    <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${inv.id} &nbsp;•&nbsp; ${fmt(inv.date)}</div>
+    <div style="margin-top:8px"><span style="background:${statusColor}22;color:${statusColor};font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.5px">${statusLabel}</span></div>
+  </div>
+
+  <!-- ACTION BUTTONS -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px">
+    <button onclick="viewInvPDF('${src}','${srcId}','${invId}')" style="background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:14px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--navy)">
+      <span style="font-size:20px">📄</span>View PDF
+    </button>
+    <button onclick="editInvDetail('${src}','${srcId}','${invId}')" style="background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:14px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--navy)">
+      <span style="font-size:20px">✏️</span>Edit Balance
+    </button>
+  </div>
+
+  <!-- LINE ITEMS -->
+  <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px">
+    ${items.map((it,i)=>{const line=calcLine(it);return`
+    <div style="padding:14px 16px;border-bottom:1px solid var(--border)${i===items.length-1?';border-bottom:none':''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div style="font-size:14px;font-weight:600;color:var(--navy);flex:1">${it.desc}</div>
+        <div style="font-size:14px;font-weight:700;color:var(--navy);flex-shrink:0;margin-left:12px">LKR ${Number(line).toLocaleString()}.00</div>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:3px">${it.qty}.0 × ${Number(it.unit).toLocaleString()}.00${it.disc>0?' · Disc '+it.disc+'%':''}</div>
+    </div>`}).join('')}
+    <!-- TOTALS -->
+    <div style="padding:12px 16px;background:var(--bg);border-top:1.5px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text-muted);margin-bottom:6px"><span>Sub Total</span><span>LKR ${Number(tot).toLocaleString()}.00</span></div>
+      ${bespeak>0?`<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span style="color:var(--text-muted)">Bespeaking Fee</span><span style="color:#38A169;font-weight:600">(LKR ${Number(bespeak).toLocaleString()}.00)</span></div>`:''}
+      <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;color:var(--navy);padding-top:6px;border-top:1px solid var(--border)"><span>Balance Due</span><span>LKR ${Number(Math.max(0,bal)).toLocaleString()}.00</span></div>
+    </div>
+  </div>
+
+  <!-- NOTES -->
+  ${inv.notes?`<div style="background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
+    <div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Notes</div>
+    <div style="font-size:13px;color:var(--text-mid);line-height:1.7">${inv.notes.replace(/
+/g,'<br/>')}</div>
+  </div>`:''}`;
+
+  document.getElementById('doc-preview-foot').innerHTML=`<button class="btn btn-ghost" onclick="closeModal('doc-preview-modal')">Close</button>`;
+  openModal('doc-preview-modal');
+}
+
+function viewInvPDF(src,srcId,invId){
+  const obj=src==='lead'?leads[srcId]:customers[srcId]; if(!obj)return;
+  const inv=obj.invoices?.[invId]; if(!inv)return;
+  const fakeL={name:obj.name,phone:obj.phone||'',email:obj.email||'',weddingDate:obj.weddingDate||''};
+  closeModal('doc-preview-modal');
+  setTimeout(()=>viewDocDirect('I',fakeL,inv),200);
+}
+
+function editInvDetail(src,srcId,invId){
+  closeModal('doc-preview-modal');
+  setTimeout(()=>editInvById(src,srcId,invId),200);
+}
+
 
 function viewInvRow(src,srcId,invId){
   const obj=src==='lead'?leads[srcId]:customers[srcId];if(!obj)return;
@@ -1255,12 +1386,19 @@ function editInvById(src, srcId, invId){
     <div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;margin-bottom:4px">Invoice Total</div>
     <div style="font-size:20px;font-weight:700;color:var(--gold)">${fmtLKR(tot)}</div>
   </div>
-  <div class="form-grid">
-    <div class="form-group"><label>Advance Paid (Rs)</label><input type="number" id="adv-amt" value="${inv.advance||0}" min="0"/></div>
-    <div class="form-group"><label>Date</label><input type="date" id="adv-date" value="${inv.date||new Date().toISOString().slice(0,10)}"/></div>
-    <div class="form-group span2"><label>Notes</label><textarea id="adv-notes">${inv.notes||''}</textarea></div>
+  <div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;margin-bottom:3px">Bespeaking Fee</div>
+      <div style="font-size:16px;font-weight:700;color:var(--success)">${fmtLKR(inv.advance||0)}</div>
+    </div>
+    <div style="font-size:11px;color:var(--text-muted);background:var(--border);padding:3px 8px;border-radius:20px">Locked</div>
   </div>
-  <div style="margin-top:10px;font-size:12px;color:var(--text-muted)">Balance due: <strong style="color:var(--navy)">${fmtLKR(Math.max(0,bal))}</strong></div>`;
+  <input type="hidden" id="adv-amt" value="${inv.advance||0}"/>
+  <div class="form-grid">
+    <div class="form-group"><label>Invoice Date</label><input type="date" id="adv-date" value="${inv.date||new Date().toISOString().slice(0,10)}"/></div>
+    <div class="form-group"><label>Balance Due</label><input type="text" value="${fmtLKR(Math.max(0,bal))}" readonly style="background:var(--bg);color:var(--text-muted)"/></div>
+    <div class="form-group span2"><label>Notes</label><textarea id="adv-notes">${inv.notes||''}</textarea></div>
+  </div>`;
   document.getElementById('adv-foot').innerHTML=`<button class="btn btn-ghost" onclick="closeModal('advance-modal')">Cancel</button><button class="btn btn-outline" onclick="previewInvEdit('${src}','${srcId}','${invId}')">Preview</button><button class="btn btn-primary" onclick="saveInvEdit('${src}','${srcId}','${invId}')">Save Changes</button>`;
   openModal('advance-modal');
 }
