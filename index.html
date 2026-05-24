@@ -92,7 +92,7 @@ tbody tr:active td{background:var(--navy-dim)}
 .mt{font-family:'Cinzel',serif;font-size:16px;color:var(--navy)}
 .msb{font-size:12px;color:var(--muted);margin-top:2px}
 .mc{background:var(--bg);border:1.5px solid var(--border);color:var(--text2);cursor:pointer;font-size:20px;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1}
-.mbdy{padding:24px}
+.mbdy{padding:24px;min-height:200px}
 .mft{padding:16px 24px;border-top:1.5px solid var(--border);display:flex;gap:10px;justify-content:flex-end;background:var(--bg);border-radius:0 0 14px 14px;flex-wrap:wrap}
 .fg{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .fi{display:flex;flex-direction:column;gap:5px}
@@ -245,7 +245,7 @@ textarea{resize:vertical;min-height:80px}
 <div class="main"><div class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="hamburger" onclick="openSB()"><svg width="20" height="16" viewBox="0 0 20 16" fill="none"><rect width="20" height="2" rx="1" fill="currentColor"/><rect y="7" width="20" height="2" rx="1" fill="currentColor"/><rect y="14" width="20" height="2" rx="1" fill="currentColor"/></svg></button><div class="page-title" id="PT">Lead Pipeline</div></div><div class="topbar-right"><div class="swrap"><span class="sicon">⌕</span><input type="text" class="sbox" id="SI" placeholder="Search…" oninput="doSearch()"/></div><button id="MSB" style="display:none;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:8px;cursor:pointer" onclick="toggleMSB()">⌕</button><button class="btn btn-primary" id="AB" onclick="handleAdd()">+ Add</button></div></div><div id="MSBar" style="display:none;padding:10px 14px;background:var(--surf);border-bottom:1.5px solid var(--border)"><div class="swrap" style="width:100%"><span class="sicon">⌕</span><input type="text" class="sbox" id="MSI" placeholder="Search…" oninput="document.getElementById('SI').value=this.value;doSearch()" style="width:100%"/></div></div><div class="content" id="MC"></div></div>
 <nav class="mnav"><div class="mni" id="MN"></div></nav>
 </div></div>
-<div class="overlay" id="lead-modal"><div class="modal msm"><div class="mhd"><div><div class="mt">New Lead</div></div><button class="mc" onclick="CM('lead-modal')">×</button></div><div class="mbdy"><div class="fg"><div class="fi"><label>Full Name *</label><input type="text" id="lf-name" placeholder="Bride name"/></div><div class="fi"><label>WhatsApp</label><input type="text" id="lf-phone" placeholder="+94 77 000 0000"/></div><div class="fi"><label>Email</label><input type="email" id="lf-email"/></div><div class="fi"><label>Source</label><select id="lf-src"><option value="whatsapp">WhatsApp</option><option value="instagram">Instagram</option><option value="form">Form</option><option value="referral">Referral</option><option value="walk-in">Walk-in</option></select></div><div class="fi"><label>Stage</label><select id="lf-stage"><option value="0">New Lead</option><option value="1">Contacted</option><option value="2">Consultation Booked</option><option value="3">Consultation Done</option><option value="4">Quoted</option></select></div><div class="fi"><label>Wedding Date</label><input type="date" id="lf-date"/></div><div class="fi"><label>Package</label><select id="lf-pkg"><option value="">Not discussed</option><option>Wedding Only</option><option>Wedding + Homecoming</option><option>Wedding + HC + Bridesmaids</option><option>Wedding + HC + BM + Going Away</option><option>Custom</option></select></div><div class="fi"><label>Bridesmaids</label><input type="number" id="lf-bm" min="0" value="0"/></div><div class="fi s2"><label>Notes</label><textarea id="lf-notes"></textarea></div></div></div><div class="mft"><button class="btn btn-ghost" onclick="CM('lead-modal')">Cancel</button><button class="btn btn-primary" onclick="saveLead()">Save</button></div></div></div>
+<div class="overlay" id="lead-modal"><div class="modal msm"><div class="mhd"><div><div class="mt">New Lead</div></div><button class="mc" onclick="CM('lead-modal')">×</button></div><div class="mbdy"><div class="fg"><div class="fi"><label>Full Name *</label><input type="text" id="lf-name" placeholder="Bride name"/></div><div class="fi"><label>WhatsApp</label><input type="text" id="lf-phone" placeholder="+94 77 000 0000"/></div><div class="fi"><label>Email</label><input type="email" id="lf-email"/></div><div class="fi"><label>Source</label><select id="lf-src" onfocus="populateLfSrc(this)"><option value="whatsapp">WhatsApp</option></select></div><div class="fi"><label>Stage</label><select id="lf-stage"><option value="0">New Lead</option><option value="1">Contacted</option><option value="2">Consultation Booked</option><option value="3">Consultation Done</option><option value="4">Quoted</option></select></div><div class="fi"><label>Wedding Date</label><input type="date" id="lf-date"/></div><div class="fi"><label>Package</label><select id="lf-pkg"><option value="">Not discussed</option><option>Wedding Only</option><option>Wedding + Homecoming</option><option>Wedding + HC + Bridesmaids</option><option>Wedding + HC + BM + Going Away</option><option>Custom</option></select></div><div class="fi"><label>Bridesmaids</label><input type="number" id="lf-bm" min="0" value="0"/></div><div class="fi s2"><label>Notes</label><textarea id="lf-notes"></textarea></div></div></div><div class="mft"><button class="btn btn-ghost" onclick="CM('lead-modal')">Cancel</button><button class="btn btn-primary" onclick="saveLead()">Save</button></div></div></div>
 <div class="overlay" id="detail-modal"><div class="modal"><div class="mhd"><div><div class="mt" id="dm-n"></div><div class="msb" id="dm-s"></div></div><button class="mc" onclick="CM('detail-modal')">×</button></div><div class="mbdy" id="dm-b"></div><div class="mft" id="dm-f"></div></div></div>
 <div class="overlay" id="quot-modal"><div class="modal mlg"><div class="mhd"><div><div class="mt">Quotation</div><div class="msb" id="qm-s"></div></div><button class="mc" onclick="CM('quot-modal')">×</button></div><div class="mbdy" id="qm-b" style="padding:14px"></div><div class="mft" id="qm-f"></div></div></div>
 <div class="overlay" id="doc-modal"><div class="modal mlg"><div class="mhd"><div><div class="mt" id="doc-t"></div></div><button class="mc" onclick="CM('doc-modal')">×</button></div><div class="mbdy" id="doc-b"></div><div class="mft" id="doc-f"></div></div></div>
@@ -259,13 +259,14 @@ textarea{resize:vertical;min-height:80px}
 <div class="sov" id="thm-ov" onclick="CS('thm')"></div><div class="sheet" id="thm-sheet"><div class="shdl"></div><div class="shd"><div class="sht" id="thm-t">Select Theme</div><button class="shc" onclick="CS('thm')">×</button></div><div class="shl" id="thm-l"></div></div>
 <div class="sov" id="amt-ov" onclick="CS('amt')"></div><div class="sheet" id="amt-sheet" style="max-height:48vh"><div class="shdl"></div><div class="shd"><div class="sht" id="amt-t">Enter Amount</div><button class="shc" onclick="CS('amt')">×</button></div><div style="padding:18px"><div style="font-size:12px;color:var(--muted);margin-bottom:8px" id="amt-h"></div><input type="number" id="amt-i" style="width:100%;padding:14px;font-size:22px;font-family:Inter,sans-serif;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);outline:none;text-align:right" placeholder="0"/><button onclick="confirmAmt()" style="width:100%;margin-top:12px;background:var(--navy);color:#fff;border:none;border-radius:8px;padding:13px;font-size:15px;font-family:Inter,sans-serif;font-weight:600;cursor:pointer">Add to Quote</button></div></div>
 <div class="sov" id="cst-ov" onclick="CS('cst')"></div><div class="sheet" id="cst-sheet"><div class="shdl"></div><div class="shd"><div class="sht">Select Customer</div><button class="shc" onclick="CS('cst')">×</button></div><div class="ssw"><span class="ssi">⌕</span><input class="shs" type="text" id="cst-q" placeholder="Search…" oninput="filterCusts(this.value)"/></div><div class="shl" id="cst-list"></div></div>
+<div class="overlay" id="cf-modal" style="z-index:3000"><div class="modal msm"><div class="mhd"><div><div class="mt" id="cf-title">Confirm</div><div class="msb" id="cf-sub" style="display:none"></div></div></div><div class="mbdy"><div id="cf-msg" style="font-size:14px;color:var(--text2);line-height:1.6"></div><div id="cf-input-wrap" style="margin-top:14px;display:none"><label id="cf-input-label" style="display:block;margin-bottom:6px">Amount</label><input type="number" id="cf-input" style="width:100%"/></div><div id="cf-note-wrap" style="margin-top:10px;display:none"><label style="display:block;margin-bottom:6px">Note (optional)</label><input type="text" id="cf-note" placeholder="Reason or comment"/></div></div><div class="mft"><button class="btn btn-ghost" onclick="cfNo()" id="cf-no">Cancel</button><button class="btn btn-primary" onclick="cfYes()" id="cf-yes">Confirm</button></div></div></div>
 <div class="notif" id="NF"></div>
 <script>
 const FB='https://biso-crm-default-rtdb.asia-southeast1.firebasedatabase.app';
 const STAGES=['New Lead','Contacted','Consultation Booked','Consultation Done','Quoted'];
 const SC=['p0','p1','p2','p3','p4'];
 const THEMES=['Kandyan','Modern Kandyan','Indian / Lehenga','Western'];
-const SRC={whatsapp:['tw','WhatsApp'],instagram:['ti','Instagram'],form:['tf','Form'],referral:['tr','Referral'],'walk-in':['twi','Walk-in']};
+const SRC={whatsapp:['tw','WhatsApp'],phone:['twi','Phone'],walkin:['twi','Walk-in'],instagram:['ti','Instagram'],facebookdm:['ti','Facebook'],facebookform:['tf','FB Form'],facebookads:['tf','FB Ads'],googleads:['tf','Google Ads'],website:['tf','Website'],referral:['tr','Referral'],form:['tf','Form'],'walk-in':['twi','Walk-in']};
 const SVCS=[
   {c:'Bridal',d:'Bridal',b:125000,aT:true,aA:false},
   {c:'Homecoming',d:'Homecoming',b:125000,aT:true,aA:false},
@@ -364,8 +365,80 @@ function cA(){return Object.values(custs);}
 function OM(id){document.getElementById(id).classList.add('open');}
 function CM(id){document.getElementById(id).classList.remove('open');}
 document.addEventListener('click',function(e){if(e.target.classList.contains('overlay'))e.target.classList.remove('open');});
+
+// Custom confirm modal - replaces native confirm/prompt
+var _cfResolve = null;
+function showConfirm(opts){
+  // opts: {title, msg, yesText, noText, dangerous, input, inputLabel, inputDefault, note}
+  return new Promise(function(resolve){
+    _cfResolve = resolve;
+    document.getElementById('cf-title').textContent = opts.title || 'Confirm';
+    document.getElementById('cf-msg').textContent = opts.msg || '';
+    document.getElementById('cf-yes').textContent = opts.yesText || 'Confirm';
+    document.getElementById('cf-no').textContent = opts.noText || 'Cancel';
+    var yesBtn = document.getElementById('cf-yes');
+    yesBtn.classList.remove('btn-primary','btn-danger');
+    yesBtn.classList.add(opts.dangerous ? 'btn-danger' : 'btn-primary');
+    var iw = document.getElementById('cf-input-wrap');
+    if(opts.input){
+      iw.style.display = '';
+      document.getElementById('cf-input-label').textContent = opts.inputLabel || 'Value';
+      document.getElementById('cf-input').value = opts.inputDefault!==undefined ? opts.inputDefault : '';
+    } else {
+      iw.style.display = 'none';
+    }
+    var nw = document.getElementById('cf-note-wrap');
+    if(opts.note){
+      nw.style.display = '';
+      document.getElementById('cf-note').value = '';
+    } else {
+      nw.style.display = 'none';
+    }
+    OM('cf-modal');
+  });
+}
+function cfYes(){
+  var res = {ok:true};
+  var iw = document.getElementById('cf-input-wrap');
+  if(iw.style.display !== 'none'){
+    res.value = document.getElementById('cf-input').value;
+  }
+  var nw = document.getElementById('cf-note-wrap');
+  if(nw.style.display !== 'none'){
+    res.note = document.getElementById('cf-note').value;
+  }
+  CM('cf-modal');
+  if(_cfResolve){_cfResolve(res); _cfResolve = null;}
+}
+function cfNo(){
+  CM('cf-modal');
+  if(_cfResolve){_cfResolve({ok:false}); _cfResolve = null;}
+}
+
 function notif(msg){var el=document.getElementById('NF');el.textContent=msg;el.classList.add('show');setTimeout(function(){el.classList.remove('show');},3000);}
-function stab(el,id){el.closest('.mbdy').querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});el.classList.add('active');el.closest('.mbdy').querySelectorAll('[id^="tb-"],[id^="ct-"]').forEach(function(t){t.style.display='none';});var t=document.getElementById(id);if(t)t.style.display='';}
+function stab(el,id){var mb=el.closest('.mbdy');mb.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});el.classList.add('active');mb.querySelectorAll('[id^="tb-"],[id^="ct-"]').forEach(function(t){t.style.display='none';});var t=document.getElementById(id);if(t)t.style.display='';mb.scrollTop=0;}
+
+// Wedding-date-weighted SLA calculation
+function slaThreshold(stage,daysToWed){
+  // Base thresholds in hours: 12h, 3d=72h, 2d=48h, 7d=168h
+  var base=[12,72,72,48,168];
+  var hrs=base[stage]||72;
+  if(daysToWed!==null){
+    if(daysToWed<14)return hrs*0.1; // always urgent
+    if(daysToWed<30)return hrs*0.25;
+    if(daysToWed<90)return hrs*0.5;
+  }
+  return hrs;
+}
+function isLeadOverdue(l){
+  var s=Number(l.stage||0);
+  if(s>=5||l.confirmed)return false;
+  var lastAct=new Date(l.lastActivity||l.createdAt||0).getTime();
+  var hoursSince=(Date.now()-lastAct)/3600000;
+  var dw=dU(l.weddingDate);
+  return hoursSince>slaThreshold(s,dw);
+}
+
 function dBadge(d){if(d===null)return '';var c=d<30?'ds':d<90?'dn':'dok';return '<span class="db '+c+'">'+d+'d</span>';}
 function gSet(){try{return JSON.parse(localStorage.getItem('biso_s')||'{}');}catch(e){return {};}}
 function sSet(s){localStorage.setItem('biso_s',JSON.stringify(s));}
@@ -394,11 +467,13 @@ function rPipeline(){
   h+=sCard('Total Leads',all.filter(function(l){return !l.confirmed;}).length,'in pipeline','ib');
   h+=sCard('Contacted',all.filter(function(l){return !l.confirmed&&Number(l.stage||0)>=1;}).length,'reached out','ig');
   h+=sCard('Consultations',all.filter(function(l){return !l.confirmed&&Number(l.stage||0)>=2;}).length,'booked/done','io');
-  h+=sCard('Confirmed',all.filter(function(l){return l.confirmed;}).length,'advance paid','iv');
+  h+=sCard('Confirmed',all.filter(function(l){return l.confirmed;}).length,'advance paid','iv',"sv('clients')");
   h+='</div><div class="pipeline">';
   STAGES.forEach(function(st,i){
     var cols=pl.filter(function(l){return Number(l.stage||0)===i;});
-    h+='<div class="stage-col"><div class="shdr '+SC[i]+'"><span class="sname">'+st+'</span><span class="scnt">'+cols.length+'</span></div><div class="sbdy">';
+    var overdue=cols.filter(isLeadOverdue).length;
+    var subText=overdue>0?'<span style="font-size:9px;color:var(--danger);font-weight:700;margin-left:5px">'+overdue+' overdue</span>':'';
+    h+='<div class="stage-col"><div class="shdr '+SC[i]+'"><span class="sname">'+st+subText+'</span><span class="scnt">'+cols.length+'</span></div><div class="sbdy">';
     if(cols.length)cols.forEach(function(l){h+=lCard(l);});
     else h+='<div class="empty" style="padding:18px"><div class="et">No leads</div></div>';
     h+='</div></div>';
@@ -406,18 +481,19 @@ function rPipeline(){
   h+='</div>';
   document.getElementById('MC').innerHTML=h;
 }
-function sCard(lbl,val,sub,cls){return '<div class="sc"><div class="sc-top"><div><div class="sl">'+lbl+'</div><div class="sv">'+val+'</div></div><div class="si '+cls+'">&nbsp;</div></div><div class="ss">'+sub+'</div></div>';}
+function sCard(lbl,val,sub,cls,onclick){var op=onclick?' onclick="'+onclick+'" style="cursor:pointer"':'';return '<div class="sc"'+op+'><div class="sc-top"><div><div class="sl">'+lbl+'</div><div class="sv">'+val+'</div></div><div class="si '+cls+'">&nbsp;</div></div><div class="ss">'+sub+'</div></div>';}
 function lCard(l){
   var age=dS(l.createdAt);
   var src=SRC[l.source]||SRC.form;var tc=src[0];var tl=src[1];
-  var dt=age>7?'<span class="tag tu">'+age+'d old</span>':'<span class="tag td">'+age+'d</span>';
+  var overdue=isLeadOverdue(l);
+  var dt=overdue?'<span class="tag tu">Overdue</span>':age>7?'<span class="tag tu">'+age+'d old</span>':'<span class="tag td">'+age+'d</span>';
   var qt=Object.keys(l.quotations||{}).length>0?'<span class="tag tq">Quoted</span>':'';
-  var pkg=l.package?'<div style="font-size:11px;color:var(--muted);margin-top:2px">'+l.package+'</div>':'';
+  var dw=dU(l.weddingDate);
+  var dwTag=dw!==null&&dw<60?'<span class="tag tu">Wed '+dw+'d</span>':'';
   return '<div class="lcard" onclick="openDetail(\''+l.id+'\')">'
     +'<div class="lname">'+l.name+'</div>'
     +'<div class="ldate">'+(l.weddingDate?'Wedding: '+fmt(l.weddingDate):'Date TBD')+'</div>'
-    +pkg
-    +'<div class="ltags"><span class="tag '+tc+'">'+tl+'</span>'+qt+dt+'</div>'
+    +'<div class="ltags"><span class="tag '+tc+'">'+tl+'</span>'+qt+dwTag+dt+'</div>'
     +'</div>';
 }
 function rClients(){
@@ -535,7 +611,7 @@ function openQDoc(src,sId,qId){
   document.getElementById('doc-f').innerHTML='<button class="btn btn-ghost" onclick="CM(\'doc-modal\')">Close</button>';
   OM('doc-modal');
 }
-function moreQ(src,sId,qId,sent){if(!sent){if(confirm('Mark as sent to client?'))markSent(src,sId,qId);}else notif('Already marked as sent.');}
+function moreQ(src,sId,qId,sent){if(!sent){showConfirm({title:'Mark as sent',msg:'Mark this quotation as sent to the client?',yesText:'Mark as sent'}).then(function(r){if(r.ok)markSent(src,sId,qId);});}else notif('Already marked as sent.');}
 async function markSent(src,sId,qId){
   var path=src==='lead'?'/leads/'+sId+'/quotations/'+qId:'/customers/'+sId+'/quotes/'+qId;
   try{
@@ -628,7 +704,7 @@ async function addPay(src,sId,iId){
   }catch(e){notif('Error: '+e.message);}
 }
 async function delPay(src,sId,iId,pid){
-  if(!confirm('Delete this payment?'))return;
+  var _cr = await showConfirm({title:'Delete payment',msg:'Delete this payment record? This will adjust the balance.',yesText:'Delete',dangerous:true});if(!_cr.ok)return;
   var obj=src==='lead'?leads[sId]:custs[sId];if(!obj||!obj.invoices||!obj.invoices[iId])return;
   var pay=(obj.invoices[iId].payments||{})[pid];if(!pay)return;
   var amt=parseFloat(pay.amount)||0;
@@ -993,87 +1069,504 @@ async function updQB(){
 }
 function openDetail(id){
   var l=leads[id];if(!l)return;
-  document.getElementById('dm-n').textContent=l.name;
-  document.getElementById('dm-s').textContent=l.package||'';
+  var cancelled=!!l.cancelled;
+  // Header
+  document.getElementById('dm-n').textContent=l.name+(cancelled?' (Cancelled)':'');
   var d=dU(l.weddingDate);
+  var subText='';
+  if(cancelled){subText='Booking cancelled · '+(l.cancelReason||'No reason given');}
+  else if(l.confirmed){subText='Wedding '+fmt(l.weddingDate)+(d!==null?' · '+d+' days away':'');}
+  else{var nxt=nextActionLabel(l);subText=nxt;}
+  document.getElementById('dm-s').textContent=subText;
+  // Compute totals
   var tot=(l.advance||0)+(l.balance||0);
   var pct=tot>0?Math.round(((l.advance||0)/tot)*100):0;
   var quots=Object.values(l.quotations||{});
   var invs=Object.values(l.invoices||{});
   var appts=Object.values(l.appointments||{});
-  var stOpts='';
-  if(l.confirmed)stOpts='<option value="confirmed" selected>Confirmed</option>';
-  else{STAGES.forEach(function(s,i){stOpts+='<option value="'+i+'"'+(Number(l.stage||0)===i?' selected':'')+'>'+s+'</option>';});stOpts+='<option value="confirmed">Mark Confirmed</option>';}
-  var pkgs=['Wedding Only','Wedding + Homecoming','Wedding + HC + Bridesmaids','Wedding + HC + BM + Going Away','Custom'];
-  var pkgOpts='<option value="">—</option>';pkgs.forEach(function(p){pkgOpts+='<option'+(l.package===p?' selected':'')+'>'+p+'</option>';});
+  var notes=Object.values(l.notesLog||{});
+  var docs=Object.values(l.documents||{});
+  var events=l.events||{wedding:{enabled:true}};
+  // Tabs
   var cTabs=l.confirmed?'<div class="tab" onclick="stab(this,\'tb-pay\')">Payment</div><div class="tab" onclick="stab(this,\'tb-appt\')">Appts</div>':'';
-  var payTab='';
-  if(l.confirmed){
-    payTab='<div id="tb-pay" style="display:none">'
-      +'<div class="fg"><div class="fi"><label>Advance Paid (Rs)</label><input type="number" value="'+(l.advance||0)+'" onchange="updL(\''+id+'\',{advance:parseInt(this.value)||0})"/></div><div class="fi"><label>Balance Due (Rs)</label><input type="number" value="'+(l.balance||0)+'" onchange="updL(\''+id+'\',{balance:parseInt(this.value)||0})"/></div></div>'
-      +'<div style="margin-top:12px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--muted)">Progress</span><span style="font-weight:700">'+pct+'%</span></div>'
-      +'<div class="pb"><div class="pf" style="width:'+pct+'%"></div></div></div>'
-      +'</div>';
+  // ===== Overview Tab =====
+  var ovTab=buildOverviewTab(id,l,cancelled);
+  // ===== Payment Tab =====
+  var payTab=l.confirmed?buildPaymentTab(id,l,cancelled,quots,invs):'';
+  // ===== Appointments Tab =====
+  var apptTab=l.confirmed?buildApptTab(id,l,cancelled,appts):'';
+  // ===== Notes Tab =====
+  var notesTab=buildNotesTab(id,l,cancelled,notes);
+  // ===== Documents Tab =====
+  var docsTab=buildDocsTab(id,l,cancelled,docs);
+  // Stage CTA (context-sensitive)
+  var stageCta=cancelled?'':buildStageCta(id,l);
+  document.getElementById('dm-b').innerHTML=
+    '<div class="tabs"><div class="tab active" onclick="stab(this,\'tb-ov\')">Overview</div>'+cTabs+'<div class="tab" onclick="stab(this,\'tb-notes\')">Notes</div><div class="tab" onclick="stab(this,\'tb-docs\')">Documents</div></div>'
+    +ovTab+payTab+apptTab+notesTab+docsTab;
+  // Footer: back button left, delete/cancel + close + stage CTA right
+  var leftBtn='<button class="btn btn-ghost btn-sm" onclick="CM(\'detail-modal\')">‹ Back</button>';
+  var rightBtns='';
+  if(!cancelled){
+    if(l.confirmed)rightBtns+='<button class="btn btn-danger btn-sm" onclick="openCancelBooking(\''+id+'\')">Cancel Booking</button>';
+    else rightBtns+='<button class="btn btn-danger btn-sm" onclick="delLead(\''+id+'\')">Delete</button>';
   }
-  var apptTab='';
-  if(l.confirmed){
-    var ar=appts.map(function(a,i){return '<div class="appt"><span style="font-size:11px;color:var(--navy);font-weight:700;min-width:88px">'+fmt(a.date)+'</span><span style="font-size:13px">'+a.label+'</span><button class="ad" onclick="delAppt(\''+id+'\',\''+( a.key||String(i) )+'\')" >x</button></div>';}).join('');
-    apptTab='<div id="tb-appt" style="display:none">'
-      +'<div>'+(ar||'<div class="empty" style="padding:20px"><div class="et">No appointments</div></div>')+'</div>'
-      +'<div style="display:flex;gap:8px;margin-top:10px"><input type="date" id="ap-d-'+id+'"/><input type="text" id="ap-l-'+id+'" placeholder="Hair Trial, Final Fitting…" style="flex:2"/><button class="btn btn-outline btn-sm" onclick="addAppt(\''+id+'\')" >+ Add</button></div>'
-      +'</div>';
+  rightBtns+='<button class="btn btn-ghost" onclick="CM(\'detail-modal\')">Close</button>';
+  if(stageCta)rightBtns+=stageCta;
+  document.getElementById('dm-f').innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;width:100%;gap:8px;flex-wrap:wrap"><div>'+leftBtn+'</div><div style="display:flex;gap:8px;flex-wrap:wrap">'+rightBtns+'</div></div>';
+  OM('detail-modal');
+}
+
+// ---------- Helpers ----------
+function nextActionLabel(l){
+  var s=Number(l.stage||0);
+  var labels=['New lead - contact now','Contacted - book consultation','Consultation booked - confirm date','Consultation done - send quote','Quoted - follow up'];
+  return labels[s]||'';
+}
+function evTrue(e){return e&&e.enabled;}
+function buildOverviewTab(id,l,cancelled){
+  var d=dU(l.weddingDate);
+  var ev=l.events||{};
+  var dis=cancelled?' disabled':'';
+  var lockNote=cancelled?'<div style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;color:var(--danger)">Booking cancelled '+(l.cancelledAt?fmt(l.cancelledAt):'')+'. '+(l.cancelReason?'Reason: '+l.cancelReason:'')+(l.refundAmount?'. Refund: '+fR(l.refundAmount):'')+'</div>':'';
+  // Source dropdown
+  var SRCS=getSources();
+  var srcOpts='';SRCS.forEach(function(s){srcOpts+='<option value="'+s.value+'"'+(l.source===s.value?' selected':'')+'>'+s.label+'</option>';});
+  // Event checkboxes
+  var evHtml='';
+  ['wedding','homecoming','goingAway'].forEach(function(k){
+    var lbl=k==='wedding'?'Wedding':k==='homecoming'?'Homecoming':'Going Away';
+    var e=ev[k]||{};
+    var checked=evTrue(e)?'checked':'';
+    if(k==='wedding'&&l.confirmed)checked='checked'; // wedding always on if confirmed
+    evHtml+='<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px">';
+    evHtml+='<label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:600;color:var(--navy);text-transform:none;letter-spacing:0"><input type="checkbox" '+checked+dis+' onchange="toggleEvent(\''+id+'\',\''+k+'\',this.checked)" style="width:18px;height:18px;cursor:pointer"/> '+lbl+'</label>';
+    if(checked){
+      evHtml+='<div class="fg" style="margin-top:10px">';
+      evHtml+='<div class="fi"><label>Date</label><input type="date"'+dis+' value="'+(e.date||(k==='wedding'?l.weddingDate||'':''))+'" onchange="updEvent(\''+id+'\',\''+k+'\',\'date\',this.value)"/></div>';
+      evHtml+='<div class="fi"><label>Venue</label><input type="text"'+dis+' value="'+(e.venue||'')+'" placeholder="Venue name" onchange="updEvent(\''+id+'\',\''+k+'\',\'venue\',this.value)"/></div>';
+      evHtml+='<div class="fi"><label>Start Time</label><input type="time"'+dis+' value="'+(e.startTime||'')+'" onchange="updEvent(\''+id+'\',\''+k+'\',\'startTime\',this.value)"/></div>';
+      evHtml+='<div class="fi"><label>End Time</label><input type="time"'+dis+' value="'+(e.endTime||'')+'" onchange="updEvent(\''+id+'\',\''+k+'\',\'endTime\',this.value)"/></div>';
+      if(k==='wedding'||k==='homecoming'){
+        evHtml+='<div class="fi"><label>Bridesmaids</label><input type="number" min="0"'+dis+' value="'+(e.bridesmaids||0)+'" onchange="updEvent(\''+id+'\',\''+k+'\',\'bridesmaids\',parseInt(this.value)||0)"/></div>';
+        evHtml+='<div class="fi"><label>Flower Girls</label><input type="number" min="0"'+dis+' value="'+(e.flowerGirls||0)+'" onchange="updEvent(\''+id+'\',\''+k+'\',\'flowerGirls\',parseInt(this.value)||0)"/></div>';
+        evHtml+='<div class="fi s2"><label>Little Maids</label><input type="number" min="0"'+dis+' value="'+(e.littleMaids||0)+'" onchange="updEvent(\''+id+'\',\''+k+'\',\'littleMaids\',parseInt(this.value)||0)"/></div>';
+      }
+      evHtml+='</div>';
+    }
+    evHtml+='</div>';
+  });
+  return '<div id="tb-ov">'+lockNote
+    +'<div class="stitle">Bride Info</div>'
+    +'<div class="fg">'
+    +'<div class="fi"><label>Full Name</label><input type="text"'+dis+' value="'+(l.name||'')+'" onchange="updL(\''+id+'\',{name:this.value})"/></div>'
+    +'<div class="fi"><label>WhatsApp Number</label><input type="text"'+dis+' value="'+(l.phone||'')+'" placeholder="+94 77 000 0000" onchange="updL(\''+id+'\',{phone:this.value})"/></div>'
+    +'<div class="fi"><label>Email</label><input type="email"'+dis+' value="'+(l.email||'')+'" onchange="updL(\''+id+'\',{email:this.value})"/></div>'
+    +'<div class="fi"><label>Source</label><select'+dis+' onchange="updL(\''+id+'\',{source:this.value})">'+srcOpts+'</select></div>'
+    +'</div>'
+    +'<div class="stitle" style="margin-top:18px">Events</div>'
+    +evHtml
+    +'</div>';
+}
+
+function buildPaymentTab(id,l,cancelled,quots,invs){
+  // Attention cards
+  var attention='';
+  // Find final trial appointment
+  var appts=Object.values(l.appointments||{}).filter(function(a){return !a.cancelled;});
+  var ft=appts.find(function(a){return a.reason==='Final Trial';});
+  var balance=l.balance||0;
+  var dToWed=dU(l.weddingDate);
+  // Final payment red card: 14 days before wedding date OR if balance > 0 and ft is scheduled within 14 days
+  if(!cancelled&&balance>0&&dToWed!==null&&dToWed<=14){
+    var bg='#FEF2F2',bd='#FECACA',col='var(--danger)',label='URGENT';
+    if(dToWed<=7){bg='#FEF2F2';bd='#FCA5A5';col='var(--danger)';label='OVERDUE - PAY NOW';}
+    else if(dToWed<=14){bg='#FFF7ED';bd='#FED7AA';col='#C2410C';label='DUE SOON';}
+    attention+='<div style="background:'+bg+';border:1.5px solid '+bd+';border-radius:10px;padding:14px;margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:'+col+';letter-spacing:1px;margin-bottom:4px">'+label+'</div><div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:3px">Final payment due</div><div style="font-size:13px;color:var(--text2)">Balance of '+fR(balance)+' is due on or before the final trial date. Wedding is '+dToWed+' days away.</div></div>';
+  } else if(!cancelled&&balance>0&&ft&&ft.date){
+    var dToFt=dU(ft.date);
+    if(dToFt!==null&&dToFt<=14){
+      attention+='<div style="background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:10px;padding:14px;margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:#C2410C;letter-spacing:1px;margin-bottom:4px">FINAL TRIAL IN '+dToFt+' DAYS</div><div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:3px">Collect final payment</div><div style="font-size:13px;color:var(--text2)">Balance '+fR(balance)+' is due on or before '+fmt(ft.date)+'.</div></div>';
+    }
   }
+  // Payment summary
+  var tot=(l.advance||0)+(l.balance||0);
+  var pct=tot>0?Math.round(((l.advance||0)/tot)*100):0;
+  var summary='<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><div><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase">Total</div><div style="font-size:18px;font-weight:700;color:var(--navy)">'+fR(tot)+'</div></div><div style="text-align:right"><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase">Balance</div><div style="font-size:18px;font-weight:700;color:'+((l.balance||0)>0?'var(--warn)':'var(--success)')+'">'+fR(l.balance||0)+'</div></div></div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--muted)">Paid '+pct+'%</span><span style="color:var(--success);font-weight:600">'+fR(l.advance||0)+' collected</span></div><div class="pb"><div class="pf" style="width:'+pct+'%"></div></div></div>';
+  // Quotation & Invoice section (moved here from Documents)
+  var qiHtml='<div class="stitle">Quotation & Invoice</div>';
   var qRows='';
   quots.forEach(function(qt){
     var badge=qt.convertedToInvoice?'<span class="badge bi">Invoiced</span>':'<span class="badge bo">Open</span>';
-    qRows+='<tr style="border-bottom:1px solid var(--border)">'
-      +'<td style="padding:8px 0;font-size:11px;color:var(--muted);font-weight:600">'+qt.id+'</td>'
-      +'<td style="font-size:12px;padding:8px 4px">'+fmt(qt.date)+'</td>'
-      +'<td style="color:var(--gold);font-weight:700">'+fR(qTot(qt.items))+'</td>'
-      +'<td>'+badge+'</td>'
-      +'<td style="text-align:right"><button class="btn btn-outline btn-xs" onclick="openQDoc(\'lead\',\''+id+'\',\''+qt.id+'\')" >View</button>'
-      +(!qt.convertedToInvoice?'<button class="btn btn-ghost btn-xs" style="margin-left:4px" onclick="editQ(\'lead\',\''+id+'\',\''+qt.id+'\')" >Edit</button>':'')+'</td></tr>';
+    qRows+='<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;margin-bottom:8px" onclick="openQDoc(\'lead\',\''+id+'\',\''+qt.id+'\')"><div><div style="font-size:13px;font-weight:600;color:var(--navy)">'+qt.id+'</div><div style="font-size:11px;color:var(--muted)">'+fmt(qt.date)+' · '+fR(qTot(qt.items))+'</div></div><div>'+badge+'</div></div>';
   });
+  if(!qRows)qRows='<div style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:10px">No quotations</div>';
+  qiHtml+=qRows;
   var iRows='';
   invs.forEach(function(inv){
-    iRows+='<tr style="border-bottom:1px solid var(--border)">'
-      +'<td style="padding:8px 0;font-size:11px;color:var(--muted);font-weight:600">'+inv.id+'</td>'
-      +'<td style="font-size:12px;padding:8px 4px">'+fmt(inv.date)+'</td>'
-      +'<td style="color:var(--gold);font-weight:700">'+fR(qTot(inv.items))+'</td>'
-      +'<td style="color:var(--success);font-size:12px">'+fR(inv.advance||0)+' paid</td>'
-      +'<td style="text-align:right"><button class="btn btn-outline btn-xs" onclick="openIDoc(\'lead\',\''+id+'\',\''+inv.id+'\')" >View</button></td></tr>';
+    var t=qTot(inv.items);
+    var pSum=(inv.advance||0)+Object.values(inv.payments||{}).reduce(function(s,p){return s+(parseFloat(p.amount)||0);},0);
+    var b=t-pSum;
+    var st=b<=0?'PAID':pSum>0?'PARTIAL':'UNPAID';
+    var stc=b<=0?'var(--success)':pSum>0?'var(--warn)':'var(--danger)';
+    iRows+='<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;margin-bottom:8px" onclick="openIDoc(\'lead\',\''+id+'\',\''+inv.id+'\')"><div><div style="font-size:13px;font-weight:600;color:var(--navy)">'+inv.id+'</div><div style="font-size:11px;color:var(--muted)">'+fmt(inv.date)+' · '+fR(t)+' · Bal '+fR(Math.max(0,b))+'</div></div><div><span class="badge" style="background:'+stc+'22;color:'+stc+'">'+st+'</span></div></div>';
   });
-  var cfBtn=!l.confirmed?'<button class="btn btn-primary" onclick="confirmC(\''+id+'\')" >Confirm</button>':'';
-  document.getElementById('dm-b').innerHTML=
-    '<div class="tabs"><div class="tab active" onclick="stab(this,\'tb-ov\')">Overview</div>'+cTabs+'<div class="tab" onclick="stab(this,\'tb-notes\')">Notes</div><div class="tab" onclick="stab(this,\'tb-docs\')">Documents</div></div>'
-    +'<div id="tb-ov">'
-    +'<div class="dg">'
-    +'<div class="di"><div class="dl">Phone</div><div class="dv">'+(l.phone||'—')+'</div></div>'
-    +'<div class="di"><div class="dl">Email</div><div class="dv">'+(l.email||'—')+'</div></div>'
-    +'<div class="di"><div class="dl">Source</div><div class="dv">'+(l.source||'—')+'</div></div>'
-    +'<div class="di"><div class="dl">Wedding Date</div><div class="dv hi">'+fmt(l.weddingDate)+dBadge(d)+'</div></div>'
-    +'<div class="di"><div class="dl">Venue</div><div class="dv">'+(l.venue||'—')+'</div></div>'
-    +'<div class="di"><div class="dl">Bridesmaids</div><div class="dv">'+(l.bridesmaids||0)+'</div></div>'
-    +'</div>'
-    +'<div class="fg" style="margin-top:4px">'
-    +'<div class="fi"><label>Stage</label><select onchange="updStage(\''+id+'\',this.value)">'+stOpts+'</select></div>'
-    +'<div class="fi"><label>Wedding Date</label><input type="date" value="'+(l.weddingDate||'')+'" onchange="updL(\''+id+'\',{weddingDate:this.value})"/></div>'
-    +'<div class="fi"><label>Venue</label><input type="text" value="'+(l.venue||'')+'" onchange="updL(\''+id+'\',{venue:this.value})"/></div>'
-    +'<div class="fi"><label>Package</label><select onchange="updL(\''+id+'\',{package:this.value})">'+pkgOpts+'</select></div>'
-    +'<div class="fi"><label>Bridesmaids</label><input type="number" value="'+(l.bridesmaids||0)+'" min="0" onchange="updL(\''+id+'\',{bridesmaids:parseInt(this.value)||0})"/></div>'
-    +'</div></div>'
-    +(payTab||'')+(apptTab||'')
-    +'<div id="tb-notes" style="display:none"><div class="fi"><label>Notes</label><textarea style="min-height:120px" onchange="updL(\''+id+'\',{notes:this.value})">'+(l.notes||'')+'</textarea></div></div>'
-    +'<div id="tb-docs" style="display:none">'
-    +'<div style="margin-bottom:14px"><button class="btn btn-primary btn-sm" onclick="openQM(\''+id+'\',null)" >+ Create Quotation</button></div>'
-    +'<div class="stitle">Quotations</div>'
-    +(qRows?'<table style="width:100%;border-collapse:collapse;margin-bottom:14px"><tbody>'+qRows+'</tbody></table>':'<div style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:12px">No quotations</div>')
-    +'<div class="stitle">Invoices</div>'
-    +(iRows?'<table style="width:100%;border-collapse:collapse"><tbody>'+iRows+'</tbody></table>':'<div style="font-size:13px;color:var(--muted);font-style:italic">No invoices</div>')
-    +'</div>';
-  document.getElementById('dm-f').innerHTML='<button class="btn btn-danger btn-sm" onclick="delLead(\''+id+'\')" >Delete</button><button class="btn btn-ghost" onclick="CM(\'detail-modal\')">Close</button>'+cfBtn;
-  OM('detail-modal');
+  if(!iRows)iRows='<div style="font-size:12px;color:var(--muted);font-style:italic">No invoices</div>';
+  qiHtml+=iRows;
+  // Quick action: add payment opens the first invoice
+  var qa='';
+  if(invs.length>0&&!cancelled){
+    qa='<button class="btn btn-primary btn-sm" style="margin-bottom:14px;width:100%" onclick="openAddPay(\'lead\',\''+id+'\',\''+invs[0].id+'\')">+ Add Payment</button>';
+  }
+  return '<div id="tb-pay" style="display:none">'+attention+summary+qa+qiHtml+'</div>';
 }
+
+function buildApptTab(id,l,cancelled,appts){
+  // Sort: scheduled first by date asc, then cancelled by cancelledAt desc
+  var scheduled=appts.filter(function(a){return !a.cancelled;}).sort(function(a,b){return new Date(a.date+'T'+(a.time||'00:00'))-new Date(b.date+'T'+(b.time||'00:00'));});
+  var cancelledA=appts.filter(function(a){return a.cancelled;}).sort(function(a,b){return new Date(b.cancelledAt||0)-new Date(a.cancelledAt||0);});
+  var schHtml='';
+  scheduled.forEach(function(a){
+    var dToA=dU(a.date);var dCol=dToA!==null&&dToA<=3?'var(--danger)':dToA!==null&&dToA<=7?'var(--warn)':'var(--text2)';
+    schHtml+='<div style="background:var(--surf);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
+      +'<div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--navy)">'+(a.reason||'Appointment')+'</div>'
+      +'<div style="font-size:12px;color:'+dCol+';margin-top:2px">'+fmt(a.date)+(a.time?' at '+a.time:'')+(dToA!==null?' · in '+dToA+'d':'')+'</div>'
+      +(a.note?'<div style="font-size:11px;color:var(--muted);margin-top:3px;font-style:italic">'+a.note+'</div>':'')
+      +'</div>'
+      +(cancelled?'':'<button class="btn btn-ghost btn-xs" onclick="cancelAppt(\''+id+'\',\''+a.key+'\')">Cancel</button>')
+      +'</div></div>';
+  });
+  if(!schHtml)schHtml='<div style="font-size:12px;color:var(--muted);font-style:italic;padding:8px">No upcoming appointments</div>';
+  var canHtml='';
+  cancelledA.forEach(function(a){
+    canHtml+='<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;opacity:.7">'
+      +'<div style="font-size:13px;font-weight:600;color:var(--muted);text-decoration:line-through">'+(a.reason||'Appointment')+' · '+fmt(a.date)+(a.time?' at '+a.time:'')+'</div>'
+      +'<div style="font-size:11px;color:var(--muted);margin-top:2px">Cancelled '+(a.cancelledAt?fmt(a.cancelledAt):'')+(a.cancelReason?' · '+a.cancelReason:'')+'</div>'
+      +'</div>';
+  });
+  // Add appointment form
+  var addForm='';
+  if(!cancelled){
+    addForm='<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px">'
+      +'<div style="font-size:12px;font-weight:600;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Schedule Appointment</div>'
+      +'<div class="fg">'
+      +'<div class="fi"><label>Date</label><input type="date" id="ap-d-'+id+'"/></div>'
+      +'<div class="fi"><label>Time</label><input type="time" id="ap-t-'+id+'"/></div>'
+      +'<div class="fi s2"><label>Reason</label><select id="ap-r-'+id+'"><option value="">— Select reason —</option><option>Consultation</option><option>Trial</option><option>Final Trial</option><option>Fabric Appointment</option><option>Pickup</option><option>Other</option></select></div>'
+      +'<div class="fi s2"><label>Note (optional)</label><input type="text" id="ap-n-'+id+'" placeholder="Comments"/></div>'
+      +'</div>'
+      +'<button class="btn btn-primary btn-sm" style="margin-top:10px;width:100%" onclick="addAppt2(\''+id+'\')">+ Add Appointment</button>'
+      +'</div>';
+  }
+  return '<div id="tb-appt" style="display:none">'+addForm
+    +'<div class="stitle">Upcoming</div>'+schHtml
+    +(canHtml?'<div class="stitle" style="margin-top:14px">Cancelled (record kept)</div>'+canHtml:'')
+    +'</div>';
+}
+
+function buildNotesTab(id,l,cancelled,notes){
+  notes.sort(function(a,b){return new Date(b.createdAt||0)-new Date(a.createdAt||0);});
+  var nHtml='';
+  notes.forEach(function(n){
+    nHtml+='<div style="background:var(--surf);border:1.5px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px" id="note-'+n.id+'">'
+      +'<div id="nv-'+n.id+'">'
+      +'<div style="font-size:13px;color:var(--text);white-space:pre-wrap;line-height:1.5">'+(n.body||'').replace(/</g,'&lt;')+'</div>'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">'
+      +'<div style="font-size:10px;color:var(--muted)">'+(n.createdAt?fmt(n.createdAt):'')+(n.editedAt?' · edited '+fmt(n.editedAt):'')+'</div>'
+      +(cancelled?'':'<div style="display:flex;gap:6px"><button class="btn btn-ghost btn-xs" onclick="editNote(\''+id+'\',\''+n.id+'\')">Edit</button><button class="btn btn-ghost btn-xs" style="color:var(--danger)" onclick="delNote(\''+id+'\',\''+n.id+'\')">Delete</button></div>')
+      +'</div>'
+      +'</div>'
+      +'<div id="ne-'+n.id+'" style="display:none">'
+      +'<textarea id="ne-t-'+n.id+'" style="min-height:80px">'+(n.body||'').replace(/</g,'&lt;')+'</textarea>'
+      +'<div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px"><button class="btn btn-ghost btn-xs" onclick="cancelEditNote(\''+n.id+'\')">Cancel</button><button class="btn btn-primary btn-xs" onclick="saveNote(\''+id+'\',\''+n.id+'\')">Save</button></div>'
+      +'</div>'
+      +'</div>';
+  });
+  if(!nHtml)nHtml='<div style="font-size:12px;color:var(--muted);font-style:italic;padding:8px">No notes yet</div>';
+  var addBox=cancelled?'':'<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:14px">'
+    +'<textarea id="newNote-'+id+'" placeholder="Add a note..." style="min-height:60px"></textarea>'
+    +'<div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px"><button class="btn btn-ghost btn-xs" onclick="document.getElementById(\'newNote-'+id+'\').value=\'\'">Clear</button><button class="btn btn-primary btn-xs" onclick="addNote(\''+id+'\')">+ Add Note</button></div>'
+    +'</div>';
+  return '<div id="tb-notes" style="display:none">'+addBox+nHtml+'</div>';
+}
+
+function buildDocsTab(id,l,cancelled,docs){
+  docs.sort(function(a,b){return new Date(b.uploadedAt||0)-new Date(a.uploadedAt||0);});
+  var dh='';
+  docs.forEach(function(doc){
+    var icon=doc.type==='application/pdf'?'PDF':doc.type&&doc.type.indexOf('image')>-1?'IMG':'FILE';
+    dh+='<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surf);border:1.5px solid var(--border);border-radius:8px;margin-bottom:8px">'
+      +'<div style="width:36px;height:36px;background:var(--navy);color:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700">'+icon+'</div>'
+      +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+doc.name+'</div><div style="font-size:11px;color:var(--muted)">'+(doc.uploadedAt?fmt(doc.uploadedAt):'')+' · '+Math.round((doc.size||0)/1024)+' KB'+(doc.category?' · '+doc.category:'')+'</div></div>'
+      +'<button class="btn btn-ghost btn-xs" onclick="viewDoc(\''+id+'\',\''+doc.id+'\')">View</button>'
+      +(cancelled?'':'<button class="btn btn-ghost btn-xs" style="color:var(--danger)" onclick="delDoc(\''+id+'\',\''+doc.id+'\')">Delete</button>')
+      +'</div>';
+  });
+  if(!dh)dh='<div style="font-size:12px;color:var(--muted);font-style:italic;padding:8px">No documents uploaded</div>';
+  var upBox=cancelled?'':'<div style="background:var(--bg);border:1.5px dashed var(--border);border-radius:10px;padding:14px;margin-bottom:14px;text-align:center">'
+    +'<input type="file" id="docFile-'+id+'" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" style="display:none" onchange="handleDocUpload(\''+id+'\',this)"/>'
+    +'<button class="btn btn-primary btn-sm" onclick="document.getElementById(\'docFile-'+id+'\').click()">Choose File</button>'
+    +'<div style="font-size:11px;color:var(--muted);margin-top:8px">PDF, JPG, PNG · Max 2 MB</div>'
+    +'</div>';
+  return '<div id="tb-docs" style="display:none">'+upBox+dh+'</div>';
+}
+
+function buildStageCta(id,l){
+  var s=Number(l.stage||0);
+  if(l.confirmed)return '';
+  if(s===0){
+    var ph=(l.phone||'').replace(/[^0-9]/g,'');
+    var btns='';
+    if(ph)btns+='<button class="btn btn-gold btn-sm" onclick="window.open(\'https://wa.me/'+ph+'\',\'_blank\');advStage(\''+id+'\',1)">WhatsApp</button>';
+    if(ph)btns+='<button class="btn btn-outline btn-sm" onclick="window.open(\'tel:+'+ph+'\');advStage(\''+id+'\',1)">Call</button>';
+    if(l.email)btns+='<button class="btn btn-outline btn-sm" onclick="window.open(\'mailto:'+l.email+'\');advStage(\''+id+'\',1)">Email</button>';
+    return btns||'<button class="btn btn-primary btn-sm" onclick="advStage(\''+id+'\',1)">Mark Contacted</button>';
+  }
+  if(s===1)return '<button class="btn btn-primary btn-sm" onclick="advStage(\''+id+'\',2)">Book Consultation</button>';
+  if(s===2)return '<button class="btn btn-primary btn-sm" onclick="advStage(\''+id+'\',3)">Mark Consultation Done</button>';
+  if(s===3)return '<button class="btn btn-primary btn-sm" onclick="CM(\'detail-modal\');openQM(\''+id+'\',null)">Create Quotation</button>';
+  if(s===4){
+    var q=Object.values(l.quotations||{}).find(function(qt){return !qt.convertedToInvoice;});
+    if(q)return '<button class="btn btn-primary btn-sm" onclick="CM(\'detail-modal\');openAdv(\'lead\',\''+id+'\',\''+q.id+'\')">Convert to Invoice</button>';
+  }
+  return '';
+}
+
+// ---------- Event helpers ----------
+async function toggleEvent(id,k,checked){
+  var l=leads[id];if(!l)return;
+  l.events=l.events||{};
+  l.events[k]=l.events[k]||{};
+  l.events[k].enabled=checked;
+  if(checked&&k==='wedding'&&!l.events.wedding.date)l.events.wedding.date=l.weddingDate||'';
+  try{
+    await fbP('/leads/'+id+'/events/'+k,l.events[k]);
+    await logHistory(id,'event-toggle',{event:k,enabled:checked});
+    openDetail(id);
+  }catch(e){notif('Error: '+e.message);}
+}
+async function updEvent(id,k,field,value){
+  var l=leads[id];if(!l)return;
+  l.events=l.events||{};l.events[k]=l.events[k]||{};
+  var oldVal=l.events[k][field];
+  l.events[k][field]=value;
+  try{
+    var p={};p[field]=value;
+    await fbP('/leads/'+id+'/events/'+k,p);
+    // If wedding date changed, also update top-level weddingDate for compatibility
+    if(k==='wedding'&&field==='date'){
+      await fbP('/leads/'+id,{weddingDate:value});
+      l.weddingDate=value;
+    }
+    await logHistory(id,'event-edit',{event:k,field:field,from:oldVal,to:value});
+    render();
+  }catch(e){notif('Error: '+e.message);}
+}
+
+// ---------- Appointments ----------
+async function addAppt2(id){
+  var d=document.getElementById('ap-d-'+id);
+  var t=document.getElementById('ap-t-'+id);
+  var r=document.getElementById('ap-r-'+id);
+  var n=document.getElementById('ap-n-'+id);
+  if(!d||!d.value){notif('Please pick a date.');return;}
+  if(!r||!r.value){notif('Please choose a reason.');return;}
+  var key=uid();
+  var appt={key:key,date:d.value,time:(t&&t.value)||'',reason:r.value,note:(n&&n.value)||'',cancelled:false,createdAt:new Date().toISOString()};
+  try{
+    var p={};p[key]=appt;
+    await fbP('/leads/'+id+'/appointments',p);
+    leads[id].appointments=leads[id].appointments||{};leads[id].appointments[key]=appt;
+    await logHistory(id,'appt-add',{reason:r.value,date:d.value});
+    openDetail(id);
+  }catch(e){notif('Error: '+e.message);}
+}
+async function cancelAppt(id,key){
+  var r=await showConfirm({title:'Cancel appointment',msg:'This appointment will stay in the record as cancelled and cannot be deleted.',yesText:'Cancel appointment',dangerous:true,note:true});
+  if(!r.ok)return;
+  var appt=leads[id].appointments[key];
+  appt.cancelled=true;appt.cancelledAt=new Date().toISOString();appt.cancelReason=r.note||'';
+  try{
+    await fbP('/leads/'+id+'/appointments/'+key,{cancelled:true,cancelledAt:appt.cancelledAt,cancelReason:appt.cancelReason});
+    await logHistory(id,'appt-cancel',{reason:appt.reason,date:appt.date,note:r.note});
+    openDetail(id);
+  }catch(e){notif('Error: '+e.message);}
+}
+
+// ---------- Notes ----------
+async function addNote(id){
+  var ta=document.getElementById('newNote-'+id);
+  var body=(ta&&ta.value||'').trim();
+  if(!body){notif('Note is empty.');return;}
+  var nid='n-'+uid();
+  var note={id:nid,body:body,createdAt:new Date().toISOString()};
+  try{
+    var p={};p[nid]=note;
+    await fbP('/leads/'+id+'/notesLog',p);
+    leads[id].notesLog=leads[id].notesLog||{};leads[id].notesLog[nid]=note;
+    await logHistory(id,'note-add',{});
+    if(ta)ta.value='';
+    openDetail(id);
+    stab(document.querySelector('#detail-modal .tab:nth-child(' + (leads[id].confirmed?4:2) + ')'),'tb-notes');
+  }catch(e){notif('Error: '+e.message);}
+}
+function editNote(id,nid){
+  document.getElementById('nv-'+nid).style.display='none';
+  document.getElementById('ne-'+nid).style.display='';
+}
+function cancelEditNote(nid){
+  document.getElementById('ne-'+nid).style.display='none';
+  document.getElementById('nv-'+nid).style.display='';
+}
+async function saveNote(id,nid){
+  var ta=document.getElementById('ne-t-'+nid);
+  var body=(ta&&ta.value||'').trim();
+  if(!body){notif('Note is empty.');return;}
+  try{
+    var now=new Date().toISOString();
+    await fbP('/leads/'+id+'/notesLog/'+nid,{body:body,editedAt:now});
+    leads[id].notesLog[nid].body=body;leads[id].notesLog[nid].editedAt=now;
+    await logHistory(id,'note-edit',{});
+    openDetail(id);
+  }catch(e){notif('Error: '+e.message);}
+}
+async function delNote(id,nid){
+  var r=await showConfirm({title:'Delete note',msg:'Delete this note permanently?',yesText:'Delete',dangerous:true});
+  if(!r.ok)return;
+  try{
+    await fbD('/leads/'+id+'/notesLog/'+nid);
+    delete leads[id].notesLog[nid];
+    await logHistory(id,'note-delete',{});
+    openDetail(id);
+  }catch(e){notif('Error: '+e.message);}
+}
+
+// ---------- Documents ----------
+async function handleDocUpload(id,inp){
+  var f=inp.files[0];if(!f)return;
+  if(f.size>2*1024*1024){notif('File too large. Max 2 MB.');inp.value='';return;}
+  var allowed=['application/pdf','image/jpeg','image/png','image/jpg'];
+  if(allowed.indexOf(f.type)===-1){notif('Only PDF, JPG, PNG allowed.');inp.value='';return;}
+  var r=await showConfirm({title:'Tag this document',msg:'Choose a category (or leave blank).',yesText:'Upload',input:true,inputLabel:'Category (e.g. Contract, Receipt)',inputDefault:''});
+  if(!r.ok){inp.value='';return;}
+  var reader=new FileReader();
+  reader.onload=async function(e){
+    var docId='d-'+uid();
+    var doc={id:docId,name:f.name,type:f.type,size:f.size,data:e.target.result,uploadedAt:new Date().toISOString(),category:r.value||''};
+    try{
+      var p={};p[docId]=doc;
+      await fbP('/leads/'+id+'/documents',p);
+      leads[id].documents=leads[id].documents||{};leads[id].documents[docId]=doc;
+      await logHistory(id,'doc-upload',{name:f.name});
+      notif('Document uploaded.');
+      inp.value='';
+      openDetail(id);
+    }catch(err){notif('Upload failed: '+err.message);}
+  };
+  reader.readAsDataURL(f);
+}
+function viewDoc(id,docId){
+  var doc=leads[id].documents[docId];if(!doc)return;
+  var w=window.open();
+  if(doc.type==='application/pdf'){
+    w.document.write('<iframe src="'+doc.data+'" style="width:100%;height:100vh;border:0"></iframe>');
+  } else {
+    w.document.write('<img src="'+doc.data+'" style="max-width:100%;height:auto"/>');
+  }
+}
+async function delDoc(id,docId){
+  var r=await showConfirm({title:'Delete document',msg:'Delete this document permanently?',yesText:'Delete',dangerous:true});
+  if(!r.ok)return;
+  try{
+    await fbD('/leads/'+id+'/documents/'+docId);
+    delete leads[id].documents[docId];
+    await logHistory(id,'doc-delete',{docId:docId});
+    openDetail(id);
+  }catch(e){notif('Error: '+e.message);}
+}
+
+// ---------- Cancellation ----------
+async function openCancelBooking(id){
+  var l=leads[id];if(!l)return;
+  var r=await showConfirm({
+    title:'Cancel booking',
+    msg:'This will mark '+l.name+'\'s booking as cancelled. The record will be kept (locked, read-only) under Confirmed. Enter refund amount if any.',
+    yesText:'Cancel booking',
+    dangerous:true,
+    input:true,
+    inputLabel:'Refund amount (Rs)',
+    inputDefault:'0',
+    note:true
+  });
+  if(!r.ok)return;
+  var refund=parseFloat(r.value)||0;
+  var reason=r.note||'';
+  var now=new Date().toISOString();
+  try{
+    var patch={cancelled:true,cancelledAt:now,cancelReason:reason,refundAmount:refund};
+    // If refund > 0, log as negative payment on first invoice
+    var firstInv=Object.values(l.invoices||{})[0];
+    if(refund>0&&firstInv){
+      var pid='p-'+uid();
+      var pay={id:pid,amount:-refund,date:now.slice(0,10),method:'Refund',note:'Cancellation refund: '+reason,createdAt:now};
+      var pp={};pp[pid]=pay;
+      await fbP('/leads/'+id+'/invoices/'+firstInv.id+'/payments',pp);
+      l.invoices[firstInv.id].payments=l.invoices[firstInv.id].payments||{};
+      l.invoices[firstInv.id].payments[pid]=pay;
+      patch.advance=Math.max(0,(l.advance||0)-refund);
+      patch.balance=(l.balance||0)+refund;
+    }
+    await fbP('/leads/'+id,patch);
+    Object.assign(l,patch);
+    await logHistory(id,'cancel-booking',{reason:reason,refund:refund});
+    notif('Booking cancelled.');
+    openDetail(id);
+    render();
+  }catch(e){notif('Error: '+e.message);}
+}
+
+// ---------- Stage helpers ----------
+async function advStage(id,newStage){
+  try{
+    await fbP('/leads/'+id,{stage:newStage,lastActivity:new Date().toISOString()});
+    leads[id].stage=newStage;leads[id].lastActivity=new Date().toISOString();
+    await logHistory(id,'stage-change',{to:newStage});
+    notif('Stage updated.');
+    openDetail(id);
+    render();
+  }catch(e){notif('Error: '+e.message);}
+}
+
+// ---------- Audit trail ----------
+async function logHistory(id,action,details){
+  try{
+    var entry={at:new Date().toISOString(),action:action,details:details||{},by:'system'};
+    var hid='h-'+uid();
+    var p={};p[hid]=entry;
+    await fbP('/leads/'+id+'/_history',p);
+    leads[id]._history=leads[id]._history||{};leads[id]._history[hid]=entry;
+  }catch(e){}
+}
+
+// ---------- Sources management ----------
+function getSources(){
+  var s=gSet();
+  if(s.sources&&s.sources.length)return s.sources;
+  return [
+    {value:'whatsapp',label:'WhatsApp'},
+    {value:'phone',label:'Phone Call'},
+    {value:'walkin',label:'Walk-in'},
+    {value:'instagram',label:'Instagram DM'},
+    {value:'facebookdm',label:'Facebook DM'},
+    {value:'facebookform',label:'Facebook Form'},
+    {value:'facebookads',label:'Facebook Ads'},
+    {value:'googleads',label:'Google Ads'},
+    {value:'website',label:'Website Form'},
+    {value:'referral',label:'Referral'}
+  ];
+}
+
 async function updL(id,data){try{await fbP('/leads/'+id,data);leads[id]=Object.assign({},leads[id],data);render();}catch(e){notif('Error: '+e.message);}}
 function updStage(id,v){if(v==='confirmed')confirmC(id);else updL(id,{stage:parseInt(v)});}
 async function confirmC(id){
@@ -1083,7 +1576,7 @@ async function confirmC(id){
   if(!ex){var cid='cust-'+uid();var nc={id:cid,name:l.name,phone:l.phone||'',email:l.email||'',weddingDate:l.weddingDate||'',venue:l.venue||'',bridesmaids:l.bridesmaids||0,notes:'',anniversary:'',createdAt:new Date().toISOString(),quotes:{},invoices:{}};await fbS('/customers/'+cid,nc);custs[cid]=nc;}
   CM('detail-modal');notif(l.name+' confirmed!');sv('clients');
 }
-async function delLead(id){if(!confirm('Delete this lead?'))return;await fbD('/leads/'+id);delete leads[id];CM('detail-modal');notif('Lead deleted.');render();}
+async function delLead(id){var _cr = await showConfirm({title:'Delete lead',msg:'Delete this lead permanently? This cannot be undone.',yesText:'Delete',dangerous:true});if(!_cr.ok)return;await fbD('/leads/'+id);delete leads[id];CM('detail-modal');notif('Lead deleted.');render();}
 async function addAppt(id){
   var d=document.getElementById('ap-d-'+id);var lb=document.getElementById('ap-l-'+id);
   if(!d||!lb||!d.value||!lb.value.trim()){notif('Enter date and label.');return;}
@@ -1093,7 +1586,17 @@ async function addAppt(id){
   openDetail(id);
 }
 async function delAppt(lid,key){await fbD('/leads/'+lid+'/appointments/'+key);delete leads[lid].appointments[key];openDetail(lid);}
-function openLeadModal(){['lf-name','lf-phone','lf-email','lf-notes'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});var bm=document.getElementById('lf-bm');if(bm)bm.value='0';var d=document.getElementById('lf-date');if(d)d.value='';OM('lead-modal');}
+function populateLfSrc(sel){
+  var srcs=getSources();
+  var cur=sel.value;
+  sel.innerHTML='';
+  srcs.forEach(function(s){
+    var opt=document.createElement('option');opt.value=s.value;opt.textContent=s.label;
+    if(s.value===cur)opt.selected=true;
+    sel.appendChild(opt);
+  });
+}
+function openLeadModal(){populateLfSrc(document.getElementById('lf-src'));['lf-name','lf-phone','lf-email','lf-notes'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});var bm=document.getElementById('lf-bm');if(bm)bm.value='0';var d=document.getElementById('lf-date');if(d)d.value='';OM('lead-modal');}
 async function saveLead(){
   var name=(document.getElementById('lf-name')?document.getElementById('lf-name').value:'').trim();
   if(!name){notif('Enter bride name.');return;}
@@ -1173,21 +1676,67 @@ function rSettings(tab){
   var it='<div class="fi" style="margin-bottom:18px"><label>Default Notes / Terms</label><textarea id="s-notes" style="min-height:130px">'+(s.defaultNotes||defNotes()).replace(/</g,'&lt;')+'</textarea></div><div class="fi" style="margin-bottom:18px"><label>Company Logo URL</label><input type="text" id="s-logo" value="'+(s.logoUrl||'')+'" placeholder="https://... image URL"/></div><button class="btn btn-primary" onclick="saveInvS()">Save Invoice Settings</button>';
   var pt='<div style="margin-bottom:12px;font-size:13px;color:var(--muted)">Override defaults. Leave blank to use default.</div><div style="display:flex;flex-direction:column;gap:8px">'+pi+'</div><button class="btn btn-primary" style="margin-top:14px" onclick="savePriceS()">Save Prices</button>';
   var dt='<div style="background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:10px;padding:18px;margin-bottom:14px"><div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:7px">Backfill Missing Leads</div><div style="font-size:13px;color:var(--text2);margin-bottom:14px">Creates lead records for any customer who has quotes or invoices but no matching lead. Use this if customers have quotes but the pipeline shows empty.</div><button class="btn btn-primary" onclick="backfillLeads()">Backfill Leads from Customers</button></div><div style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:10px;padding:18px"><div style="font-size:14px;font-weight:600;color:var(--danger);margin-bottom:7px">Clear Test Data</div><div style="font-size:13px;color:var(--text2);margin-bottom:14px">Permanently deletes all leads, customers, quotations and invoices. Settings and prices are kept.</div><button class="btn btn-danger" onclick="clearData()">Delete All Test Data</button></div>';
+  // Sources tab
+  var srcs=getSources();
+  var srcRows='';
+  srcs.forEach(function(s,idx){
+    srcRows+='<div style="display:flex;align-items:center;gap:8px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:6px">'
+      +'<input type="text" value="'+s.label.replace(/"/g,'&quot;')+'" data-idx="'+idx+'" class="src-lbl" style="flex:1"/>'
+      +'<button class="btn btn-ghost btn-xs" style="color:var(--danger)" onclick="removeSrc('+idx+')">Remove</button>'
+      +'</div>';
+  });
+  var st='<div style="font-size:13px;color:var(--muted);margin-bottom:14px">Lead sources for the New Lead form and source filters.</div>'
+    +srcRows
+    +'<div style="display:flex;gap:8px;margin-top:10px"><input type="text" id="newSrcLabel" placeholder="New source name" style="flex:1"/><button class="btn btn-outline btn-sm" onclick="addSrc()">+ Add</button></div>'
+    +'<button class="btn btn-primary" style="margin-top:14px" onclick="saveSrcs()">Save Sources</button>';
   document.getElementById('MC').innerHTML=
     '<div style="max-width:620px">'
     +'<div class="tabs" style="margin-bottom:18px">'
-    +'<div class="tab '+(at==='invoice'?'active':'')+'" onclick="rSettings(\'invoice\')">Invoice Settings</div>'
-    +'<div class="tab '+(at==='prices'?'active':'')+'" onclick="rSettings(\'prices\')">Line Item Prices</div>'
-    +'<div class="tab '+(at==='data'?'active':'')+'" onclick="rSettings(\'data\')">Test Data</div>'
+    +'<div class="tab '+(at==='invoice'?'active':'')+'" onclick="rSettings(\'invoice\')">Invoice</div>'
+    +'<div class="tab '+(at==='prices'?'active':'')+'" onclick="rSettings(\'prices\')">Prices</div>'
+    +'<div class="tab '+(at==='sources'?'active':'')+'" onclick="rSettings(\'sources\')">Sources</div>'
+    +'<div class="tab '+(at==='data'?'active':'')+'" onclick="rSettings(\'data\')">Data</div>'
     +'</div>'
-    +'<div class="card"><div class="mbdy">'+(at==='invoice'?it:at==='prices'?pt:dt)+'</div></div>'
+    +'<div class="card"><div class="mbdy">'+(at==='invoice'?it:at==='prices'?pt:at==='sources'?st:dt)+'</div></div>'
     +'</div>';
 }
 function saveInvS(){var notes=document.getElementById('s-notes')?document.getElementById('s-notes').value:'';var logo=document.getElementById('s-logo')?document.getElementById('s-logo').value:'';sSet(Object.assign({},gSet(),{defaultNotes:notes,logoUrl:logo}));notif('Saved!');}
 function savePriceS(){var s=gSet();var lp=s.linePrices||{};SVCS.filter(function(sv){return sv.aA||sv.b>0;}).forEach(function(sv){var pid='p-'+sv.d.replace(/[^a-z0-9]/gi,'_');var el=document.getElementById(pid);if(el&&el.value&&parseFloat(el.value)>0)lp[sv.d]=parseFloat(el.value);else delete lp[sv.d];});sSet(Object.assign({},s,{linePrices:lp}));notif('Prices saved!');}
+function slugify(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,'').slice(0,30)||'src'+Date.now();}
+var _srcsDraft=null;
+function getDraftSrcs(){if(!_srcsDraft)_srcsDraft=getSources().slice();return _srcsDraft;}
+function addSrc(){
+  var inp=document.getElementById('newSrcLabel');
+  var lbl=(inp&&inp.value||'').trim();
+  if(!lbl){notif('Enter a name.');return;}
+  var d=getDraftSrcs();
+  d.push({value:slugify(lbl),label:lbl});
+  _srcsDraft=d;
+  if(inp)inp.value='';
+  rSettings('sources');
+}
+function removeSrc(idx){
+  var d=getDraftSrcs();
+  d.splice(idx,1);
+  _srcsDraft=d;
+  rSettings('sources');
+}
+function saveSrcs(){
+  // Read all label inputs in case user edited
+  var d=getDraftSrcs();
+  document.querySelectorAll('.src-lbl').forEach(function(inp){
+    var i=parseInt(inp.getAttribute('data-idx'));
+    if(!isNaN(i)&&d[i])d[i].label=inp.value.trim()||d[i].label;
+  });
+  sSet(Object.assign({},gSet(),{sources:d}));
+  _srcsDraft=null;
+  notif('Sources saved.');
+  rSettings('sources');
+}
+
 async function backfillLeads(){
-  if(!confirm('Create lead records for customers who have quotes/invoices but no matching lead?'))return;
-  var created=0,skipped=0;
+  var _cr = await showConfirm({title:'Backfill & repair leads',msg:'Create or repair lead records for customers with quotes/invoices.',yesText:'Run'});if(!_cr.ok)return;
+  var created=0,repaired=0,skipped=0;
   try{
     var allCusts=cA();
     for(var i=0;i<allCusts.length;i++){
@@ -1196,7 +1745,35 @@ async function backfillLeads(){
       var hasInvoices=Object.keys(c.invoices||{}).length>0;
       if(!hasQuotes&&!hasInvoices){skipped++;continue;}
       var existingLead=lA().find(function(l){return l.phone&&c.phone&&l.phone===c.phone;});
-      if(existingLead){skipped++;continue;}
+      // Compute expected state
+      var hasConvertedQuote=Object.values(c.quotes||{}).some(function(qt){return qt.convertedToInvoice;});
+      var isConfirmed=hasInvoices||hasConvertedQuote;
+      var totals=0;
+      Object.values(c.invoices||{}).forEach(function(inv){totals+=qTot(inv.items);});
+      var advances=0;
+      Object.values(c.invoices||{}).forEach(function(inv){
+        advances+=(inv.advance||0);
+        Object.values(inv.payments||{}).forEach(function(p){advances+=(parseFloat(p.amount)||0);});
+      });
+      if(existingLead){
+        // Repair the existing lead's stage/confirmed/payment state
+        var repair={};
+        if(existingLead.confirmed!==isConfirmed)repair.confirmed=isConfirmed;
+        if(Number(existingLead.stage||0)!==(isConfirmed?5:4))repair.stage=isConfirmed?5:4;
+        if((existingLead.advance||0)!==advances)repair.advance=advances;
+        if((existingLead.balance||0)!==Math.max(0,totals-advances))repair.balance=Math.max(0,totals-advances);
+        // Sync quotes/invoices references onto the lead so it shows in detail view
+        if(hasQuotes&&!existingLead.quotations)repair.quotations=c.quotes||{};
+        if(hasInvoices&&!existingLead.invoices)repair.invoices=c.invoices||{};
+        if(Object.keys(repair).length>0){
+          await fbP('/leads/'+existingLead.id,repair);
+          Object.assign(existingLead,repair);
+          repaired++;
+        } else {
+          skipped++;
+        }
+        continue;
+      }
       var nid=uid();
       var hasConvertedQuote=Object.values(c.quotes||{}).some(function(qt){return qt.convertedToInvoice;});
       var isConfirmed=hasInvoices||hasConvertedQuote;
@@ -1225,11 +1802,11 @@ async function backfillLeads(){
       leads[nid]=nl;
       created++;
     }
-    notif('Backfill complete: '+created+' lead'+(created!==1?'s':'')+' created, '+skipped+' skipped.');
+    notif('Done: '+created+' created, '+repaired+' repaired, '+skipped+' skipped.');
     render();
   }catch(e){notif('Error: '+e.message);}
 }
-async function clearData(){if(!confirm('DELETE ALL test data?'))return;if(!confirm('Are you sure?'))return;try{await fbS('/leads',null);await fbS('/customers',null);leads={};custs={};notif('Cleared.');render();}catch(e){notif('Error: '+e.message);}}
+async function clearData(){var _r1 = await showConfirm({title:'Clear all data',msg:'This will permanently delete ALL leads, customers, quotes and invoices. Settings will be kept.',yesText:'Continue',dangerous:true});if(!_r1.ok)return;var _r2 = await showConfirm({title:'Final confirmation',msg:'Are you absolutely sure? This cannot be undone.',yesText:'Yes, delete everything',dangerous:true});if(!_r2.ok)return;try{await fbS('/leads',null);await fbS('/customers',null);leads={};custs={};notif('All data cleared.');render();}catch(e){notif('Error: '+e.message);}}
 (function(){
   function chk(){var b=document.getElementById('MSB');if(b)b.style.display=window.innerWidth<=900?'flex':'none';}
   chk();window.addEventListener('resize',chk);
