@@ -144,12 +144,12 @@ textarea{resize:vertical;min-height:80px}
 .sht{font-family:'Cinzel',serif;font-size:15px;color:var(--navy)}
 .shc{background:var(--bg);border:1.5px solid var(--border);border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--text2);line-height:1}
 .ssw{position:relative;padding:11px 20px;border-bottom:1.5px solid var(--border);flex-shrink:0}
-.ss{width:100%;padding:10px 14px 10px 36px;background:var(--bg);border:1.5px solid var(--border);border-radius:9px;font-size:14px;font-family:'Inter',sans-serif;color:var(--text);outline:none}
-.ss:focus{border-color:var(--navy)}
+.shs{width:100%;padding:10px 14px 10px 36px;background:var(--bg);border:1.5px solid var(--border);border-radius:9px;font-size:14px;font-family:'Inter',sans-serif;color:var(--text);outline:none}
+.shs:focus{border-color:var(--navy)}
 .ssi{position:absolute;left:32px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
-.sl{overflow-y:auto;flex:1}
-.si{display:flex;align-items:center;justify-content:space-between;padding:13px 20px;border-bottom:1px solid var(--border);cursor:pointer}
-.si:active{background:var(--navy-dim)}
+.shl{overflow-y:auto;flex:1}
+.shi{display:flex;align-items:center;justify-content:space-between;padding:13px 20px;border-bottom:1px solid var(--border);cursor:pointer}
+.shi:active{background:var(--navy-dim)}
 .sin{font-size:13px;font-weight:600;color:var(--navy)}
 .sim{font-size:11px;color:var(--muted);margin-top:2px}
 .sip{font-size:13px;font-weight:700;color:var(--gold);flex-shrink:0}
@@ -255,10 +255,10 @@ textarea{resize:vertical;min-height:80px}
 <div class="overlay" id="pay-modal"><div class="modal msm"><div class="mhd"><div><div class="mt">Add Payment</div><div class="msb" id="pay-s"></div></div><button class="mc" onclick="CM('pay-modal')">x</button></div><div class="mbdy" id="pay-b"></div><div class="mft" id="pay-f"></div></div></div>
 <div class="overlay" id="cust-modal"><div class="modal"><div class="mhd"><div><div class="mt" id="cm-t"></div><div class="msb" id="cm-s"></div></div><button class="mc" onclick="CM('cust-modal')">×</button></div><div class="mbdy" id="cm-b"></div><div class="mft" id="cm-f"></div></div></div>
 <div class="overlay" id="ncust-modal"><div class="modal msm"><div class="mhd"><div><div class="mt">New Customer</div></div><button class="mc" onclick="CM('ncust-modal')">×</button></div><div class="mbdy"><div class="fg"><div class="fi"><label>Full Name *</label><input type="text" id="nc-n"/></div><div class="fi"><label>WhatsApp *</label><input type="text" id="nc-p"/></div><div class="fi"><label>Email</label><input type="email" id="nc-e"/></div><div class="fi"><label>Wedding Date</label><input type="date" id="nc-w"/></div><div class="fi"><label>Venue</label><input type="text" id="nc-v"/></div><div class="fi"><label>Bridesmaids</label><input type="number" id="nc-b" min="0" value="0"/></div><div class="fi s2"><label>Notes</label><textarea id="nc-nt"></textarea></div></div></div><div class="mft"><button class="btn btn-ghost" onclick="CM('ncust-modal')">Cancel</button><button class="btn btn-primary" onclick="saveNC()">Save</button></div></div></div>
-<div class="sov" id="svc-ov" onclick="CS('svc')"></div><div class="sheet" id="svc-sheet"><div class="shdl"></div><div class="shd"><div class="sht">Add Service</div><button class="shc" onclick="CS('svc')">×</button></div><div class="ssw"><span class="ssi">⌕</span><input class="ss" type="text" id="svc-q" placeholder="Search services…" oninput="filterSvcs(this.value)" autocomplete="off"/></div><div class="sl" id="svc-list"></div></div>
-<div class="sov" id="thm-ov" onclick="CS('thm')"></div><div class="sheet" id="thm-sheet"><div class="shdl"></div><div class="shd"><div class="sht" id="thm-t">Select Theme</div><button class="shc" onclick="CS('thm')">×</button></div><div class="sl" id="thm-l"></div></div>
+<div class="sov" id="svc-ov" onclick="CS('svc')"></div><div class="sheet" id="svc-sheet"><div class="shdl"></div><div class="shd"><div class="sht">Add Service</div><button class="shc" onclick="CS('svc')">×</button></div><div class="ssw"><span class="ssi">⌕</span><input class="shs" type="text" id="svc-q" placeholder="Search services…" oninput="filterSvcs(this.value)" autocomplete="off"/></div><div class="shl" id="svc-list"></div></div>
+<div class="sov" id="thm-ov" onclick="CS('thm')"></div><div class="sheet" id="thm-sheet"><div class="shdl"></div><div class="shd"><div class="sht" id="thm-t">Select Theme</div><button class="shc" onclick="CS('thm')">×</button></div><div class="shl" id="thm-l"></div></div>
 <div class="sov" id="amt-ov" onclick="CS('amt')"></div><div class="sheet" id="amt-sheet" style="max-height:48vh"><div class="shdl"></div><div class="shd"><div class="sht" id="amt-t">Enter Amount</div><button class="shc" onclick="CS('amt')">×</button></div><div style="padding:18px"><div style="font-size:12px;color:var(--muted);margin-bottom:8px" id="amt-h"></div><input type="number" id="amt-i" style="width:100%;padding:14px;font-size:22px;font-family:Inter,sans-serif;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);outline:none;text-align:right" placeholder="0"/><button onclick="confirmAmt()" style="width:100%;margin-top:12px;background:var(--navy);color:#fff;border:none;border-radius:8px;padding:13px;font-size:15px;font-family:Inter,sans-serif;font-weight:600;cursor:pointer">Add to Quote</button></div></div>
-<div class="sov" id="cst-ov" onclick="CS('cst')"></div><div class="sheet" id="cst-sheet"><div class="shdl"></div><div class="shd"><div class="sht">Select Customer</div><button class="shc" onclick="CS('cst')">×</button></div><div class="ssw"><span class="ssi">⌕</span><input class="ss" type="text" id="cst-q" placeholder="Search…" oninput="filterCusts(this.value)"/></div><div class="sl" id="cst-list"></div></div>
+<div class="sov" id="cst-ov" onclick="CS('cst')"></div><div class="sheet" id="cst-sheet"><div class="shdl"></div><div class="shd"><div class="sht">Select Customer</div><button class="shc" onclick="CS('cst')">×</button></div><div class="ssw"><span class="ssi">⌕</span><input class="shs" type="text" id="cst-q" placeholder="Search…" oninput="filterCusts(this.value)"/></div><div class="shl" id="cst-list"></div></div>
 <div class="notif" id="NF"></div>
 <script>
 const FB='https://biso-crm-default-rtdb.asia-southeast1.firebasedatabase.app';
@@ -712,6 +712,18 @@ async function convInv(src,sId,qId){
       await fbP('/customers/'+sId,cp);
       if(custs[sId]&&custs[sId].quotes&&custs[sId].quotes[qId])custs[sId].quotes[qId].convertedToInvoice=true;
       custs[sId].invoices=custs[sId].invoices||{};custs[sId].invoices[inv.id]=inv;
+      // Also find and update the linked lead (created during saveQB for walk-in/customer-source quotes)
+      var linkedLead=lA().find(function(l){return l.phone&&custs[sId]&&l.phone===custs[sId].phone;});
+      if(linkedLead){
+        var lp={};
+        if(linkedLead.quotations&&linkedLead.quotations[qId])lp['quotations/'+qId+'/convertedToInvoice']=true;
+        lp['invoices/'+inv.id]=inv;
+        lp['advance']=bp;lp['balance']=tot-bp;lp['confirmed']=true;lp['stage']=5;
+        await fbP('/leads/'+linkedLead.id,lp);
+        linkedLead.confirmed=true;linkedLead.stage=5;linkedLead.advance=bp;linkedLead.balance=tot-bp;
+        if(linkedLead.quotations&&linkedLead.quotations[qId])linkedLead.quotations[qId].convertedToInvoice=true;
+        linkedLead.invoices=linkedLead.invoices||{};linkedLead.invoices[inv.id]=inv;
+      }
     }
     var wDate=src==='lead'?(leads[sId]?leads[sId].weddingDate||'':''):(custs[sId]?custs[sId].weddingDate||'':'');
     var exC=cA().find(function(c){return c.phone&&c.phone===obj.phone;});
@@ -870,7 +882,7 @@ function filterSvcs(sq){
   f.forEach(function(sv){
     var lp=svcP(sv.d);
     var pl=(sv.aA&&lp===sv.b)?'From '+fR(sv.b):fR(lp||sv.b);
-    h+='<div class="si" onclick="selSvc(\''+sv.d.replace(/\'/g,"\\'")+'\',' +sv.b+',\''+sv.c+'\','+sv.aT+','+sv.aA+')" ><div><div class="sin">'+sv.d+'</div><div class="sim">'+sv.c+'</div></div><div class="sip">'+pl+'</div></div>';
+    h+='<div class="shi" onclick="selSvc(\''+sv.d.replace(/\'/g,"\\'")+'\',' +sv.b+',\''+sv.c+'\','+sv.aT+','+sv.aA+')" ><div><div class="sin">'+sv.d+'</div><div class="sim">'+sv.c+'</div></div><div class="sip">'+pl+'</div></div>';
   });
   h+='<div class="sadd" onclick="addCustom(\''+sq.replace(/\'/g,"\\'")+'\')"><span style="color:var(--gold);font-weight:600;font-size:13px">+ Add custom line</span></div>';
   document.getElementById('svc-list').innerHTML=h;
@@ -944,9 +956,24 @@ async function saveQB(){
       if((leads[QB.lid].stage||0)<4){await fbP('/leads/'+QB.lid,{stage:4});leads[QB.lid].stage=4;}
     }else if(QB.cid){
       var cc=custs[QB.cid];
-      var ex=lA().find(function(l){return l.phone&&cc&&l.phone===cc.phone&&!l.confirmed;});
-      if(ex){await fbP('/leads/'+ex.id+'/quotations',{[qt.id]:qt});ex.quotations=ex.quotations||{};ex.quotations[qt.id]=qt;await fbP('/leads/'+ex.id,{stage:4});ex.stage=4;}
-      else if(cc){var nid=uid();var nl={id:nid,name:cc.name,phone:cc.phone||'',email:cc.email||'',source:'walk-in',stage:4,weddingDate:cc.weddingDate||'',package:'Custom',notes:'Auto from quote '+qt.id,bridesmaids:cc.bridesmaids||0,createdAt:new Date().toISOString(),confirmed:false,advance:0,balance:0,venue:cc.venue||'',appointments:{},quotations:{},invoices:{}};nl.quotations[qt.id]=qt;await fbS('/leads/'+nid,nl);leads[nid]=nl;}
+      if(!cc){notif('Warning: customer not found.');}
+      else{
+        var ex=lA().find(function(l){return l.phone&&l.phone===cc.phone&&!l.confirmed;});
+        if(ex){
+          await fbP('/leads/'+ex.id+'/quotations',{[qt.id]:qt});
+          ex.quotations=ex.quotations||{};ex.quotations[qt.id]=qt;
+          await fbP('/leads/'+ex.id,{stage:4});ex.stage=4;
+        }else{
+          var nid=uid();
+          var nl={id:nid,name:cc.name,phone:cc.phone||'',email:cc.email||'',source:'walk-in',stage:4,weddingDate:cc.weddingDate||'',package:'Custom',notes:'Auto from quote '+qt.id,bridesmaids:cc.bridesmaids||0,createdAt:new Date().toISOString(),confirmed:false,advance:0,balance:0,venue:cc.venue||'',appointments:{},quotations:{}};
+          nl.quotations[qt.id]=qt;
+          try{
+            await fbS('/leads/'+nid,nl);
+            leads[nid]=nl;
+            notif('Lead auto-created for '+cc.name);
+          }catch(err){notif('Lead creation failed: '+err.message);}
+        }
+      }
     }
     CM('quot-modal');notif('Quotation saved!');if(QB.lid)openDetail(QB.lid);render();
   }catch(e){notif('Error: '+e.message);}
@@ -1158,6 +1185,50 @@ function rSettings(tab){
 }
 function saveInvS(){var notes=document.getElementById('s-notes')?document.getElementById('s-notes').value:'';var logo=document.getElementById('s-logo')?document.getElementById('s-logo').value:'';sSet(Object.assign({},gSet(),{defaultNotes:notes,logoUrl:logo}));notif('Saved!');}
 function savePriceS(){var s=gSet();var lp=s.linePrices||{};SVCS.filter(function(sv){return sv.aA||sv.b>0;}).forEach(function(sv){var pid='p-'+sv.d.replace(/[^a-z0-9]/gi,'_');var el=document.getElementById(pid);if(el&&el.value&&parseFloat(el.value)>0)lp[sv.d]=parseFloat(el.value);else delete lp[sv.d];});sSet(Object.assign({},s,{linePrices:lp}));notif('Prices saved!');}
+async function backfillLeads(){
+  if(!confirm('Create lead records for customers who have quotes/invoices but no matching lead?'))return;
+  var created=0,skipped=0;
+  try{
+    var allCusts=cA();
+    for(var i=0;i<allCusts.length;i++){
+      var c=allCusts[i];
+      var hasQuotes=Object.keys(c.quotes||{}).length>0;
+      var hasInvoices=Object.keys(c.invoices||{}).length>0;
+      if(!hasQuotes&&!hasInvoices){skipped++;continue;}
+      var existingLead=lA().find(function(l){return l.phone&&c.phone&&l.phone===c.phone;});
+      if(existingLead){skipped++;continue;}
+      var nid=uid();
+      var hasConvertedQuote=Object.values(c.quotes||{}).some(function(qt){return qt.convertedToInvoice;});
+      var isConfirmed=hasInvoices||hasConvertedQuote;
+      var totals=0;
+      Object.values(c.invoices||{}).forEach(function(inv){totals+=qTot(inv.items);});
+      var advances=0;
+      Object.values(c.invoices||{}).forEach(function(inv){
+        advances+=(inv.advance||0);
+        Object.values(inv.payments||{}).forEach(function(p){advances+=(parseFloat(p.amount)||0);});
+      });
+      var nl={
+        id:nid,name:c.name,phone:c.phone||'',email:c.email||'',
+        source:'walk-in',stage:isConfirmed?5:4,
+        weddingDate:c.weddingDate||'',package:'Custom',
+        notes:'Backfilled from customer profile',
+        bridesmaids:c.bridesmaids||0,
+        createdAt:c.createdAt||new Date().toISOString(),
+        confirmed:isConfirmed,
+        advance:advances,balance:Math.max(0,totals-advances),
+        venue:c.venue||'',
+        appointments:{},
+        quotations:c.quotes||{},
+        invoices:c.invoices||{}
+      };
+      await fbS('/leads/'+nid,nl);
+      leads[nid]=nl;
+      created++;
+    }
+    notif('Backfill complete: '+created+' lead'+(created!==1?'s':'')+' created, '+skipped+' skipped.');
+    render();
+  }catch(e){notif('Error: '+e.message);}
+}
 async function clearData(){if(!confirm('DELETE ALL test data?'))return;if(!confirm('Are you sure?'))return;try{await fbS('/leads',null);await fbS('/customers',null);leads={};custs={};notif('Cleared.');render();}catch(e){notif('Error: '+e.message);}}
 (function(){
   function chk(){var b=document.getElementById('MSB');if(b)b.style.display=window.innerWidth<=900?'flex':'none';}
