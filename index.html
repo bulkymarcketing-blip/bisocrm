@@ -392,12 +392,12 @@ function rPipeline(){
   var pl=all.filter(function(l){return !l.confirmed&&(q?l.name.toLowerCase().includes(q):true);});
   var h='<div class="sg">';
   h+=sCard('Total Leads',all.filter(function(l){return !l.confirmed;}).length,'in pipeline','ib');
-  h+=sCard('Contacted',all.filter(function(l){return !l.confirmed&&l.stage>=1;}).length,'reached out','ig');
-  h+=sCard('Consultations',all.filter(function(l){return !l.confirmed&&l.stage>=2;}).length,'booked/done','io');
+  h+=sCard('Contacted',all.filter(function(l){return !l.confirmed&&Number(l.stage||0)>=1;}).length,'reached out','ig');
+  h+=sCard('Consultations',all.filter(function(l){return !l.confirmed&&Number(l.stage||0)>=2;}).length,'booked/done','io');
   h+=sCard('Confirmed',all.filter(function(l){return l.confirmed;}).length,'advance paid','iv');
   h+='</div><div class="pipeline">';
   STAGES.forEach(function(st,i){
-    var cols=pl.filter(function(l){return l.stage===i;});
+    var cols=pl.filter(function(l){return Number(l.stage||0)===i;});
     h+='<div class="stage-col"><div class="shdr '+SC[i]+'"><span class="sname">'+st+'</span><span class="scnt">'+cols.length+'</span></div><div class="sbdy">';
     if(cols.length)cols.forEach(function(l){h+=lCard(l);});
     else h+='<div class="empty" style="padding:18px"><div class="et">No leads</div></div>';
@@ -976,7 +976,7 @@ function openDetail(id){
   var appts=Object.values(l.appointments||{});
   var stOpts='';
   if(l.confirmed)stOpts='<option value="confirmed" selected>Confirmed</option>';
-  else{STAGES.forEach(function(s,i){stOpts+='<option value="'+i+'"'+(l.stage==i?' selected':'')+'>'+s+'</option>';});stOpts+='<option value="confirmed">Mark Confirmed</option>';}
+  else{STAGES.forEach(function(s,i){stOpts+='<option value="'+i+'"'+(Number(l.stage||0)===i?' selected':'')+'>'+s+'</option>';});stOpts+='<option value="confirmed">Mark Confirmed</option>';}
   var pkgs=['Wedding Only','Wedding + Homecoming','Wedding + HC + Bridesmaids','Wedding + HC + BM + Going Away','Custom'];
   var pkgOpts='<option value="">—</option>';pkgs.forEach(function(p){pkgOpts+='<option'+(l.package===p?' selected':'')+'>'+p+'</option>';});
   var cTabs=l.confirmed?'<div class="tab" onclick="stab(this,\'tb-pay\')">Payment</div><div class="tab" onclick="stab(this,\'tb-appt\')">Appts</div>':'';
