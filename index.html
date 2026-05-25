@@ -2,6 +2,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
 <title>Biso CRM</title>
+<!-- Build: 2026-05-25 09:14 v10.4 - if you see old UI, hard refresh (settings > clear browser data) -->
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/css/intlTelInput.min.css">
 <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/intlTelInput.min.js"></script>
@@ -274,7 +275,7 @@ textarea{resize:vertical;min-height:80px}
 <div class="sov" id="thm-ov" onclick="CS('thm')"></div><div class="sheet" id="thm-sheet"><div class="shdl"></div><div class="shd"><div class="sht" id="thm-t">Select Theme</div><button class="shc" onclick="CS('thm')">×</button></div><div class="shl" id="thm-l"></div></div>
 <div class="sov" id="amt-ov" onclick="CS('amt')"></div><div class="sheet" id="amt-sheet" style="max-height:48vh"><div class="shdl"></div><div class="shd"><div class="sht" id="amt-t">Enter Amount</div><button class="shc" onclick="CS('amt')">×</button></div><div style="padding:18px"><div style="font-size:12px;color:var(--muted);margin-bottom:8px" id="amt-h"></div><input type="number" id="amt-i" style="width:100%;padding:14px;font-size:22px;font-family:Inter,sans-serif;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);outline:none;text-align:right" placeholder="0"/><button onclick="confirmAmt()" style="width:100%;margin-top:12px;background:var(--navy);color:#fff;border:none;border-radius:8px;padding:13px;font-size:15px;font-family:Inter,sans-serif;font-weight:600;cursor:pointer">Add to Quote</button></div></div>
 <div class="sov" id="cst-ov" onclick="CS('cst')"></div><div class="sheet" id="cst-sheet"><div class="shdl"></div><div class="shd"><div class="sht">Select Customer</div><button class="shc" onclick="CS('cst')">×</button></div><div class="ssw"><span class="ssi">⌕</span><input class="shs" type="text" id="cst-q" placeholder="Search…" oninput="filterCusts(this.value)"/></div><div class="shl" id="cst-list"></div></div>
-<div class="overlay" id="cf-modal" style="z-index:3000"><div class="modal msm"><div class="mhd"><div><div class="mt" id="cf-title">Confirm</div><div class="msb" id="cf-sub" style="display:none"></div></div></div><div class="mbdy"><div id="cf-msg" style="font-size:14px;color:var(--text2);line-height:1.6"></div><div id="cf-input-wrap" style="margin-top:14px;display:none"><label id="cf-input-label" style="display:block;margin-bottom:6px">Amount</label><input type="number" id="cf-input" style="width:100%"/></div><div id="cf-note-wrap" style="margin-top:10px;display:none"><label style="display:block;margin-bottom:6px">Note (optional)</label><input type="text" id="cf-note" placeholder="Reason or comment"/></div></div><div class="mft"><button class="btn btn-ghost" onclick="cfNo()" id="cf-no">Cancel</button><button class="btn btn-primary" onclick="cfYes()" id="cf-yes">Confirm</button></div></div></div>
+<div class="overlay" id="cf-modal" style="z-index:3000"><div class="modal msm"><div class="mhd"><div><div class="mt" id="cf-title">Confirm</div><div class="msb" id="cf-sub" style="display:none"></div></div></div><div class="mbdy"><div id="cf-msg" style="font-size:14px;color:var(--text2);line-height:1.6"></div><div id="cf-input-wrap" style="margin-top:14px;display:none"><label id="cf-input-label" style="display:block;margin-bottom:6px">Amount</label><input type="number" id="cf-input" style="width:100%"/><input type="date" id="cf-input-date" style="width:100%;display:none"/><input type="time" id="cf-input-time" style="width:100%;display:none;margin-top:8px"/></div><div id="cf-note-wrap" style="margin-top:10px;display:none"><label style="display:block;margin-bottom:6px">Note (optional)</label><input type="text" id="cf-note" placeholder="Reason or comment"/></div></div><div class="mft"><button class="btn btn-ghost" onclick="cfNo()" id="cf-no">Cancel</button><button class="btn btn-primary" onclick="cfYes()" id="cf-yes">Confirm</button></div></div></div>
 <div class="notif" id="NF"></div>
 <script>
 const FB='https://biso-crm-default-rtdb.asia-southeast1.firebasedatabase.app';
@@ -637,7 +638,7 @@ document.addEventListener('click',function(e){if(e.target.classList.contains('ov
 // Custom confirm modal - replaces native confirm/prompt
 var _cfResolve = null;
 function showConfirm(opts){
-  // opts: {title, msg, yesText, noText, dangerous, input, inputLabel, inputDefault, note}
+  // opts: {title, msg, yesText, noText, dangerous, input, inputType, inputLabel, inputDefault, note, time, timeDefault}
   return new Promise(function(resolve){
     _cfResolve = resolve;
     document.getElementById('cf-title').textContent = opts.title || 'Confirm';
@@ -648,10 +649,33 @@ function showConfirm(opts){
     yesBtn.classList.remove('btn-primary','btn-danger');
     yesBtn.classList.add(opts.dangerous ? 'btn-danger' : 'btn-primary');
     var iw = document.getElementById('cf-input-wrap');
+    var inpNum = document.getElementById('cf-input');
+    var inpDate = document.getElementById('cf-input-date');
+    var inpTime = document.getElementById('cf-input-time');
+    // Reset all input visibility
+    inpNum.style.display='none';
+    inpDate.style.display='none';
+    inpTime.style.display='none';
     if(opts.input){
       iw.style.display = '';
       document.getElementById('cf-input-label').textContent = opts.inputLabel || 'Value';
-      document.getElementById('cf-input').value = opts.inputDefault!==undefined ? opts.inputDefault : '';
+      var t = opts.inputType || 'number';
+      if(t==='date'){
+        inpDate.style.display='';
+        inpDate.value = opts.inputDefault || '';
+        if(opts.time){
+          inpTime.style.display='';
+          inpTime.value = opts.timeDefault || '';
+        }
+      } else if(t==='text'){
+        inpNum.type='text';
+        inpNum.style.display='';
+        inpNum.value = opts.inputDefault!==undefined ? opts.inputDefault : '';
+      } else {
+        inpNum.type='number';
+        inpNum.style.display='';
+        inpNum.value = opts.inputDefault!==undefined ? opts.inputDefault : '';
+      }
     } else {
       iw.style.display = 'none';
     }
@@ -669,7 +693,15 @@ function cfYes(){
   var res = {ok:true};
   var iw = document.getElementById('cf-input-wrap');
   if(iw.style.display !== 'none'){
-    res.value = document.getElementById('cf-input').value;
+    var inpDate = document.getElementById('cf-input-date');
+    var inpTime = document.getElementById('cf-input-time');
+    var inpNum = document.getElementById('cf-input');
+    if(inpDate.style.display !== 'none'){
+      res.value = inpDate.value;
+      if(inpTime.style.display !== 'none')res.time = inpTime.value;
+    } else {
+      res.value = inpNum.value;
+    }
   }
   var nw = document.getElementById('cf-note-wrap');
   if(nw.style.display !== 'none'){
@@ -1858,18 +1890,21 @@ async function advStage(id,newStage){
   if(newStage===2){
     var r=await showConfirm({
       title:'Book Consultation',
-      msg:'When is the consultation? Date is required.',
+      msg:'When is the consultation?',
       yesText:'Book',
       input:true,
-      inputLabel:'Consultation Date (YYYY-MM-DD)',
+      inputType:'date',
+      inputLabel:'Consultation Date',
       inputDefault:new Date().toISOString().slice(0,10),
+      time:true,
+      timeDefault:'',
       note:true
     });
     if(!r.ok)return;
     if(!r.value){notif('Consultation date is required.');return;}
     // Create the consultation appointment
     var key='a-'+Math.random().toString(36).slice(2,10);
-    var appt={key:key,date:r.value,time:'',reason:'Consultation',note:r.note||'',cancelled:false,createdAt:new Date().toISOString()};
+    var appt={key:key,date:r.value,time:r.time||'',reason:'Consultation',note:r.note||'',cancelled:false,createdAt:new Date().toISOString()};
     try{
       var p={};p[key]=appt;
       await fbP('/leads/'+id+'/appointments',p);
@@ -2013,6 +2048,23 @@ function renderOverviewForm(){
   // Event sections
   function eventCard(key,label,e){
     var enabled=!!(e&&e.enabled);
+    var needsTheme = (key==='wedding' || key==='homecoming');
+    var THEMES = ['Kandyan','Modern Kandyan','Indian','Lehenga','Western','Other'];
+    // Theme dropdown
+    var themeField = '';
+    if(needsTheme){
+      var curTheme = e.theme || '';
+      var isOther = curTheme && THEMES.indexOf(curTheme)===-1;
+      var displayedTheme = isOther ? 'Other' : curTheme;
+      var themeOpts = '<option value="">— Select —</option>';
+      THEMES.forEach(function(t){
+        themeOpts += '<option value="'+t+'"'+(displayedTheme===t?' selected':'')+'>'+t+'</option>';
+      });
+      var otherField = displayedTheme==='Other'
+        ? '<input type="text" id="theme-other-'+key+'" value="'+(isOther?curTheme:'').replace(/"/g,'&quot;')+'" placeholder="Specify theme" oninput="ofSetThemeOther(\''+key+'\',this.value)" style="margin-top:6px"/>'
+        : '';
+      themeField = '<div class="fi s2"><label>Theme *</label><select id="theme-'+key+'" onchange="ofSetTheme(\''+key+'\',this.value)">'+themeOpts+'</select>'+otherField+'</div>';
+    }
     var bridesmaidsField = key==='wedding' ? '<div class="fi"><label>Bridesmaids</label>'+countDropdown('bm-'+key,e.bridesmaids||0)+'</div>' : '';
     var flowerGirlsField = (key==='wedding'||key==='homecoming') ? '<div class="fi"><label>Flower Girls</label>'+countDropdown('fg-'+key,e.flowerGirls||0)+'</div>' : '';
     var littleMaidsField = (key==='wedding'||key==='homecoming') ? '<div class="fi"><label>Little Maids</label>'+countDropdown('lm-'+key,e.littleMaids||0)+'</div>' : '';
@@ -2024,6 +2076,7 @@ function renderOverviewForm(){
         '<div class="fg" style="margin-top:10px">'
         +'<div class="fi"><label>Date *</label><input type="date" value="'+(e.date||'')+'" onchange="ofSetEvent(\''+key+'\',\'date\',this.value)"/></div>'
         +'<div class="fi"><label>Venue</label><input type="text" value="'+(e.venue||'').replace(/"/g,'&quot;')+'" placeholder="Venue name" onchange="ofSetEvent(\''+key+'\',\'venue\',this.value)"/></div>'
+        +themeField
         +'<div class="fi"><label>Start Time</label><input type="time" value="'+(e.startTime||'')+'" onchange="ofSetEvent(\''+key+'\',\'startTime\',this.value)"/></div>'
         +'<div class="fi"><label>End Time</label><input type="time" value="'+(e.endTime||'')+'" onchange="ofSetEvent(\''+key+'\',\'endTime\',this.value)"/></div>'
         +bridesmaidsField
@@ -2115,6 +2168,32 @@ function ofSetEvent(key,field,val){
   if(key==='wedding'&&field==='date')OF.draft.weddingDate=val;
 }
 
+function ofSetTheme(key,val){
+  ofMark();
+  OF.draft.events=OF.draft.events||{};
+  OF.draft.events[key]=OF.draft.events[key]||{};
+  if(val==='Other'){
+    // Keep existing custom theme or empty
+    var cur = OF.draft.events[key].theme;
+    if(!cur || ['Kandyan','Modern Kandyan','Indian','Lehenga','Western'].indexOf(cur)!==-1){
+      OF.draft.events[key].theme='';
+    }
+    renderOverviewForm();
+  } else if(val===''){
+    OF.draft.events[key].theme='';
+  } else {
+    OF.draft.events[key].theme=val;
+    // Remove "Other" text field if it was shown
+    renderOverviewForm();
+  }
+}
+function ofSetThemeOther(key,val){
+  ofMark();
+  OF.draft.events=OF.draft.events||{};
+  OF.draft.events[key]=OF.draft.events[key]||{};
+  OF.draft.events[key].theme=val.trim();
+}
+
 function ofCountChange(id,val){
   ofMark();
   var parts=id.split('-'); // bm-wedding, fg-wedding, lm-homecoming etc.
@@ -2203,9 +2282,13 @@ function ofValidate(){
     errs.push('Tick at least one event (Wedding, Homecoming, or Going Away).');
   } else {
     enabledEvents.forEach(function(k){
+      var lbl=k==='wedding'?'Wedding':k==='homecoming'?'Homecoming':'Going Away';
       if(!events[k].date){
-        var lbl=k==='wedding'?'Wedding':k==='homecoming'?'Homecoming':'Going Away';
         errs.push(lbl+' is ticked but has no date. Either set a date or untick.');
+      }
+      // Theme required for Wedding and Homecoming, not Going Away
+      if((k==='wedding'||k==='homecoming') && !events[k].theme){
+        errs.push(lbl+' needs a theme. Pick one (or choose Other to type your own).');
       }
     });
   }
