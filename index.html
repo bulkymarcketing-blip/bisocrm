@@ -2272,11 +2272,37 @@ function openOverviewForm(brideId, opts){
     if(existingQuote && existingQuote.items){
       Object.values(existingQuote.items).forEach(function(it){
         var k = it.key || 'L-'+Math.random().toString(36).slice(2,9);
-        OF.draft.quoteItems[k] = Object.assign({}, it, {key:k});
+        var loaded = Object.assign({}, it, {key:k});
+        // Infer linkedTo from description so syncQuoteItems can match (and not duplicate)
+        if(!loaded.linkedTo){
+          var d = (loaded.desc||'').toLowerCase();
+          if(d.indexOf('bridal')===0)loaded.linkedTo = 'wedding';
+          else if(d.indexOf('homecoming')===0 && (loaded.unit||0) < 0)loaded.linkedTo = 'discount';
+          else if(d.indexOf('homecoming')===0)loaded.linkedTo = 'homecoming';
+          else if(d.indexOf('going away')===0)loaded.linkedTo = 'goingAway';
+          else if(d.indexOf('bridesmaid')===0)loaded.linkedTo = 'bridesmaids';
+          else if(d.indexOf('flower girl')===0)loaded.linkedTo = 'flowerGirls';
+          else if(d.indexOf('little maid')===0)loaded.linkedTo = 'littleMaids';
+          else loaded.custom = true;
+        }
+        OF.draft.quoteItems[k] = loaded;
       });
       OF.draft._existingQuoteId = existingQuote.id;
     }
-    // Sync to reconcile with current event state
+    // Deduplicate: keep only the first instance of each linkedTo key
+    var seenLinks = {};
+    Object.keys(OF.draft.quoteItems).forEach(function(k){
+      var it = OF.draft.quoteItems[k];
+      if(it.linkedTo){
+        if(seenLinks[it.linkedTo]){
+          // Already have a line for this link - remove the duplicate
+          delete OF.draft.quoteItems[k];
+        } else {
+          seenLinks[it.linkedTo] = k;
+        }
+      }
+    });
+    // Sync to reconcile with current event state (won't add duplicates now)
     syncQuoteItems();
   } else {
     OF.brideId=null;
