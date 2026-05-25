@@ -245,7 +245,7 @@ textarea{resize:vertical;min-height:80px}
 <div class="main"><div class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="hamburger" onclick="openSB()"><svg width="20" height="16" viewBox="0 0 20 16" fill="none"><rect width="20" height="2" rx="1" fill="currentColor"/><rect y="7" width="20" height="2" rx="1" fill="currentColor"/><rect y="14" width="20" height="2" rx="1" fill="currentColor"/></svg></button><div class="page-title" id="PT">Lead Pipeline</div></div><div class="topbar-right"><div class="swrap"><span class="sicon">⌕</span><input type="text" class="sbox" id="SI" placeholder="Search…" oninput="doSearch()"/></div><button id="MSB" style="display:none;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:8px;cursor:pointer" onclick="toggleMSB()">⌕</button><button class="btn btn-primary" id="AB" onclick="handleAdd()">+ Add</button></div></div><div id="MSBar" style="display:none;padding:10px 14px;background:var(--surf);border-bottom:1.5px solid var(--border)"><div class="swrap" style="width:100%"><span class="sicon">⌕</span><input type="text" class="sbox" id="MSI" placeholder="Search…" oninput="document.getElementById('SI').value=this.value;doSearch()" style="width:100%"/></div></div><div class="content" id="MC"></div></div>
 <nav class="mnav"><div class="mni" id="MN"></div></nav>
 </div></div>
-<div class="overlay" id="lead-modal"><div class="modal msm"><div class="mhd"><div><div class="mt">New Lead</div></div><button class="mc" onclick="CM('lead-modal')">×</button></div><div class="mbdy"><div class="fg"><div class="fi"><label>Full Name *</label><input type="text" id="lf-name" placeholder="Bride name"/></div><div class="fi"><label>WhatsApp</label><input type="text" id="lf-phone" placeholder="+94 77 000 0000"/></div><div class="fi"><label>Email</label><input type="email" id="lf-email"/></div><div class="fi"><label>Source</label><select id="lf-src" onfocus="populateLfSrc(this)"><option value="whatsapp">WhatsApp</option></select></div><div class="fi"><label>Stage</label><select id="lf-stage"><option value="0">New Lead</option><option value="1">Contacted</option><option value="2">Consultation Booked</option><option value="3">Consultation Done</option><option value="4">Quoted</option></select></div><div class="fi"><label>Wedding Date</label><input type="date" id="lf-date"/></div><div class="fi"><label>Package</label><select id="lf-pkg"><option value="">Not discussed</option><option>Wedding Only</option><option>Wedding + Homecoming</option><option>Wedding + HC + Bridesmaids</option><option>Wedding + HC + BM + Going Away</option><option>Custom</option></select></div><div class="fi"><label>Bridesmaids</label><input type="number" id="lf-bm" min="0" value="0"/></div><div class="fi s2"><label>Notes</label><textarea id="lf-notes"></textarea></div></div></div><div class="mft"><button class="btn btn-ghost" onclick="CM('lead-modal')">Cancel</button><button class="btn btn-primary" onclick="saveLead()">Save</button></div></div></div>
+<div class="overlay" id="lead-modal"><div class="modal"><div class="mhd"><div style="display:flex;align-items:center;gap:10px;flex:1"><button class="btn btn-ghost btn-xs" onclick="closeOverview()" style="padding:6px 10px;border:none;background:var(--bg)">‹ Back</button><div style="flex:1"><div class="mt" id="of-title">New Bride</div><div class="msb" id="of-sub" style="display:none"></div></div></div><button class="mc" onclick="closeOverview()">×</button></div><div class="mbdy" id="of-body"></div><div class="mft" id="of-footer"></div></div></div>
 <div class="overlay" id="detail-modal"><div class="modal"><div class="mhd"><div><div class="mt" id="dm-n"></div><div class="msb" id="dm-s"></div></div><button class="mc" onclick="CM('detail-modal')">×</button></div><div class="mbdy" id="dm-b"></div><div class="mft" id="dm-f"></div></div></div>
 <div class="overlay" id="quot-modal"><div class="modal mlg"><div class="mhd"><div><div class="mt">Quotation</div><div class="msb" id="qm-s"></div></div><button class="mc" onclick="CM('quot-modal')">×</button></div><div class="mbdy" id="qm-b" style="padding:14px"></div><div class="mft" id="qm-f"></div></div></div>
 <div class="overlay" id="doc-modal"><div class="modal mlg"><div class="mhd"><div><div class="mt" id="doc-t"></div></div><button class="mc" onclick="CM('doc-modal')">×</button></div><div class="mbdy" id="doc-b"></div><div class="mft" id="doc-f"></div></div></div>
@@ -254,15 +254,47 @@ textarea{resize:vertical;min-height:80px}
 <div class="overlay" id="einv-modal"><div class="modal msm"><div class="mhd"><div><div class="mt">Edit Invoice</div><div class="msb" id="einv-s"></div></div><button class="mc" onclick="CM('einv-modal')">×</button></div><div class="mbdy" id="einv-b"></div><div class="mft" id="einv-f"></div></div></div>
 <div class="overlay" id="pay-modal"><div class="modal msm"><div class="mhd"><div><div class="mt">Add Payment</div><div class="msb" id="pay-s"></div></div><button class="mc" onclick="CM('pay-modal')">x</button></div><div class="mbdy" id="pay-b"></div><div class="mft" id="pay-f"></div></div></div>
 <div class="overlay" id="cust-modal"><div class="modal"><div class="mhd"><div><div class="mt" id="cm-t"></div><div class="msb" id="cm-s"></div></div><button class="mc" onclick="CM('cust-modal')">×</button></div><div class="mbdy" id="cm-b"></div><div class="mft" id="cm-f"></div></div></div>
-<div class="overlay" id="ncust-modal"><div class="modal msm"><div class="mhd"><div><div class="mt">New Customer</div></div><button class="mc" onclick="CM('ncust-modal')">×</button></div><div class="mbdy"><div class="fg"><div class="fi"><label>Full Name *</label><input type="text" id="nc-n"/></div><div class="fi"><label>WhatsApp *</label><input type="text" id="nc-p"/></div><div class="fi"><label>Email</label><input type="email" id="nc-e"/></div><div class="fi"><label>Wedding Date</label><input type="date" id="nc-w"/></div><div class="fi"><label>Venue</label><input type="text" id="nc-v"/></div><div class="fi"><label>Bridesmaids</label><input type="number" id="nc-b" min="0" value="0"/></div><div class="fi s2"><label>Notes</label><textarea id="nc-nt"></textarea></div></div></div><div class="mft"><button class="btn btn-ghost" onclick="CM('ncust-modal')">Cancel</button><button class="btn btn-primary" onclick="saveNC()">Save</button></div></div></div>
+<div class="overlay" id="ncust-modal" style="display:none"><!-- replaced by overview form --></div>
 <div class="sov" id="svc-ov" onclick="CS('svc')"></div><div class="sheet" id="svc-sheet"><div class="shdl"></div><div class="shd"><div class="sht">Add Service</div><button class="shc" onclick="CS('svc')">×</button></div><div class="ssw"><span class="ssi">⌕</span><input class="shs" type="text" id="svc-q" placeholder="Search services…" oninput="filterSvcs(this.value)" autocomplete="off"/></div><div class="shl" id="svc-list"></div></div>
 <div class="sov" id="thm-ov" onclick="CS('thm')"></div><div class="sheet" id="thm-sheet"><div class="shdl"></div><div class="shd"><div class="sht" id="thm-t">Select Theme</div><button class="shc" onclick="CS('thm')">×</button></div><div class="shl" id="thm-l"></div></div>
 <div class="sov" id="amt-ov" onclick="CS('amt')"></div><div class="sheet" id="amt-sheet" style="max-height:48vh"><div class="shdl"></div><div class="shd"><div class="sht" id="amt-t">Enter Amount</div><button class="shc" onclick="CS('amt')">×</button></div><div style="padding:18px"><div style="font-size:12px;color:var(--muted);margin-bottom:8px" id="amt-h"></div><input type="number" id="amt-i" style="width:100%;padding:14px;font-size:22px;font-family:Inter,sans-serif;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);outline:none;text-align:right" placeholder="0"/><button onclick="confirmAmt()" style="width:100%;margin-top:12px;background:var(--navy);color:#fff;border:none;border-radius:8px;padding:13px;font-size:15px;font-family:Inter,sans-serif;font-weight:600;cursor:pointer">Add to Quote</button></div></div>
+<div class="sov" id="cc-ov" onclick="CS('cc')"></div><div class="sheet" id="cc-sheet"><div class="shdl"></div><div class="shd"><div class="sht">Select Country</div><button class="shc" onclick="CS('cc')">×</button></div><div class="ssw"><span class="ssi">⌕</span><input class="shs" type="text" id="cc-q" placeholder="Search country..." oninput="filterCountries(this.value)"/></div><div class="shl" id="cc-list"></div></div>
 <div class="sov" id="cst-ov" onclick="CS('cst')"></div><div class="sheet" id="cst-sheet"><div class="shdl"></div><div class="shd"><div class="sht">Select Customer</div><button class="shc" onclick="CS('cst')">×</button></div><div class="ssw"><span class="ssi">⌕</span><input class="shs" type="text" id="cst-q" placeholder="Search…" oninput="filterCusts(this.value)"/></div><div class="shl" id="cst-list"></div></div>
 <div class="overlay" id="cf-modal" style="z-index:3000"><div class="modal msm"><div class="mhd"><div><div class="mt" id="cf-title">Confirm</div><div class="msb" id="cf-sub" style="display:none"></div></div></div><div class="mbdy"><div id="cf-msg" style="font-size:14px;color:var(--text2);line-height:1.6"></div><div id="cf-input-wrap" style="margin-top:14px;display:none"><label id="cf-input-label" style="display:block;margin-bottom:6px">Amount</label><input type="number" id="cf-input" style="width:100%"/></div><div id="cf-note-wrap" style="margin-top:10px;display:none"><label style="display:block;margin-bottom:6px">Note (optional)</label><input type="text" id="cf-note" placeholder="Reason or comment"/></div></div><div class="mft"><button class="btn btn-ghost" onclick="cfNo()" id="cf-no">Cancel</button><button class="btn btn-primary" onclick="cfYes()" id="cf-yes">Confirm</button></div></div></div>
 <div class="notif" id="NF"></div>
 <script>
 const FB='https://biso-crm-default-rtdb.asia-southeast1.firebasedatabase.app';
+
+// Country codes for phone picker - common ones listed first, then alphabetical
+var COUNTRIES=[
+  {n:'Sri Lanka',c:'94',f:'🇱🇰'},
+  {n:'India',c:'91',f:'🇮🇳'},
+  {n:'United States',c:'1',f:'🇺🇸'},
+  {n:'United Kingdom',c:'44',f:'🇬🇧'},
+  {n:'Australia',c:'61',f:'🇦🇺'},
+  {n:'United Arab Emirates',c:'971',f:'🇦🇪'},
+  {n:'Canada',c:'1',f:'🇨🇦'},
+  {n:'Saudi Arabia',c:'966',f:'🇸🇦'},
+  {n:'Singapore',c:'65',f:'🇸🇬'},
+  {n:'Qatar',c:'974',f:'🇶🇦'},
+  {n:'Kuwait',c:'965',f:'🇰🇼'},
+  {n:'Oman',c:'968',f:'🇴🇲'},
+  {n:'Bahrain',c:'973',f:'🇧🇭'},
+  {n:'Malaysia',c:'60',f:'🇲🇾'},
+  {n:'Thailand',c:'66',f:'🇹🇭'},
+  {n:'Japan',c:'81',f:'🇯🇵'},
+  {n:'China',c:'86',f:'🇨🇳'},
+  {n:'New Zealand',c:'64',f:'🇳🇿'},
+  {n:'Germany',c:'49',f:'🇩🇪'},
+  {n:'France',c:'33',f:'🇫🇷'},
+  {n:'Italy',c:'39',f:'🇮🇹'},
+  {n:'Pakistan',c:'92',f:'🇵🇰'},
+  {n:'Bangladesh',c:'880',f:'🇧🇩'},
+  {n:'Nepal',c:'977',f:'🇳🇵'},
+  {n:'Maldives',c:'960',f:'🇲🇻'}
+];
+function findCountry(cc){return COUNTRIES.find(function(x){return x.c===String(cc);})||COUNTRIES[0];}
+
 const STAGES=['New Lead','Contacted','Consultation Booked','Consultation Done','Quoted'];
 const SC=['p0','p1','p2','p3','p4'];
 const THEMES=['Kandyan','Modern Kandyan','Indian / Lehenga','Western'];
@@ -305,25 +337,247 @@ let leads={},custs={},view='pipeline',q='';
 let QB={lid:null,cid:null,items:[],notes:'',psvc:null,editId:null};
 let _cb=null;
 async function fbG(p){const r=await fetch(FB+p+'.json');if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}
-async function fbS(p,d){const r=await fetch(FB+p+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}
-async function fbP(p,d){const r=await fetch(FB+p+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}
-async function fbD(p){await fetch(FB+p+'.json',{method:'DELETE'});}
+async function fbS(p,d){
+  // Redirect /leads/X and /customers/X to /brides/X
+  if(p&&p.indexOf('/leads/')===0&&p!=='/leads')p='/brides/'+p.slice(7);
+  else if(p&&p.indexOf('/customers/')===0&&p!=='/customers')p='/brides/'+p.slice(11);
+  const r=await fetch(FB+p+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  return r.json();
+}
+async function fbP(p,d){
+  // Redirect /leads/X to /brides/X (single source of truth)
+  if(p&&p.indexOf('/leads/')===0)p='/brides/'+p.slice(7);
+  // Redirect /customers/X to /brides/X as well - we keep things in sync
+  else if(p&&p.indexOf('/customers/')===0)p='/brides/'+p.slice(11);
+  const r=await fetch(FB+p+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  return r.json();
+}
+async function fbD(p){
+  if(p&&p.indexOf('/leads/')===0&&p!=='/leads')p='/brides/'+p.slice(7);
+  else if(p&&p.indexOf('/customers/')===0&&p!=='/customers')p='/brides/'+p.slice(11);
+  await fetch(FB+p+'.json',{method:'DELETE'});
+}
+// Phone normalization: takes any input, returns WhatsApp format (digits only, with country code).
+// Default country code is +94 (Sri Lanka) if no country code detected.
+function normPhone(raw,defaultCC){
+  if(!raw)return '';
+  defaultCC=defaultCC||'94';
+  var digits=String(raw).replace(/\D/g,'');
+  if(!digits)return '';
+  // Already has country code (starts with non-zero, length 10+)
+  if(digits.length>=11&&digits[0]!=='0')return digits;
+  // Starts with 0 - strip and prepend default CC
+  if(digits[0]==='0')return defaultCC+digits.slice(1);
+  // 9 digits without 0 - prepend default CC
+  if(digits.length===9)return defaultCC+digits;
+  return digits;
+}
+function fmtPhone(p){
+  if(!p)return '';
+  // Show as +94 77 123 4567
+  var s=String(p).replace(/\D/g,'');
+  if(s.length>=11&&s.slice(0,2)==='94')return '+94 '+s.slice(2,4)+' '+s.slice(4,7)+' '+s.slice(7);
+  return '+'+s;
+}
+
+// Brides storage - canonical
+var brides={};
+
+// Migrate leads+customers into brides keyed by normalized phone
+function migrateToBrides(leadsObj,custsObj){
+  var out={};
+  var byPhone={};
+  // Process customers first (they often have more info)
+  Object.values(custsObj||{}).forEach(function(c){
+    var ph=normPhone(c.phone);
+    if(!ph)ph='_nocust_'+c.id;
+    var b=out[ph]||{};
+    Object.assign(b,{
+      id:b.id||c.id,
+      name:b.name||c.name,
+      phone:ph,
+      email:b.email||c.email||'',
+      weddingDate:b.weddingDate||c.weddingDate||'',
+      venue:b.venue||c.venue||'',
+      bridesmaids:b.bridesmaids||c.bridesmaids||0,
+      notes:b.notes||c.notes||'',
+      anniversary:b.anniversary||c.anniversary||'',
+      createdAt:b.createdAt||c.createdAt||new Date().toISOString(),
+      quotes:Object.assign({},c.quotes||{},b.quotes||{}),
+      invoices:Object.assign({},c.invoices||{},b.invoices||{}),
+      _customerId:c.id
+    });
+    out[ph]=b;
+    byPhone[ph]=b;
+  });
+  // Process leads - merge into existing by phone OR add new
+  Object.values(leadsObj||{}).forEach(function(l){
+    var ph=normPhone(l.phone)||('_nolead_'+l.id);
+    var b=out[ph];
+    if(!b){
+      b={
+        id:l.id,
+        phone:ph,
+        createdAt:l.createdAt||new Date().toISOString(),
+        quotes:{},invoices:{}
+      };
+      out[ph]=b;
+    }
+    // Merge lead fields - lead takes priority on stage/pipeline fields
+    b.id=b.id||l.id;
+    b.name=l.name||b.name;
+    b.email=l.email||b.email||'';
+    b.source=l.source||b.source||'whatsapp';
+    b.stage=Number(l.stage||0);
+    b.confirmed=!!l.confirmed;
+    b.cancelled=!!l.cancelled;
+    b.cancelledAt=l.cancelledAt||b.cancelledAt||'';
+    b.cancelReason=l.cancelReason||b.cancelReason||'';
+    b.refundAmount=l.refundAmount||b.refundAmount||0;
+    b.weddingDate=l.weddingDate||b.weddingDate||'';
+    b.venue=l.venue||b.venue||'';
+    b.bridesmaids=l.bridesmaids||b.bridesmaids||0;
+    b.notes=l.notes||b.notes||'';
+    b.advance=l.advance||b.advance||0;
+    b.balance=l.balance||b.balance||0;
+    b.events=l.events||b.events||{};
+    b.appointments=Object.assign({},b.appointments||{},l.appointments||{});
+    b.quotations=Object.assign({},l.quotations||{});
+    // Merge quotes/invoices from lead too
+    b.quotes=Object.assign({},b.quotes||{},l.quotations||{});
+    b.invoices=Object.assign({},b.invoices||{},l.invoices||{});
+    b.notesLog=Object.assign({},b.notesLog||{},l.notesLog||{});
+    b.documents=Object.assign({},b.documents||{},l.documents||{});
+    b._history=Object.assign({},b._history||{},l._history||{});
+    b.lastActivity=l.lastActivity||b.lastActivity||l.createdAt;
+    b._leadId=l.id;
+  });
+  // Ensure defaults
+  Object.values(out).forEach(function(b){
+    if(!b.id)b.id='bride-'+Math.random().toString(36).slice(2,10);
+    if(b.confirmed===undefined)b.confirmed=false;
+    if(b.cancelled===undefined)b.cancelled=false;
+    if(b.stage===undefined)b.stage=0;
+    if(!b.events)b.events={};
+    if(!b.quotes)b.quotes={};
+    if(!b.invoices)b.invoices={};
+    if(!b.appointments)b.appointments={};
+    if(!b.notesLog)b.notesLog={};
+    if(!b.documents)b.documents={};
+  });
+  return out;
+}
+
+// Project brides back into leads + custs views (for backward compat with existing UI code)
+function projectViews(){
+  leads={};custs={};
+  Object.values(brides).forEach(function(b){
+    // leads view: everything that's not just-customer (has stage or quotes that became leads)
+    var lead={
+      id:b.id,
+      name:b.name||'',
+      phone:b.phone||'',
+      email:b.email||'',
+      source:b.source||'whatsapp',
+      stage:Number(b.stage||0),
+      confirmed:!!b.confirmed,
+      cancelled:!!b.cancelled,
+      cancelledAt:b.cancelledAt||'',
+      cancelReason:b.cancelReason||'',
+      refundAmount:b.refundAmount||0,
+      weddingDate:b.weddingDate||'',
+      venue:b.venue||'',
+      bridesmaids:b.bridesmaids||0,
+      notes:b.notes||'',
+      advance:b.advance||0,
+      balance:b.balance||0,
+      events:b.events||{},
+      appointments:b.appointments||{},
+      quotations:b.quotes||{},
+      invoices:b.invoices||{},
+      notesLog:b.notesLog||{},
+      documents:b.documents||{},
+      _history:b._history||{},
+      createdAt:b.createdAt,
+      lastActivity:b.lastActivity||b.createdAt
+    };
+    leads[b.id]=lead;
+    // customer view: same data but customer-shaped
+    var cust={
+      id:b.id,
+      name:b.name||'',
+      phone:b.phone||'',
+      email:b.email||'',
+      weddingDate:b.weddingDate||'',
+      venue:b.venue||'',
+      bridesmaids:b.bridesmaids||0,
+      notes:b.notes||'',
+      anniversary:b.anniversary||'',
+      createdAt:b.createdAt,
+      quotes:b.quotes||{},
+      invoices:b.invoices||{}
+    };
+    custs[b.id]=cust;
+  });
+}
+
+// Save a bride record to Firebase
+async function saveBride(b){
+  if(!b.id)b.id='bride-'+Math.random().toString(36).slice(2,10);
+  brides[b.id]=b;
+  await fbS('/brides/'+b.id,b);
+  projectViews();
+}
+
+// Patch a bride record
+async function patchBride(id,patch){
+  if(!brides[id])return;
+  Object.assign(brides[id],patch);
+  await fbP('/brides/'+id,patch);
+  projectViews();
+}
+
 async function loadData(){
   document.getElementById('lerr').style.display='none';
   document.getElementById('LS').style.display='flex';
   try{
     const ctrl=new AbortController();
     const t=setTimeout(()=>ctrl.abort(),10000);
-    const r=await fetch(FB+'/leads.json',{signal:ctrl.signal});
+    var r=await fetch(FB+'/brides.json',{signal:ctrl.signal});
     clearTimeout(t);
     if(!r.ok)throw new Error('HTTP '+r.status);
-    leads=(await r.json())||{};
-    custs=(await(await fetch(FB+'/customers.json')).json())||{};
+    brides=(await r.json())||{};
+    // If brides empty but legacy data exists, run one-time migration
+    if(Object.keys(brides).length===0){
+      var [legacyL,legacyC]=await Promise.all([
+        fetch(FB+'/leads.json').then(function(r){return r.json();}),
+        fetch(FB+'/customers.json').then(function(r){return r.json();})
+      ]);
+      legacyL=legacyL||{};legacyC=legacyC||{};
+      if(Object.keys(legacyL).length>0||Object.keys(legacyC).length>0){
+        brides=migrateToBrides(legacyL,legacyC);
+        // Write all brides to Firebase
+        if(Object.keys(brides).length>0){
+          await fbS('/brides',brides);
+          notif('Migrated '+Object.keys(brides).length+' bride'+(Object.keys(brides).length!==1?'s':'')+' from old data.');
+        }
+      }
+    }
+    projectViews();
     document.getElementById('LS').style.display='none';
     document.getElementById('APP').style.display='block';
     document.getElementById('ST').textContent='Live sync active';
     buildNav();render();
-    setInterval(async()=>{try{const[l,c]=await Promise.all([fbG('/leads'),fbG('/customers')]);leads=l||{};custs=c||{};render();}catch(e){}},15000);
+    setInterval(async function(){
+      try{
+        var newB=await fbG('/brides');
+        brides=newB||{};
+        projectViews();
+        render();
+      }catch(e){}
+    },15000);
   }catch(e){
     document.getElementById('lerr').style.display='block';
     document.getElementById('lm').textContent=e.name==='AbortError'?'Connection timed out.':'Failed: '+e.message;
@@ -1596,13 +1850,293 @@ function populateLfSrc(sel){
     sel.appendChild(opt);
   });
 }
-function openLeadModal(){populateLfSrc(document.getElementById('lf-src'));['lf-name','lf-phone','lf-email','lf-notes'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});var bm=document.getElementById('lf-bm');if(bm)bm.value='0';var d=document.getElementById('lf-date');if(d)d.value='';OM('lead-modal');}
-async function saveLead(){
-  var name=(document.getElementById('lf-name')?document.getElementById('lf-name').value:'').trim();
-  if(!name){notif('Enter bride name.');return;}
-  var lead={id:uid(),name:name,phone:(document.getElementById('lf-phone')?document.getElementById('lf-phone').value:'').trim(),email:(document.getElementById('lf-email')?document.getElementById('lf-email').value:'').trim(),source:(document.getElementById('lf-src')?document.getElementById('lf-src').value:'whatsapp'),stage:parseInt((document.getElementById('lf-stage')?document.getElementById('lf-stage').value:'0')),weddingDate:(document.getElementById('lf-date')?document.getElementById('lf-date').value:''),package:(document.getElementById('lf-pkg')?document.getElementById('lf-pkg').value:''),notes:(document.getElementById('lf-notes')?document.getElementById('lf-notes').value:'').trim(),bridesmaids:parseInt((document.getElementById('lf-bm')?document.getElementById('lf-bm').value:'0')),createdAt:new Date().toISOString(),confirmed:false,advance:0,balance:0,venue:'',appointments:{},quotations:{},invoices:{}};
-  try{await fbS('/leads/'+lead.id,lead);leads[lead.id]=lead;CM('lead-modal');notif('Lead added!');render();}catch(e){notif('Error: '+e.message);}
+
+// =========================================================
+// Overview Form - single source of truth
+// Used for: new bride creation, lead/confirmed detail overview tab
+// =========================================================
+var OF = {
+  brideId:null,        // if editing existing
+  isNew:true,
+  draft:null,          // working copy of bride data
+  dirty:false,
+  countryCode:'94'
+};
+
+function openOverviewForm(brideId){
+  if(brideId&&brides[brideId]){
+    OF.brideId=brideId;
+    OF.isNew=false;
+    OF.draft=JSON.parse(JSON.stringify(brides[brideId]));
+    var pAll=String(OF.draft.phone||'').replace(/\D/g,'');
+    var c=COUNTRIES.find(function(x){return pAll.indexOf(x.c)===0;});
+    OF.countryCode=c?c.c:'94';
+  } else {
+    OF.brideId=null;
+    OF.isNew=true;
+    OF.draft={
+      id:'bride-'+Math.random().toString(36).slice(2,10),
+      name:'',phone:'',email:'',
+      source:'whatsapp',
+      stage:0,confirmed:false,cancelled:false,
+      events:{},
+      notes:'',
+      createdAt:new Date().toISOString(),
+      lastActivity:new Date().toISOString(),
+      quotes:{},invoices:{},appointments:{},notesLog:{},documents:{},_history:{}
+    };
+    OF.countryCode='94';
+  }
+  OF.dirty=false;
+  renderOverviewForm();
+  document.getElementById('of-title').textContent=OF.isNew?'New Bride':OF.draft.name||'Bride';
+  OM('lead-modal');
 }
+
+async function closeOverview(){
+  if(OF.dirty){
+    var r=await showConfirm({title:'Discard changes?',msg:'You have unsaved changes. Discard them?',yesText:'Discard',dangerous:true});
+    if(!r.ok)return;
+  }
+  CM('lead-modal');
+}
+
+function renderOverviewForm(){
+  var b=OF.draft;
+  var cc=findCountry(OF.countryCode);
+  var localNum=String(b.phone||'').replace(/^94|^0/,'').replace(/\D/g,'');
+  // If draft has phone starting with non-94 country code, strip it
+  if(b.phone&&!b.phone.startsWith('94')){
+    var matched=COUNTRIES.find(function(x){return b.phone.startsWith(x.c);});
+    if(matched){localNum=b.phone.slice(matched.c.length);OF.countryCode=matched.c;cc=matched;}
+  }
+  
+  var SRCS=getSources();
+  var srcOpts='';SRCS.forEach(function(s){srcOpts+='<option value="'+s.value+'"'+(b.source===s.value?' selected':'')+'>'+s.label+'</option>';});
+  
+  // Event sections
+  function eventCard(key,label,e){
+    var enabled=!!(e&&e.enabled);
+    var bridesmaidsField = key==='wedding' ? '<div class="fi"><label>Bridesmaids</label>'+countDropdown('bm-'+key,e.bridesmaids||0)+'</div>' : '';
+    var flowerGirlsField = (key==='wedding'||key==='homecoming') ? '<div class="fi"><label>Flower Girls</label>'+countDropdown('fg-'+key,e.flowerGirls||0)+'</div>' : '';
+    var littleMaidsField = (key==='wedding'||key==='homecoming') ? '<div class="fi"><label>Little Maids</label>'+countDropdown('lm-'+key,e.littleMaids||0)+'</div>' : '';
+    return '<div style="background:'+(enabled?'var(--bg)':'#fafbfc')+';border:1.5px solid '+(enabled?'var(--navy)':'var(--border)')+';border-radius:10px;padding:12px;margin-bottom:10px">'
+      +'<label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;font-weight:600;color:'+(enabled?'var(--navy)':'var(--text2)')+';text-transform:none;letter-spacing:0">'
+      +'<input type="checkbox" '+(enabled?'checked':'')+' onchange="ofToggleEvent(\''+key+'\',this.checked)" style="width:18px;height:18px;cursor:pointer"/> '+label
+      +'</label>'
+      +(enabled?(
+        '<div class="fg" style="margin-top:10px">'
+        +'<div class="fi"><label>Date *</label><input type="date" value="'+(e.date||'')+'" onchange="ofSetEvent(\''+key+'\',\'date\',this.value)"/></div>'
+        +'<div class="fi"><label>Venue</label><input type="text" value="'+(e.venue||'').replace(/"/g,'&quot;')+'" placeholder="Venue name" onchange="ofSetEvent(\''+key+'\',\'venue\',this.value)"/></div>'
+        +'<div class="fi"><label>Start Time</label><input type="time" value="'+(e.startTime||'')+'" onchange="ofSetEvent(\''+key+'\',\'startTime\',this.value)"/></div>'
+        +'<div class="fi"><label>End Time</label><input type="time" value="'+(e.endTime||'')+'" onchange="ofSetEvent(\''+key+'\',\'endTime\',this.value)"/></div>'
+        +bridesmaidsField
+        +flowerGirlsField
+        +littleMaidsField
+        +'</div>'
+      ):'')
+      +'</div>';
+  }
+  
+  var ev=b.events||{};
+  var html=
+    '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:600;margin-bottom:10px">Contact</div>'
+    // Phone (first!)
+    +'<div class="fi" style="margin-bottom:14px"><label>WhatsApp Number *</label>'
+    +'<div style="display:flex;gap:6px"><button type="button" onclick="OS(\'cc\')" style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:Inter,sans-serif"><span style="font-size:16px">'+cc.f+'</span><span style="font-weight:600;color:var(--navy)">+'+cc.c+'</span></button>'
+    +'<input type="tel" id="of-phone" value="'+localNum+'" placeholder="77 123 4567" style="flex:1" oninput="ofPhoneInput()" onblur="ofPhoneBlur()"/></div>'
+    +'<div id="of-phone-msg" style="font-size:11px;color:var(--muted);margin-top:4px"></div>'
+    +'</div>'
+    +'<div class="fg" style="margin-bottom:14px">'
+    +'<div class="fi"><label>Full Name *</label><input type="text" id="of-name" value="'+(b.name||'').replace(/"/g,'&quot;')+'" placeholder="Bride\'s name" oninput="ofMark();OF.draft.name=this.value"/></div>'
+    +'<div class="fi"><label>Email</label><input type="email" value="'+(b.email||'')+'" oninput="ofMark();OF.draft.email=this.value"/></div>'
+    +'<div class="fi"><label>Source</label><select onchange="ofMark();OF.draft.source=this.value">'+srcOpts+'</select></div>'
+    +'<div class="fi"><label>Date Inquired</label><input type="date" value="'+(b.createdAt||'').slice(0,10)+'" onchange="ofMark();OF.draft.createdAt=this.value+\'T00:00:00.000Z\'"/></div>'
+    +'</div>'
+    +'<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:600;margin:18px 0 10px">Events</div>'
+    +'<div style="font-size:12px;color:var(--muted);margin-bottom:10px">Tick the events you are styling. At least one event with a date is required.</div>'
+    +eventCard('wedding','Wedding',ev.wedding||{})
+    +eventCard('homecoming','Homecoming',ev.homecoming||{})
+    +eventCard('goingAway','Going Away',ev.goingAway||{})
+    +'<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:600;margin:18px 0 10px">Notes</div>'
+    +'<textarea id="of-notes" style="min-height:80px" oninput="ofMark();OF.draft.notes=this.value">'+(b.notes||'').replace(/</g,'&lt;')+'</textarea>'
+    +'<div id="of-validation" style="margin-top:14px"></div>';
+  
+  document.getElementById('of-body').innerHTML=html;
+  document.getElementById('of-footer').innerHTML=
+    '<button class="btn btn-ghost" onclick="closeOverview()">Cancel</button>'
+    +'<button class="btn btn-primary" onclick="ofSave()">Save</button>';
+}
+
+function countDropdown(id,val){
+  var opts='';
+  for(var i=0;i<=10;i++)opts+='<option value="'+i+'"'+(i==val?' selected':'')+'>'+i+'</option>';
+  return '<select id="'+id+'" onchange="ofCountChange(\''+id+'\',this.value)">'+opts+'</select>';
+}
+
+function ofMark(){OF.dirty=true;}
+
+function ofToggleEvent(key,checked){
+  ofMark();
+  OF.draft.events=OF.draft.events||{};
+  OF.draft.events[key]=OF.draft.events[key]||{};
+  OF.draft.events[key].enabled=checked;
+  renderOverviewForm();
+}
+
+function ofSetEvent(key,field,val){
+  ofMark();
+  OF.draft.events=OF.draft.events||{};
+  OF.draft.events[key]=OF.draft.events[key]||{};
+  OF.draft.events[key][field]=val;
+  // If wedding date set, mirror to top-level weddingDate for back-compat
+  if(key==='wedding'&&field==='date')OF.draft.weddingDate=val;
+}
+
+function ofCountChange(id,val){
+  ofMark();
+  var parts=id.split('-'); // bm-wedding, fg-wedding, lm-homecoming etc.
+  var prefix=parts[0],key=parts[1];
+  var field=prefix==='bm'?'bridesmaids':prefix==='fg'?'flowerGirls':'littleMaids';
+  OF.draft.events=OF.draft.events||{};
+  OF.draft.events[key]=OF.draft.events[key]||{};
+  OF.draft.events[key][field]=parseInt(val)||0;
+}
+
+function ofPhoneInput(){
+  ofMark();
+}
+
+function ofPhoneBlur(){
+  var inp=document.getElementById('of-phone');
+  if(!inp)return;
+  var local=inp.value.replace(/\D/g,'');
+  if(local.startsWith('0'))local=local.slice(1);
+  var full=OF.countryCode+local;
+  OF.draft.phone=full;
+  inp.value=local;
+  var msg=document.getElementById('of-phone-msg');
+  if(!msg)return;
+  if(!local){msg.textContent='';return;}
+  // Validate
+  if(local.length<7){
+    msg.textContent='Number too short';
+    msg.style.color='var(--danger)';
+    return;
+  }
+  // Check for duplicate
+  var existing=Object.values(brides).find(function(b){return b.phone===full&&b.id!==OF.draft.id;});
+  if(existing){
+    msg.textContent='⚠ This number belongs to '+existing.name+'. Open that bride instead?';
+    msg.style.color='var(--danger)';
+    msg.style.cursor='pointer';
+    msg.onclick=function(){
+      CM('lead-modal');
+      openDetail(existing.id);
+    };
+  } else {
+    msg.textContent='✓ Will save as +'+OF.countryCode+' '+local;
+    msg.style.color='var(--success)';
+    msg.style.cursor='default';
+    msg.onclick=null;
+  }
+}
+
+function filterCountries(q){
+  var s=(q||'').toLowerCase();
+  var list=q?COUNTRIES.filter(function(c){return c.n.toLowerCase().indexOf(s)>=0||c.c.indexOf(s)>=0;}):COUNTRIES;
+  var h='';
+  list.forEach(function(c){
+    h+='<div class="shi" onclick="selectCountry(\''+c.c+'\')"><div style="display:flex;align-items:center;gap:12px"><span style="font-size:22px">'+c.f+'</span><div><div class="sin">'+c.n+'</div><div class="sim">+'+c.c+'</div></div></div></div>';
+  });
+  document.getElementById('cc-list').innerHTML=h;
+}
+
+function selectCountry(cc){
+  OF.countryCode=cc;
+  OF.dirty=true;
+  CS('cc');
+  renderOverviewForm();
+  setTimeout(function(){
+    var i=document.getElementById('of-phone');
+    if(i)ofPhoneBlur();
+  },50);
+}
+
+// Validate the form before save
+function ofValidate(){
+  var errs=[];
+  var b=OF.draft;
+  // Name
+  var nameInp=document.getElementById('of-name');
+  if(nameInp)b.name=nameInp.value.trim();
+  if(!b.name)errs.push('Name is required.');
+  // Phone
+  var phInp=document.getElementById('of-phone');
+  if(phInp){
+    var local=phInp.value.replace(/\D/g,'').replace(/^0/,'');
+    if(!local){errs.push('Phone number is required.');}
+    else if(local.length<7){errs.push('Phone number is too short.');}
+    else b.phone=OF.countryCode+local;
+  }
+  // Duplicate phone
+  if(b.phone){
+    var dup=Object.values(brides).find(function(x){return x.phone===b.phone&&x.id!==b.id;});
+    if(dup)errs.push('Phone already exists for '+dup.name+'.');
+  }
+  // At least one event with a date
+  var events=b.events||{};
+  var enabledEvents=['wedding','homecoming','goingAway'].filter(function(k){return events[k]&&events[k].enabled;});
+  if(enabledEvents.length===0){
+    errs.push('Tick at least one event (Wedding, Homecoming, or Going Away).');
+  } else {
+    enabledEvents.forEach(function(k){
+      if(!events[k].date){
+        var lbl=k==='wedding'?'Wedding':k==='homecoming'?'Homecoming':'Going Away';
+        errs.push(lbl+' is ticked but has no date. Either set a date or untick.');
+      }
+    });
+  }
+  return errs;
+}
+
+async function ofSave(){
+  var notesEl=document.getElementById('of-notes');
+  if(notesEl)OF.draft.notes=notesEl.value;
+  var errs=ofValidate();
+  if(errs.length>0){
+    var box=document.getElementById('of-validation');
+    if(box){
+      box.innerHTML='<div style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:8px;padding:12px;font-size:13px;color:var(--danger)"><div style="font-weight:700;margin-bottom:6px">Cannot save:</div>'+errs.map(function(e){return '• '+e;}).join('<br/>')+'</div>';
+      box.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+    return;
+  }
+  // Set weddingDate top-level from events.wedding.date
+  if(OF.draft.events&&OF.draft.events.wedding&&OF.draft.events.wedding.date){
+    OF.draft.weddingDate=OF.draft.events.wedding.date;
+  } else if(OF.draft.events&&OF.draft.events.homecoming&&OF.draft.events.homecoming.date){
+    OF.draft.weddingDate=OF.draft.events.homecoming.date;
+  }
+  OF.draft.lastActivity=new Date().toISOString();
+  // Add to history
+  OF.draft._history=OF.draft._history||{};
+  var hid='h-'+Math.random().toString(36).slice(2,10);
+  OF.draft._history[hid]={at:new Date().toISOString(),action:OF.isNew?'created':'updated',by:'system'};
+  try{
+    await saveBride(OF.draft);
+    OF.dirty=false;
+    notif(OF.isNew?'Bride created!':'Saved.');
+    CM('lead-modal');
+    render();
+  }catch(e){
+    notif('Error: '+e.message);
+  }
+}
+
+
+function openLeadModal(){openOverviewForm(null);}
+async function saveLead(){ofSave();}
 function openCust(id){
   var c=custs[id];if(!c)return;
   document.getElementById('cm-t').textContent=c.name;
@@ -1627,15 +2161,8 @@ function openCust(id){
   OM('cust-modal');
 }
 async function updC(id,data){try{await fbP('/customers/'+id,data);custs[id]=Object.assign({},custs[id],data);}catch(e){notif('Error: '+e.message);}}
-function openNC(){['nc-n','nc-p','nc-e','nc-v','nc-nt'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});var bm=document.getElementById('nc-b');if(bm)bm.value='0';var w=document.getElementById('nc-w');if(w)w.value='';OM('ncust-modal');}
-async function saveNC(){
-  var name=(document.getElementById('nc-n')?document.getElementById('nc-n').value:'').trim();
-  var phone=(document.getElementById('nc-p')?document.getElementById('nc-p').value:'').trim();
-  if(!name||!phone){notif('Name and WhatsApp required.');return;}
-  var id='cust-'+uid();
-  var nc={id:id,name:name,phone:phone,email:(document.getElementById('nc-e')?document.getElementById('nc-e').value:'').trim(),weddingDate:(document.getElementById('nc-w')?document.getElementById('nc-w').value:''),venue:(document.getElementById('nc-v')?document.getElementById('nc-v').value:'').trim(),bridesmaids:parseInt((document.getElementById('nc-b')?document.getElementById('nc-b').value:'0')),notes:(document.getElementById('nc-nt')?document.getElementById('nc-nt').value:'').trim(),anniversary:'',createdAt:new Date().toISOString(),quotes:{},invoices:{}};
-  try{await fbS('/customers/'+id,nc);custs[id]=nc;CM('ncust-modal');notif('Customer created!');if(_cb){_cb(nc);_cb=null;}render();}catch(e){notif('Error: '+e.message);}
-}
+function openNC(){openOverviewForm(null);}
+async function saveNC(){ofSave();}
 function rFinance(){
   var allI=[];
   lA().forEach(function(l){Object.values(l.invoices||{}).forEach(function(inv){allI.push(Object.assign({},inv,{cn:l.name}));});});
