@@ -5,8 +5,8 @@
 <!-- Build: 2026-05-25 09:14 v10.4 - if you see old UI, hard refresh (settings > clear browser data) -->
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/css/intlTelInput.min.css">
-<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/intlTelInput.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/intlTelInput.min.js" crossorigin="anonymous" onerror="if(window._showErr)window._showErr('CDN failed: intl-tel-input did not load. Phone validation will use simple text fallback.');window._itiCdnFailed=true"></script>
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/utils.js" crossorigin="anonymous" onerror="if(window._showErr)window._showErr('CDN failed: intl-tel-input utils did not load.');"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{--navy:#1B2B4B;--navy-lt:#243556;--navy-dim:rgba(27,43,75,0.06);--gold:#C9A84C;--gold-lt:#DDB96A;--gold-dim:rgba(201,168,76,0.12);--bg:#F5F6FA;--surf:#FFF;--border:#E4E8F0;--text:#1B2B4B;--text2:#4A5568;--muted:#8896B0;--danger:#E53E3E;--success:#38A169;--warn:#D69E2E;--sh:0 1px 3px rgba(27,43,75,0.08),0 4px 16px rgba(27,43,75,0.06);--sh2:0 4px 24px rgba(27,43,75,0.14)}
@@ -299,6 +299,20 @@ textarea{resize:vertical;min-height:80px}
     showErr(msg);
   });
   window._showErr = showErr;
+  // Diagnostic info on load
+  window.addEventListener('load', function(){
+    setTimeout(function(){
+      var diag = [];
+      diag.push('intlTelInput available: ' + (typeof window.intlTelInput === 'function'));
+      diag.push('window.intlTelInputGlobals: ' + (typeof window.intlTelInputGlobals));
+      diag.push('User agent: ' + navigator.userAgent.substring(0, 100));
+      diag.push('CDN failed flag: ' + !!window._itiCdnFailed);
+      // Only show if we have errors already OR if CDN failed
+      if(window._itiCdnFailed || typeof window.intlTelInput !== 'function'){
+        showErr('Diagnostic info:\n' + diag.join('\n'));
+      }
+    }, 2000);
+  });
 })();
 </script>
 
