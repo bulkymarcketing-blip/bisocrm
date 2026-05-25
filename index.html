@@ -5,8 +5,8 @@
 <!-- Build: 2026-05-25 09:14 v10.4 - if you see old UI, hard refresh (settings > clear browser data) -->
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/css/intlTelInput.min.css">
-<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/intlTelInput.min.js" crossorigin="anonymous" onerror="if(window._showErr)window._showErr('CDN failed: intl-tel-input did not load. Phone validation will use simple text fallback.');window._itiCdnFailed=true"></script>
-<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/utils.js" crossorigin="anonymous" onerror="if(window._showErr)window._showErr('CDN failed: intl-tel-input utils did not load.');"></script>
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/intlTelInput.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/utils.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{--navy:#1B2B4B;--navy-lt:#243556;--navy-dim:rgba(27,43,75,0.06);--gold:#C9A84C;--gold-lt:#DDB96A;--gold-dim:rgba(201,168,76,0.12);--bg:#F5F6FA;--surf:#FFF;--border:#E4E8F0;--text:#1B2B4B;--text2:#4A5568;--muted:#8896B0;--danger:#E53E3E;--success:#38A169;--warn:#D69E2E;--sh:0 1px 3px rgba(27,43,75,0.08),0 4px 16px rgba(27,43,75,0.06);--sh2:0 4px 24px rgba(27,43,75,0.14)}
@@ -260,61 +260,7 @@ textarea{resize:vertical;min-height:80px}
 }
 @media(max-width:480px){.sg{grid-template-columns:1fr 1fr;gap:8px}.dg{grid-template-columns:1fr}.ss{display:none}}
 </style></head><body>
-<div id="ERRBANNER" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99999;background:#DC2626;color:#fff;padding:14px 16px;font-family:monospace;font-size:12px;line-height:1.4;box-shadow:0 4px 12px rgba(0,0,0,0.3);max-height:60vh;overflow-y:auto">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-    <div style="font-weight:700;font-size:14px;font-family:Inter,sans-serif">JS Error</div>
-    <div style="display:flex;gap:6px">
-      <button onclick="document.getElementById('ERRBANNER').style.display='none'" style="background:#fff;color:#DC2626;border:none;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer">Hide</button>
-      <button onclick="(function(){var t=document.getElementById('ERRDETAIL').textContent;if(navigator.clipboard){navigator.clipboard.writeText(t);}var b=event.target;b.textContent='Copied!';setTimeout(function(){b.textContent='Copy';},1500);})()" style="background:#fff;color:#DC2626;border:none;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer">Copy</button>
-    </div>
-  </div>
-  <pre id="ERRDETAIL" style="white-space:pre-wrap;word-break:break-word;margin:0;font-size:11px;color:#FFE4E4"></pre>
-</div>
-<script>
-(function(){
-  function showErr(text){
-    var b = document.getElementById('ERRBANNER');
-    var d = document.getElementById('ERRDETAIL');
-    if(b && d){
-      b.style.display = 'block';
-      d.textContent = (d.textContent ? d.textContent + '\n\n---\n\n' : '') + text;
-    } else {
-      setTimeout(function(){showErr(text);}, 100);
-    }
-  }
-  window.addEventListener('error', function(e){
-    var msg = 'Error: ' + (e.message || 'unknown');
-    if(e.filename) msg += '\nFile: ' + e.filename.split('/').pop();
-    if(e.lineno) msg += '\nLine: ' + e.lineno + ':' + (e.colno || 0);
-    if(e.error && e.error.stack) msg += '\n\nStack:\n' + e.error.stack;
-    showErr(msg);
-    return false;
-  }, true);
-  window.addEventListener('unhandledrejection', function(e){
-    var r = e.reason;
-    var msg = 'Promise Rejection: ';
-    if(r && r.message) msg += r.message;
-    else msg += String(r);
-    if(r && r.stack) msg += '\n\nStack:\n' + r.stack;
-    showErr(msg);
-  });
-  window._showErr = showErr;
-  // Diagnostic info on load
-  window.addEventListener('load', function(){
-    setTimeout(function(){
-      var diag = [];
-      diag.push('intlTelInput available: ' + (typeof window.intlTelInput === 'function'));
-      diag.push('window.intlTelInputGlobals: ' + (typeof window.intlTelInputGlobals));
-      diag.push('User agent: ' + navigator.userAgent.substring(0, 100));
-      diag.push('CDN failed flag: ' + !!window._itiCdnFailed);
-      // Only show if we have errors already OR if CDN failed
-      if(window._itiCdnFailed || typeof window.intlTelInput !== 'function'){
-        showErr('Diagnostic info:\n' + diag.join('\n'));
-      }
-    }, 2000);
-  });
-})();
-</script>
+
 
 <div id="LS"><img src="logo.png" style="width:64px" alt="" onerror="this.style.display='none'"/><div class="spin"></div><div class="ltl">BISO CRM</div><div id="lerr"><div class="lm" id="lm"></div><button style="background:var(--navy);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-family:Inter,sans-serif;cursor:pointer" onclick="loadData()">Retry</button></div></div>
 <div id="APP" style="display:none"><div class="app">
@@ -661,11 +607,17 @@ async function loadData(){
     document.getElementById('ST').textContent='Live sync active';
     buildNav();render();
     setInterval(async function(){
+      // Skip polling if a save is in progress (avoid race with local writes)
+      if(window._saving)return;
       try{
         var newB=await fbG('/brides');
+        // Only overwrite if we're not in the middle of a form interaction
+        if(window._saving)return;
         brides=newB||{};
         projectViews();
-        render();
+        // Don't re-render if a modal is open (the user is interacting)
+        var anyOpen = document.querySelector('.overlay.show, .overlay[style*="display: flex"], .overlay[style*="display:flex"]');
+        if(!anyOpen)render();
       }catch(e){}
     },15000);
   }catch(e){
@@ -1164,9 +1116,11 @@ function rSchedule(){
   function eventCard(e){
     var meta = typeMeta[e.type] || typeMeta['Other'];
     var d = new Date(e.date);
-    var daysAway = Math.ceil((d - now) / 86400000);
+    d.setHours(0,0,0,0);
     var dateLabel = d.toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short'});
-    var dayBadge = daysAway===0?'Today': daysAway===1?'Tomorrow': daysAway<7?'in '+daysAway+'d' : '';
+    // Round to nearest day to avoid timezone/time-of-day issues
+    var daysAway = Math.round((d - now) / 86400000);
+    var dayBadge = daysAway===0?'Today': daysAway===1?'Tomorrow': daysAway>1&&daysAway<7?'in '+daysAway+'d' : '';
     var timeLabel = e.time ? ' · '+e.time : '';
     var venueLabel = e.venue ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">📍 '+e.venue+'</div>' : '';
     var themeLabel = e.theme ? '<span style="display:inline-block;background:rgba(0,0,0,0.06);padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;color:var(--text2);margin-left:6px">'+e.theme+'</span>' : '';
@@ -1244,7 +1198,7 @@ function rQuotations(){
       +'<div style="flex:1;min-width:0"><div class="lrn">'+qt.sN+'</div><div class="lrm">'+fmt(qt.date)+' · '+qt.id+'</div><div style="margin-top:4px"><span class="badge '+sc+'">'+sl+'</span></div></div>'
       +'<div style="text-align:right;flex-shrink:0"><div class="lra">LKR '+Number(tot).toLocaleString()+'.00</div><div class="lrc">›</div></div></div>';
   });
-  document.getElementById('MC').innerHTML='<div class="card"><div class="card-hdr"><div class="card-title">Quotations</div><div style="display:flex;gap:10px;align-items:center"><div style="font-size:12px;color:var(--muted)">'+filt.length+' open</div><button class="btn btn-primary btn-sm" onclick="openQM(null,null)">+ New</button></div></div>'+(filt.length?rows:'<div class="empty" style="padding:60px"><div class="et">No open quotations</div></div>')+'</div>';
+  document.getElementById('MC').innerHTML='<div class="card"><div class="card-hdr"><div class="card-title">Quotations</div><div style="display:flex;gap:10px;align-items:center"><div style="font-size:12px;color:var(--muted)">'+filt.length+' open</div><button class="btn btn-primary btn-sm" onclick="openOverviewForm(null,{intent:\'quote\'})">+ New</button></div></div>'+(filt.length?rows:'<div class="empty" style="padding:60px"><div class="et">No open quotations</div></div>')+'</div>';
 }
 function rInvoices(){
   var allI=[];
@@ -2805,6 +2759,8 @@ async function ofSave(){
   delete brideClone.quoteItems;
   // Remove transient fields
   
+  // Set saving flag to pause background polling
+  window._saving = true;
   try {
     // 1. Save bride
     await saveBride(brideClone);
@@ -2833,7 +2789,8 @@ async function ofSave(){
       var patch = {};
       patch[quoteId] = qt;
       await fbP('/brides/'+OF.draft.id+'/quotes', patch);
-      // Update local state
+      // Defensive: ensure bride exists locally before updating
+      if(!brides[OF.draft.id])brides[OF.draft.id] = brideClone;
       brides[OF.draft.id].quotes = brides[OF.draft.id].quotes || {};
       brides[OF.draft.id].quotes[quoteId] = qt;
       projectViews();
@@ -2863,10 +2820,13 @@ async function ofSave(){
       await fbP('/brides/'+OF.draft.id+'/quotes/'+savedQuoteId, {convertedToInvoice:true});
       // Update bride stage to confirmed
       await fbP('/brides/'+OF.draft.id, {stage:5, confirmed:true});
-      // Local state
+      // Defensive: ensure bride exists locally
+      if(!brides[OF.draft.id])brides[OF.draft.id] = brideClone;
       brides[OF.draft.id].invoices = brides[OF.draft.id].invoices || {};
       brides[OF.draft.id].invoices[inv.id] = inv;
-      brides[OF.draft.id].quotes[savedQuoteId].convertedToInvoice = true;
+      if(brides[OF.draft.id].quotes && brides[OF.draft.id].quotes[savedQuoteId]){
+        brides[OF.draft.id].quotes[savedQuoteId].convertedToInvoice = true;
+      }
       brides[OF.draft.id].stage = 5;
       brides[OF.draft.id].confirmed = true;
       projectViews();
@@ -2888,6 +2848,8 @@ async function ofSave(){
     render();
   } catch(e) {
     notif('Error: '+e.message);
+  } finally {
+    window._saving = false;
   }
 }
 
@@ -3291,28 +3253,16 @@ async function clearData(){
     function chk(){var b=document.getElementById('MSB');if(b)b.style.display=window.innerWidth<=900?'flex':'none';}
     chk();
     window.addEventListener('resize',chk);
-    window.onerror=function(msg,src,line,col,err){
-      var lerr=document.getElementById('lerr');
-      var lm=document.getElementById('lm');
-      var LS=document.getElementById('LS');
-      var APP=document.getElementById('APP');
-      if(lerr)lerr.style.display='block';
-      if(lm)lm.textContent='Error: '+msg+' (line '+line+')';
-      if(LS)LS.style.display='flex';
-      if(APP)APP.style.display='none';
-      if(window._showErr){
-        var fullMsg='STARTUP ERROR\n\nMessage: '+msg+'\nLine: '+line+':'+(col||0);
-        if(err&&err.stack)fullMsg+='\n\nStack:\n'+err.stack;
-        window._showErr(fullMsg);
-      }
+    window.onerror=function(msg,src,line){
+      console.error('Error:', msg, 'at line', line);
+      return false;
     };
     loadData().catch(function(e){
-      if(window._showErr)window._showErr('loadData rejected:\n'+e.message+(e.stack?'\n\nStack:\n'+e.stack:''));
       var lerr=document.getElementById('lerr'),lm=document.getElementById('lm');
       if(lerr&&lm){lerr.style.display='block';lm.textContent='Load failed: '+e.message;}
     });
   } catch(initErr) {
-    if(window._showErr)window._showErr('IIFE crash:\n'+initErr.message+(initErr.stack?'\n\nStack:\n'+initErr.stack:''));
+    console.error('IIFE crash:', initErr);
   }
 })();
 </script>
