@@ -264,10 +264,6 @@ textarea{resize:vertical;min-height:80px}
 }
 @media(max-width:480px){.sg{grid-template-columns:1fr 1fr;gap:8px}.dg{grid-template-columns:1fr}.ss{display:none}}
 </style></head><body>
-<div id="DIAG" style="display:none;position:fixed;top:env(safe-area-inset-top);left:0;right:0;background:#0A1F44;color:#fff;font-family:Menlo,monospace;font-size:11px;line-height:1.5;padding:12px 14px;z-index:99999;max-height:60vh;overflow-y:auto;white-space:pre-wrap;word-break:break-word;border-bottom:2px solid #C9A961"><div id="DIAG-T" style="font-weight:700;color:#C9A961;margin-bottom:6px;font-size:12px">DIAGNOSTIC</div><div id="DIAG-B"></div><button onclick="document.getElementById('DIAG').style.display='none'" style="position:absolute;top:8px;right:8px;background:transparent;border:1px solid #C9A961;color:#C9A961;padding:2px 8px;font-size:11px;border-radius:4px;cursor:pointer">×</button></div>
-
-
-
 <div id="LS"><img src="logo.png" style="width:64px" alt="" onerror="this.style.display='none'"/><div class="spin"></div><div class="ltl">BISO CRM</div><div id="lerr"><div class="lm" id="lm"></div><button style="background:var(--navy);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-family:Inter,sans-serif;cursor:pointer" onclick="loadData()">Retry</button></div></div>
 <div id="APP" style="display:none"><div class="app">
 <aside class="sidebar" id="SB"><div class="brand"><img class="brand-logo" src="logo.png" alt="" onerror="this.style.display='none'"/><div><div class="brand-name">BISO</div><div class="brand-sub">Bridal CRM</div></div></div><nav class="nav" id="SN"></nav><div class="sidebar-foot"><div class="sync-badge"><div class="sync-dot"></div><div class="sync-txt" id="ST">Connecting…</div></div></div></aside>
@@ -671,19 +667,6 @@ function iNum(){var d=new Date();return 'BI-'+String(d.getFullYear()).slice(-2)+
 function lA(){return Object.values(leads);}
 function cA(){return Object.values(custs);}
 
-// Diagnostic logging for debugging
-window._diagLog = [];
-function diagClear(){window._diagLog=[];var b=document.getElementById('DIAG-B');if(b)b.textContent='';}
-function diag(msg){
-  var ts = new Date().toLocaleTimeString();
-  var line = '['+ts+'] '+msg;
-  window._diagLog.push(line);
-  var b = document.getElementById('DIAG-B');
-  if(b)b.textContent = window._diagLog.join('\n');
-  var d = document.getElementById('DIAG');
-  if(d)d.style.display='block';
-  console.log('[DIAG]', msg);
-}
 
 function OM(id){document.getElementById(id).classList.add('open');}
 function CM(id){document.getElementById(id).classList.remove('open');}
@@ -1945,7 +1928,7 @@ function buildApptTab(id,l,cancelled,appts){
       +'<div style="font-size:12px;color:'+dCol+';margin-top:2px">'+fmt(a.date)+(a.time?' at '+a.time:'')+(dToA!==null?' · in '+dToA+'d':'')+'</div>'
       +(a.note?'<div style="font-size:11px;color:var(--muted);margin-top:3px;font-style:italic">'+a.note+'</div>':'')
       +'</div>'
-      +(cancelled?'':'<div style="display:flex;flex-direction:column;gap:4px"><button class="btn btn-outline btn-xs" onclick="markApptDone(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px;color:var(--success);border-color:var(--success)">✓ Done</button><button class="btn btn-ghost btn-xs" onclick="cancelAppt(\''+id+'\',\''+a.key+'\')">Cancel</button></div>')
+      +(cancelled?'':'<div style="display:flex;flex-direction:column;gap:4px"><button class="btn btn-outline btn-xs" onclick="markApptDone(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px;color:var(--success);border-color:var(--success)">✓ Complete</button><button class="btn btn-ghost btn-xs" onclick="cancelAppt(\''+id+'\',\''+a.key+'\')">Cancel</button></div>')
       +'</div></div>';
   });
   if(!schHtml)schHtml='<div style="font-size:12px;color:var(--muted);font-style:italic;padding:8px">No upcoming appointments</div>';
@@ -2105,60 +2088,37 @@ async function addAppt2(id){
   }catch(e){notif('Error: '+e.message);}
 }
 async function markApptDone(id,key){
-  diagClear();
-  diag('STEP 1: markApptDone called id='+id+' key='+key);
   var appt=(leads[id]&&leads[id].appointments)?leads[id].appointments[key]:null;
-  if(!appt){diag('FAIL: appointment not found in leads['+id+'].appointments['+key+']');return;}
-  diag('STEP 2: found appointment: '+(appt.reason||'?')+' on '+(appt.date||'?'));
+  if(!appt)return;
   var r=await showConfirm({
-    title:'Mark appointment done',
+    title:'Mark appointment complete',
     msg:'Mark "'+(appt.reason||'Appointment')+'" on '+fmt(appt.date)+(appt.time?' at '+appt.time:'')+' as completed?',
-    yesText:'Mark Done'
+    yesText:'Mark Complete'
   });
-  diag('STEP 3: showConfirm result ok='+r.ok);
-  if(!r.ok){diag('STEP 3a: user cancelled, aborting');return;}
+  if(!r.ok)return;
   var doneAt=new Date().toISOString();
-  diag('STEP 4: will write doneAt='+doneAt);
-  // Save copy of appointment in case race wipes brides[id]
-  var apptCopy=Object.assign({},appt,{done:true,doneAt:doneAt});
-  // Pause polling during operation
   window._saving=true;
   try{
-    diag('STEP 5: calling fbP /brides/'+id+'/appointments/'+key);
-    var t0 = Date.now();
-    var resp = await fbP('/brides/'+id+'/appointments/'+key,{done:true,doneAt:doneAt});
-    diag('STEP 6: fbP returned in '+(Date.now()-t0)+'ms. resp='+JSON.stringify(resp).substring(0,100));
-    // Defensive: if polling wiped brides[id], recover it
+    await fbP('/brides/'+id+'/appointments/'+key,{done:true,doneAt:doneAt});
     if(!brides[id]){
-      diag('STEP 7a: brides['+id+'] missing — fetching from Firebase');
-      try{var fresh=await fbG('/brides/'+id);if(fresh)brides[id]=fresh;diag('STEP 7b: fetched, has appts? '+!!(fresh&&fresh.appointments));}catch(fe){diag('STEP 7c: fetch failed: '+fe.message);}
-    } else {
-      diag('STEP 7: brides['+id+'] still exists locally');
+      try{var fresh=await fbG('/brides/'+id);if(fresh)brides[id]=fresh;}catch(fe){}
     }
     if(brides[id]){
       brides[id].appointments=brides[id].appointments||{};
       brides[id].appointments[key]=Object.assign({},brides[id].appointments[key]||{},{done:true,doneAt:doneAt});
-      diag('STEP 8: brides['+id+'].appointments['+key+'].done = '+brides[id].appointments[key].done);
     }
     if(leads[id]){
       leads[id].appointments=leads[id].appointments||{};
       leads[id].appointments[key]=Object.assign({},leads[id].appointments[key]||{},{done:true,doneAt:doneAt});
-      diag('STEP 9: leads['+id+'].appointments['+key+'].done = '+leads[id].appointments[key].done);
-    } else {
-      diag('STEP 9: leads['+id+'] is missing!');
     }
     projectViews();
-    diag('STEP 10: projectViews done. leads['+id+'].appts['+key+'].done='+(leads[id]&&leads[id].appointments&&leads[id].appointments[key]?leads[id].appointments[key].done:'MISSING'));
-    try{await logHistory(id,'appt-done',{reason:appt.reason,date:appt.date});}catch(le){diag('logHistory failed: '+le.message);}
-    diag('STEP 11: SUCCESS — re-rendering view');
-    if(view==='schedule'){rSchedule();diag('STEP 12: rSchedule re-rendered');}
-    else{openDetail(id);diag('STEP 12: openDetail re-rendered');}
+    try{await logHistory(id,'appt-done',{reason:appt.reason,date:appt.date});}catch(le){}
+    if(view==='schedule')rSchedule();
+    else openDetail(id);
   }catch(e){
-    diag('ERROR: '+e.message+' at '+e.stack);
     notif('Error: '+e.message);
   }finally{
     window._saving=false;
-    diag('FINAL: _saving released');
   }
 }
 async function cancelAppt(id,key){
@@ -2333,15 +2293,49 @@ async function advStage(id,newStage){
       if(brides[id]){brides[id].appointments=brides[id].appointments||{};brides[id].appointments[key]=appt;}
     }catch(e){notif('Could not save appointment: '+e.message);return;}
   }
+  // Auto-mark consultation appointment as done when stage advances to 3 (Consultation Done)
+  var autoMarkedAppt = null;
+  if(newStage===3 && leads[id] && leads[id].appointments){
+    var doneAt = new Date().toISOString();
+    var consults = Object.values(leads[id].appointments).filter(function(a){
+      return a.reason==='Consultation' && !a.cancelled && !a.done;
+    });
+    if(consults.length > 0){
+      // Mark the most recent (last scheduled date) one as done
+      consults.sort(function(a,b){return new Date(b.date) - new Date(a.date);});
+      autoMarkedAppt = consults[0];
+    }
+  }
+  window._saving = true;
   try{
-    await fbP('/leads/'+id,{stage:newStage,lastActivity:new Date().toISOString()});
-    leads[id].stage=newStage;leads[id].lastActivity=new Date().toISOString();
-    if(brides[id]){brides[id].stage=newStage;brides[id].lastActivity=leads[id].lastActivity;}
-    await logHistory(id,'stage-change',{to:newStage});
-    notif('Stage updated.');
+    await fbP('/brides/'+id,{stage:newStage,lastActivity:new Date().toISOString()});
+    if(brides[id]){brides[id].stage=newStage;brides[id].lastActivity=new Date().toISOString();}
+    if(leads[id]){leads[id].stage=newStage;leads[id].lastActivity=new Date().toISOString();}
+    // Apply auto-mark-done if applicable
+    if(autoMarkedAppt){
+      var doneAt = new Date().toISOString();
+      try{
+        await fbP('/brides/'+id+'/appointments/'+autoMarkedAppt.key,{done:true,doneAt:doneAt});
+        if(brides[id] && brides[id].appointments && brides[id].appointments[autoMarkedAppt.key]){
+          brides[id].appointments[autoMarkedAppt.key].done = true;
+          brides[id].appointments[autoMarkedAppt.key].doneAt = doneAt;
+        }
+        if(leads[id] && leads[id].appointments && leads[id].appointments[autoMarkedAppt.key]){
+          leads[id].appointments[autoMarkedAppt.key].done = true;
+          leads[id].appointments[autoMarkedAppt.key].doneAt = doneAt;
+        }
+        projectViews();
+      }catch(amErr){
+        // If auto-mark fails, don't fail the whole stage advance
+        console.error('Auto-mark consultation done failed:', amErr);
+      }
+    }
+    await logHistory(id,'stage-change',{to:newStage,autoMarked:autoMarkedAppt?autoMarkedAppt.key:null});
+    notif(autoMarkedAppt ? 'Stage updated. Consultation marked complete.' : 'Stage updated.');
     if(document.getElementById('detail-modal').classList.contains('open'))openDetail(id);
     render();
-  }catch(e){notif('Error: '+e.message);}
+  }catch(e){notif('Error: '+e.message);
+  }finally{window._saving=false;}
 }
 
 // ---------- Audit trail ----------
