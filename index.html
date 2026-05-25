@@ -1038,9 +1038,11 @@ function rSchedule(){
     if(b.cancelled)return; // skip cancelled bookings
     if(q && !(b.name||'').toLowerCase().includes(q))return;
     var ev = b.events || {};
-    var weddingDate = (ev.wedding && ev.wedding.date) || b.weddingDate || '';
-    var homecomingDate = (ev.homecoming && ev.homecoming.enabled) ? ev.homecoming.date : '';
-    var goingAwayDate = (ev.goingAway && ev.goingAway.enabled) ? ev.goingAway.date : '';
+    // Rule 3: Wedding/Homecoming/Going Away only show if bride has an invoice (advance paid)
+    var hasInvoice = b.invoices && Object.keys(b.invoices).length > 0;
+    var weddingDate = hasInvoice ? ((ev.wedding && ev.wedding.date) || b.weddingDate || '') : '';
+    var homecomingDate = hasInvoice && ev.homecoming && ev.homecoming.enabled ? ev.homecoming.date : '';
+    var goingAwayDate = hasInvoice && ev.goingAway && ev.goingAway.enabled ? ev.goingAway.date : '';
     // Wedding + Homecoming on same day for same bride -> group as one card
     // For now: each ceremony is a separate card unless same date
     if(weddingDate){
@@ -1418,19 +1420,53 @@ async function convInv(src,sId,qId){
   var inv={id:iNum(),date:date,items:items,advance:bp,notes:notes};
   try{
     if(src==='lead'){
+      // Write to canonical /brides/X path (single source of truth)
       var patch={};
-      patch['quotations/'+qId+'/convertedToInvoice']=true;
+      patch['quotes/'+qId+'/convertedToInvoice']=true;
+      patch['quotes/'+qId+'/sent']=true;  // Auto-mark as sent (Bug A fix)
       patch['invoices/'+inv.id]=inv;
       patch['advance']=bp;patch['balance']=tot-bp;patch['confirmed']=true;patch['stage']=5;
-      await fbP('/leads/'+sId,patch);
+      await fbP('/brides/'+sId,patch);
+      // Update local state in brides[] (the source of truth) AND leads[] (derived view)
+      if(!brides[sId])brides[sId]={};
+      brides[sId].quotes=brides[sId].quotes||{};
+      if(brides[sId].quotes[qId]){
+        brides[sId].quotes[qId].convertedToInvoice=true;
+        brides[sId].quotes[qId].sent=true;
+      }
+      brides[sId].invoices=brides[sId].invoices||{};
+      brides[sId].invoices[inv.id]=inv;
+      brides[sId].advance=bp;brides[sId].balance=tot-bp;
+      brides[sId].confirmed=true;brides[sId].stage=5;
+      // Mirror to leads[] derived view
       if(!leads[sId])leads[sId]={};
       leads[sId].confirmed=true;leads[sId].stage=5;leads[sId].advance=bp;leads[sId].balance=tot-bp;
-      if(leads[sId].quotations&&leads[sId].quotations[qId])leads[sId].quotations[qId].convertedToInvoice=true;
+      if(leads[sId].quotations&&leads[sId].quotations[qId]){
+        leads[sId].quotations[qId].convertedToInvoice=true;
+        leads[sId].quotations[qId].sent=true;
+      }
       leads[sId].invoices=leads[sId].invoices||{};leads[sId].invoices[inv.id]=inv;
     }else{
-      var cp={};cp['quotes/'+qId+'/convertedToInvoice']=true;cp['invoices/'+inv.id]=inv;
-      await fbP('/customers/'+sId,cp);
-      if(custs[sId]&&custs[sId].quotes&&custs[sId].quotes[qId])custs[sId].quotes[qId].convertedToInvoice=true;
+      // Write to canonical /brides/X path
+      var cp={};
+      cp['quotes/'+qId+'/convertedToInvoice']=true;
+      cp['quotes/'+qId+'/sent']=true;  // Auto-mark as sent (Bug A fix)
+      cp['invoices/'+inv.id]=inv;
+      await fbP('/brides/'+sId,cp);
+      // Update brides[]
+      if(!brides[sId])brides[sId]={};
+      brides[sId].quotes=brides[sId].quotes||{};
+      if(brides[sId].quotes[qId]){
+        brides[sId].quotes[qId].convertedToInvoice=true;
+        brides[sId].quotes[qId].sent=true;
+      }
+      brides[sId].invoices=brides[sId].invoices||{};
+      brides[sId].invoices[inv.id]=inv;
+      // Mirror to derived views
+      if(custs[sId]&&custs[sId].quotes&&custs[sId].quotes[qId]){
+        custs[sId].quotes[qId].convertedToInvoice=true;
+        custs[sId].quotes[qId].sent=true;
+      }
       custs[sId].invoices=custs[sId].invoices||{};custs[sId].invoices[inv.id]=inv;
       // Also find and update the linked lead (created during saveQB for walk-in/customer-source quotes)
       var linkedLead=lA().find(function(l){return l.phone&&custs[sId]&&l.phone===custs[sId].phone;});
@@ -2453,13 +2489,35 @@ function renderOverviewForm(){
     var bridesmaidsField = key==='wedding' ? '<div class="fi"><label>Bridesmaids</label>'+countDropdown('bm-'+key,e.bridesmaids||0)+'</div>' : '';
     var flowerGirlsField = key==='wedding' ? '<div class="fi"><label>Flower Girls</label>'+countDropdown('fg-'+key,e.flowerGirls||0)+'</div>' : '';
     var littleMaidsField = key==='wedding' ? '<div class="fi"><label>Little Maids</label>'+countDropdown('lm-'+key,e.littleMaids||0)+'</div>' : '';
+    // Compute date constraints based on other event dates
+    var dateMin = '', dateMax = '', dateReadonly = '', dateHint = '';
+    var allEvents = OF.draft.events || {};
+    var wEv = allEvents.wedding;
+    var hEv = allEvents.homecoming;
+    if(key === 'homecoming' && wEv && wEv.enabled && wEv.date){
+      // Homecoming must be AFTER wedding
+      var minD = new Date(wEv.date); minD.setDate(minD.getDate()+1);
+      dateMin = ' min="'+minD.toISOString().slice(0,10)+'"';
+      dateHint = '<div style="font-size:10px;color:var(--muted);margin-top:3px">Must be after wedding ('+wEv.date+')</div>';
+    }
+    if(key === 'wedding' && hEv && hEv.enabled && hEv.date){
+      // Wedding must be BEFORE homecoming
+      var maxD = new Date(hEv.date); maxD.setDate(maxD.getDate()-1);
+      dateMax = ' max="'+maxD.toISOString().slice(0,10)+'"';
+      dateHint = '<div style="font-size:10px;color:var(--muted);margin-top:3px">Must be before homecoming ('+hEv.date+')</div>';
+    }
+    if(key === 'goingAway' && wEv && wEv.enabled && wEv.date){
+      // Going Away locked to wedding date
+      dateReadonly = ' readonly style="background:var(--bg);cursor:not-allowed;color:var(--muted)"';
+      dateHint = '<div style="font-size:10px;color:var(--gold);margin-top:3px">Same day as wedding (auto)</div>';
+    }
     return '<div style="background:'+(enabled?'var(--bg)':'#fafbfc')+';border:1.5px solid '+(enabled?'var(--navy)':'var(--border)')+';border-radius:10px;padding:12px;margin-bottom:10px">'
       +'<label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;font-weight:600;color:'+(enabled?'var(--navy)':'var(--text2)')+';text-transform:none;letter-spacing:0">'
       +'<input type="checkbox" '+(enabled?'checked':'')+' onchange="ofToggleEvent(\''+key+'\',this.checked)" style="width:18px;height:18px;cursor:pointer"/> '+label
       +'</label>'
       +(enabled?(
         '<div class="fg" style="margin-top:10px">'
-        +'<div class="fi"><label>Date *</label><input type="date" value="'+(e.date||'')+'" onchange="ofSetEvent(\''+key+'\',\'date\',this.value)"/></div>'
+        +'<div class="fi"><label>Date *</label><input type="date" value="'+(e.date||'')+'"'+dateMin+dateMax+dateReadonly+' onchange="ofSetEvent(\''+key+'\',\'date\',this.value)"/>'+dateHint+'</div>'
         +'<div class="fi"><label>Venue</label><input type="text" value="'+(e.venue||'').replace(/"/g,'&quot;')+'" placeholder="Venue name" onchange="ofSetEvent(\''+key+'\',\'venue\',this.value)"/></div>'
         +themeField
         +'<div class="fi"><label>Start Time</label><input type="time" value="'+(e.startTime||'')+'" onchange="ofSetEvent(\''+key+'\',\'startTime\',this.value)"/></div>'
@@ -2559,6 +2617,13 @@ function ofToggleEvent(key, checked){
   OF.draft.events = OF.draft.events || {};
   OF.draft.events[key] = OF.draft.events[key] || {};
   OF.draft.events[key].enabled = checked;
+  // Rule 1: When Going Away is ticked, auto-sync date to Wedding date
+  if(key === 'goingAway' && checked){
+    var w = OF.draft.events.wedding;
+    if(w && w.enabled && w.date){
+      OF.draft.events.goingAway.date = w.date;
+    }
+  }
   syncQuoteItems();
   renderOverviewForm();
 }
@@ -2568,7 +2633,31 @@ function ofSetEvent(key, field, val){
   OF.draft.events = OF.draft.events || {};
   OF.draft.events[key] = OF.draft.events[key] || {};
   OF.draft.events[key][field] = val;
-  if(key==='wedding' && field==='date')OF.draft.weddingDate = val;
+  if(key==='wedding' && field==='date'){
+    OF.draft.weddingDate = val;
+    // Rule 1: If Going Away is ticked, mirror wedding date
+    var g = OF.draft.events.goingAway;
+    if(g && g.enabled){
+      g.date = val;
+    }
+    // Rule 2: If Homecoming date is before new Wedding date, clear it
+    var h = OF.draft.events.homecoming;
+    if(h && h.enabled && h.date && val && h.date <= val){
+      // Homecoming must be AFTER wedding - clear if conflict
+      h.date = '';
+    }
+  }
+  if(key==='homecoming' && field==='date'){
+    // Rule 2: If Homecoming date is on/before Wedding date, that's invalid - reject
+    var w = OF.draft.events.wedding;
+    if(w && w.enabled && w.date && val && val <= w.date){
+      // Don't accept invalid date
+      notif('Homecoming must be after the wedding date.');
+      OF.draft.events.homecoming.date = '';
+      renderOverviewForm();
+      return;
+    }
+  }
   syncQuoteItems();
   if(field === 'date') renderOverviewForm();
 }
