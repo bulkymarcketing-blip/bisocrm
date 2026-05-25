@@ -3,9 +3,19 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
 <title>Biso CRM</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/css/intlTelInput.min.css">
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/intlTelInput.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/utils.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{--navy:#1B2B4B;--navy-lt:#243556;--navy-dim:rgba(27,43,75,0.06);--gold:#C9A84C;--gold-lt:#DDB96A;--gold-dim:rgba(201,168,76,0.12);--bg:#F5F6FA;--surf:#FFF;--border:#E4E8F0;--text:#1B2B4B;--text2:#4A5568;--muted:#8896B0;--danger:#E53E3E;--success:#38A169;--warn:#D69E2E;--sh:0 1px 3px rgba(27,43,75,0.08),0 4px 16px rgba(27,43,75,0.06);--sh2:0 4px 24px rgba(27,43,75,0.14)}
+.iti{width:100%}
+.iti__country-list{font-family:'Inter',sans-serif;font-size:13px;max-height:240px}
+.iti__country{padding:8px 12px}
+.iti__selected-flag{padding:0 8px 0 12px}
+.iti--allow-dropdown input.iti__tel-input{padding-left:90px!important}
+.iti__dropdown-content{border-radius:8px;box-shadow:var(--sh2)}
+.iti-tel-error{border-color:var(--danger)!important}
 body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;min-height:100vh;overflow-x:hidden}
 .app{display:flex;min-height:100vh}
 .sidebar{width:240px;background:var(--navy);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;transition:transform .3s}
@@ -60,6 +70,11 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
 .p4{background:#FEFCE8}.p4 .sname{color:#CA8A04}
 .lcard{background:var(--surf);border:1.5px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;transition:all .15s}
 .lcard:active{transform:scale(.98)}
+.lcard-icon-btn{background:transparent;border:1px solid var(--border);border-radius:6px;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:var(--text2);padding:0}
+.lcard-icon-btn:active{background:var(--navy-dim)}
+.lcard-cta-btn{background:var(--navy);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap}
+.lcard-cta-btn:active{opacity:.8}
+.lcard-actions{flex-shrink:0}
 .lname{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:3px}
 .ldate{font-size:11px;color:var(--muted)}
 .ltags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
@@ -258,7 +273,6 @@ textarea{resize:vertical;min-height:80px}
 <div class="sov" id="svc-ov" onclick="CS('svc')"></div><div class="sheet" id="svc-sheet"><div class="shdl"></div><div class="shd"><div class="sht">Add Service</div><button class="shc" onclick="CS('svc')">×</button></div><div class="ssw"><span class="ssi">⌕</span><input class="shs" type="text" id="svc-q" placeholder="Search services…" oninput="filterSvcs(this.value)" autocomplete="off"/></div><div class="shl" id="svc-list"></div></div>
 <div class="sov" id="thm-ov" onclick="CS('thm')"></div><div class="sheet" id="thm-sheet"><div class="shdl"></div><div class="shd"><div class="sht" id="thm-t">Select Theme</div><button class="shc" onclick="CS('thm')">×</button></div><div class="shl" id="thm-l"></div></div>
 <div class="sov" id="amt-ov" onclick="CS('amt')"></div><div class="sheet" id="amt-sheet" style="max-height:48vh"><div class="shdl"></div><div class="shd"><div class="sht" id="amt-t">Enter Amount</div><button class="shc" onclick="CS('amt')">×</button></div><div style="padding:18px"><div style="font-size:12px;color:var(--muted);margin-bottom:8px" id="amt-h"></div><input type="number" id="amt-i" style="width:100%;padding:14px;font-size:22px;font-family:Inter,sans-serif;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);outline:none;text-align:right" placeholder="0"/><button onclick="confirmAmt()" style="width:100%;margin-top:12px;background:var(--navy);color:#fff;border:none;border-radius:8px;padding:13px;font-size:15px;font-family:Inter,sans-serif;font-weight:600;cursor:pointer">Add to Quote</button></div></div>
-<div class="sov" id="cc-ov" onclick="CS('cc')"></div><div class="sheet" id="cc-sheet"><div class="shdl"></div><div class="shd"><div class="sht">Select Country</div><button class="shc" onclick="CS('cc')">×</button></div><div class="ssw"><span class="ssi">⌕</span><input class="shs" type="text" id="cc-q" placeholder="Search country..." oninput="filterCountries(this.value)"/></div><div class="shl" id="cc-list"></div></div>
 <div class="sov" id="cst-ov" onclick="CS('cst')"></div><div class="sheet" id="cst-sheet"><div class="shdl"></div><div class="shd"><div class="sht">Select Customer</div><button class="shc" onclick="CS('cst')">×</button></div><div class="ssw"><span class="ssi">⌕</span><input class="shs" type="text" id="cst-q" placeholder="Search…" oninput="filterCusts(this.value)"/></div><div class="shl" id="cst-list"></div></div>
 <div class="overlay" id="cf-modal" style="z-index:3000"><div class="modal msm"><div class="mhd"><div><div class="mt" id="cf-title">Confirm</div><div class="msb" id="cf-sub" style="display:none"></div></div></div><div class="mbdy"><div id="cf-msg" style="font-size:14px;color:var(--text2);line-height:1.6"></div><div id="cf-input-wrap" style="margin-top:14px;display:none"><label id="cf-input-label" style="display:block;margin-bottom:6px">Amount</label><input type="number" id="cf-input" style="width:100%"/></div><div id="cf-note-wrap" style="margin-top:10px;display:none"><label style="display:block;margin-bottom:6px">Note (optional)</label><input type="text" id="cf-note" placeholder="Reason or comment"/></div></div><div class="mft"><button class="btn btn-ghost" onclick="cfNo()" id="cf-no">Cancel</button><button class="btn btn-primary" onclick="cfYes()" id="cf-yes">Confirm</button></div></div></div>
 <div class="notif" id="NF"></div>
@@ -743,12 +757,70 @@ function lCard(l){
   var dt=overdue?'<span class="tag tu">Overdue</span>':age>7?'<span class="tag tu">'+age+'d old</span>':'<span class="tag td">'+age+'d</span>';
   var qt=Object.keys(l.quotations||{}).length>0?'<span class="tag tq">Quoted</span>':'';
   var dw=dU(l.weddingDate);
-  var dwTag=dw!==null&&dw<60?'<span class="tag tu">Wed '+dw+'d</span>':'';
-  return '<div class="lcard" onclick="openDetail(\''+l.id+'\')">'
+  var dwTag=dw!==null&&dw<60?'<span class="tag tu">Wedding in '+dw+'d</span>':'';
+  var actions=cardActions(l);
+  var expanded=_expandedCards[l.id];
+  var summary='';
+  if(expanded){
+    var ev=l.events||{};
+    var bits=[];
+    if(ev.wedding&&ev.wedding.enabled)bits.push('Wedding '+(ev.wedding.date?fmt(ev.wedding.date):'(date TBD)'));
+    if(ev.homecoming&&ev.homecoming.enabled)bits.push('Homecoming '+(ev.homecoming.date?fmt(ev.homecoming.date):'(date TBD)'));
+    if(ev.goingAway&&ev.goingAway.enabled)bits.push('Going Away '+(ev.goingAway.date?fmt(ev.goingAway.date):'(date TBD)'));
+    if(!bits.length&&l.weddingDate)bits.push('Wedding '+fmt(l.weddingDate));
+    summary='<div style="padding-top:10px;margin-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--text2);line-height:1.6">'
+      +(bits.length?bits.map(function(b){return '• '+b;}).join('<br/>'):'<em>No events yet</em>')
+      +(l.phone?'<br/>📞 '+fmtPhone(l.phone):'')
+      +(l.email?'<br/>✉ '+l.email:'')
+      +(l.notes?'<br/><em style="color:var(--muted)">'+(l.notes.length>120?l.notes.slice(0,120)+'…':l.notes)+'</em>':'')
+      +'</div>';
+  }
+  return '<div class="lcard" onclick="toggleLeadCard(\''+l.id+'\')">'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
+    +'<div style="flex:1;min-width:0">'
     +'<div class="lname">'+l.name+'</div>'
     +'<div class="ldate">'+(l.weddingDate?'Wedding: '+fmt(l.weddingDate):'Date TBD')+'</div>'
     +'<div class="ltags"><span class="tag '+tc+'">'+tl+'</span>'+qt+dwTag+dt+'</div>'
+    +'</div>'
+    +'<div class="lcard-actions" onclick="event.stopPropagation()" style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">'
+    +actions
+    +'</div>'
+    +'</div>'
+    +summary
     +'</div>';
+}
+
+var _expandedCards={};
+function toggleLeadCard(id){
+  _expandedCards[id]=!_expandedCards[id];
+  render();
+}
+
+function cardActions(l){
+  var s=Number(l.stage||0);
+  var ph=(l.phone||'').replace(/\D/g,'');
+  var waBtn=ph?'<button onclick="event.stopPropagation();window.open(\'https://wa.me/'+ph+'\',\'_blank\')" class="lcard-icon-btn" title="WhatsApp">💬</button>':'';
+  var callBtn=ph?'<button onclick="event.stopPropagation();window.open(\'tel:+'+ph+'\')" class="lcard-icon-btn" title="Call">📞</button>':'';
+  var editBtn='<button onclick="event.stopPropagation();openOverviewForm(\''+l.id+'\')" class="lcard-icon-btn" title="Edit">✎</button>';
+  var detailBtn='<button onclick="event.stopPropagation();openDetail(\''+l.id+'\')" class="lcard-icon-btn" title="Open">→</button>';
+  var actionBtn='';
+  if(s===0){
+    actionBtn='<button onclick="event.stopPropagation();advStage(\''+l.id+'\',1)" class="lcard-cta-btn" title="Mark Contacted">✓ Contacted</button>';
+  } else if(s===1){
+    actionBtn='<button onclick="event.stopPropagation();advStage(\''+l.id+'\',2)" class="lcard-cta-btn">+ Consult</button>';
+  } else if(s===2){
+    actionBtn='<button onclick="event.stopPropagation();advStage(\''+l.id+'\',3)" class="lcard-cta-btn">✓ Done</button>';
+  } else if(s===3){
+    actionBtn='<button onclick="event.stopPropagation();CM(\'detail-modal\');openQM(\''+l.id+'\',null)" class="lcard-cta-btn">Quote</button>';
+  } else if(s===4){
+    var openQ=Object.values(l.quotations||{}).find(function(qt){return !qt.convertedToInvoice;});
+    if(openQ){
+      actionBtn='<button onclick="event.stopPropagation();openAdv(\'lead\',\''+l.id+'\',\''+openQ.id+'\')" class="lcard-cta-btn">→ Invoice</button>';
+    }
+  }
+  // Top row: contact icons. Bottom row: stage CTA. Then edit + detail icons.
+  var iconRow='<div style="display:flex;gap:4px">'+waBtn+callBtn+detailBtn+editBtn+'</div>';
+  return (actionBtn?actionBtn+iconRow:iconRow);
 }
 function rClients(){
   var cl=lA().filter(function(l){return l.confirmed&&(q?l.name.toLowerCase().includes(q):true);});
@@ -1782,12 +1854,36 @@ async function openCancelBooking(id){
 
 // ---------- Stage helpers ----------
 async function advStage(id,newStage){
+  // Special handling: moving to "Consultation Booked" (stage 2) requires a date+time
+  if(newStage===2){
+    var r=await showConfirm({
+      title:'Book Consultation',
+      msg:'When is the consultation? Date is required.',
+      yesText:'Book',
+      input:true,
+      inputLabel:'Consultation Date (YYYY-MM-DD)',
+      inputDefault:new Date().toISOString().slice(0,10),
+      note:true
+    });
+    if(!r.ok)return;
+    if(!r.value){notif('Consultation date is required.');return;}
+    // Create the consultation appointment
+    var key='a-'+Math.random().toString(36).slice(2,10);
+    var appt={key:key,date:r.value,time:'',reason:'Consultation',note:r.note||'',cancelled:false,createdAt:new Date().toISOString()};
+    try{
+      var p={};p[key]=appt;
+      await fbP('/leads/'+id+'/appointments',p);
+      leads[id].appointments=leads[id].appointments||{};leads[id].appointments[key]=appt;
+      if(brides[id]){brides[id].appointments=brides[id].appointments||{};brides[id].appointments[key]=appt;}
+    }catch(e){notif('Could not save appointment: '+e.message);return;}
+  }
   try{
     await fbP('/leads/'+id,{stage:newStage,lastActivity:new Date().toISOString()});
     leads[id].stage=newStage;leads[id].lastActivity=new Date().toISOString();
+    if(brides[id]){brides[id].stage=newStage;brides[id].lastActivity=leads[id].lastActivity;}
     await logHistory(id,'stage-change',{to:newStage});
     notif('Stage updated.');
-    openDetail(id);
+    if(document.getElementById('detail-modal').classList.contains('open'))openDetail(id);
     render();
   }catch(e){notif('Error: '+e.message);}
 }
@@ -1941,10 +2037,9 @@ function renderOverviewForm(){
   var ev=b.events||{};
   var html=
     '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:600;margin-bottom:10px">Contact</div>'
-    // Phone (first!)
+    // Phone (first!) - intl-tel-input initialized after render
     +'<div class="fi" style="margin-bottom:14px"><label>WhatsApp Number *</label>'
-    +'<div style="display:flex;gap:6px"><button type="button" onclick="OS(\'cc\')" style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:Inter,sans-serif"><span style="font-size:16px">'+cc.f+'</span><span style="font-weight:600;color:var(--navy)">+'+cc.c+'</span></button>'
-    +'<input type="tel" id="of-phone" value="'+localNum+'" placeholder="77 123 4567" style="flex:1" oninput="ofPhoneInput()" onblur="ofPhoneBlur()"/></div>'
+    +'<input type="tel" id="of-phone" value="'+(b.phone||'')+'" placeholder="77 123 4567"/>'
     +'<div id="of-phone-msg" style="font-size:11px;color:var(--muted);margin-top:4px"></div>'
     +'</div>'
     +'<div class="fg" style="margin-bottom:14px">'
@@ -1966,7 +2061,34 @@ function renderOverviewForm(){
   document.getElementById('of-footer').innerHTML=
     '<button class="btn btn-ghost" onclick="closeOverview()">Cancel</button>'
     +'<button class="btn btn-primary" onclick="ofSave()">Save</button>';
+  // Initialize intl-tel-input on the phone field
+  setTimeout(initPhoneInput,50);
 }
+
+var _iti=null;
+function initPhoneInput(){
+  var input=document.getElementById('of-phone');
+  if(!input||typeof window.intlTelInput!=='function')return;
+  // Reset any prior instance
+  if(_iti){try{_iti.destroy();}catch(e){}_iti=null;}
+  _iti=window.intlTelInput(input,{
+    initialCountry:'lk',
+    preferredCountries:['lk','in','ae','sa','gb','us','au','qa','kw','om','bh','sg','my'],
+    separateDialCode:true,
+    nationalMode:true,
+    autoPlaceholder:'aggressive',
+    formatOnDisplay:true,
+    utilsScript:'https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/utils.js'
+  });
+  // Initialize country from existing phone if editing
+  if(OF.draft.phone){
+    try{_iti.setNumber('+'+OF.draft.phone);}catch(e){}
+  }
+  input.addEventListener('blur',ofPhoneBlur);
+  input.addEventListener('countrychange',ofPhoneBlur);
+  input.addEventListener('input',function(){OF.dirty=true;});
+}
+
 
 function countDropdown(id,val){
   var opts='';
@@ -2009,58 +2131,45 @@ function ofPhoneInput(){
 
 function ofPhoneBlur(){
   var inp=document.getElementById('of-phone');
-  if(!inp)return;
-  var local=inp.value.replace(/\D/g,'');
-  if(local.startsWith('0'))local=local.slice(1);
-  var full=OF.countryCode+local;
-  OF.draft.phone=full;
-  inp.value=local;
+  if(!inp||!_iti)return;
   var msg=document.getElementById('of-phone-msg');
   if(!msg)return;
-  if(!local){msg.textContent='';return;}
-  // Validate
-  if(local.length<7){
-    msg.textContent='Number too short';
+  var raw=inp.value.trim();
+  if(!raw){msg.innerHTML='';OF.draft.phone='';return;}
+  var isValid=_iti.isValidNumber();
+  if(!isValid){
+    var errCode=_iti.getValidationError();
+    var errMsgs=['Invalid number','Invalid country code','Number too short','Number too long','Invalid number'];
+    msg.innerHTML='✗ '+(errMsgs[errCode]||'Invalid number for selected country');
     msg.style.color='var(--danger)';
+    msg.style.cursor='default';
+    msg.onclick=null;
+    inp.classList.add('iti-tel-error');
+    OF.draft.phone='';
     return;
   }
-  // Check for duplicate
+  inp.classList.remove('iti-tel-error');
+  // Get E.164 format and strip the +
+  var e164=_iti.getNumber(); // e.g. +94771234567
+  var full=e164.replace(/^\+/,'');
+  OF.draft.phone=full;
+  // Check duplicate
   var existing=Object.values(brides).find(function(b){return b.phone===full&&b.id!==OF.draft.id;});
   if(existing){
-    msg.textContent='⚠ This number belongs to '+existing.name+'. Open that bride instead?';
+    msg.innerHTML='⚠ This number belongs to <strong>'+existing.name+'</strong>. <a href="#" onclick="openExistingBride(\''+existing.id+'\');return false;" style="color:var(--danger);text-decoration:underline;font-weight:600">Click here</a> to open.';
     msg.style.color='var(--danger)';
-    msg.style.cursor='pointer';
-    msg.onclick=function(){
-      CM('lead-modal');
-      openDetail(existing.id);
-    };
   } else {
-    msg.textContent='✓ Will save as +'+OF.countryCode+' '+local;
+    msg.innerHTML='✓ Saved as '+e164;
     msg.style.color='var(--success)';
     msg.style.cursor='default';
     msg.onclick=null;
   }
 }
 
-function filterCountries(q){
-  var s=(q||'').toLowerCase();
-  var list=q?COUNTRIES.filter(function(c){return c.n.toLowerCase().indexOf(s)>=0||c.c.indexOf(s)>=0;}):COUNTRIES;
-  var h='';
-  list.forEach(function(c){
-    h+='<div class="shi" onclick="selectCountry(\''+c.c+'\')"><div style="display:flex;align-items:center;gap:12px"><span style="font-size:22px">'+c.f+'</span><div><div class="sin">'+c.n+'</div><div class="sim">+'+c.c+'</div></div></div></div>';
-  });
-  document.getElementById('cc-list').innerHTML=h;
-}
-
-function selectCountry(cc){
-  OF.countryCode=cc;
-  OF.dirty=true;
-  CS('cc');
-  renderOverviewForm();
-  setTimeout(function(){
-    var i=document.getElementById('of-phone');
-    if(i)ofPhoneBlur();
-  },50);
+function openExistingBride(id){
+  OF.dirty=false; // discard current
+  CM('lead-modal');
+  setTimeout(function(){openDetail(id);},150);
 }
 
 // Validate the form before save
@@ -2070,19 +2179,22 @@ function ofValidate(){
   // Name
   var nameInp=document.getElementById('of-name');
   if(nameInp)b.name=nameInp.value.trim();
-  if(!b.name)errs.push('Name is required.');
-  // Phone
+  if(!b.name)errs.push('Bride name is required.');
+  // Phone - using intl-tel-input validation
   var phInp=document.getElementById('of-phone');
   if(phInp){
-    var local=phInp.value.replace(/\D/g,'').replace(/^0/,'');
-    if(!local){errs.push('Phone number is required.');}
-    else if(local.length<7){errs.push('Phone number is too short.');}
-    else b.phone=OF.countryCode+local;
+    var raw=phInp.value.trim();
+    if(!raw){errs.push('Phone number is required.');}
+    else if(_iti&&!_iti.isValidNumber()){errs.push('Phone number is not valid for the selected country.');}
+    else if(_iti){
+      var e164=_iti.getNumber();
+      if(e164)b.phone=e164.replace(/^\+/,'');
+    }
   }
   // Duplicate phone
   if(b.phone){
     var dup=Object.values(brides).find(function(x){return x.phone===b.phone&&x.id!==b.id;});
-    if(dup)errs.push('Phone already exists for '+dup.name+'.');
+    if(dup)errs.push('Phone number already exists for '+dup.name+'.');
   }
   // At least one event with a date
   var events=b.events||{};
@@ -2333,7 +2445,20 @@ async function backfillLeads(){
     render();
   }catch(e){notif('Error: '+e.message);}
 }
-async function clearData(){var _r1 = await showConfirm({title:'Clear all data',msg:'This will permanently delete ALL leads, customers, quotes and invoices. Settings will be kept.',yesText:'Continue',dangerous:true});if(!_r1.ok)return;var _r2 = await showConfirm({title:'Final confirmation',msg:'Are you absolutely sure? This cannot be undone.',yesText:'Yes, delete everything',dangerous:true});if(!_r2.ok)return;try{await fbS('/leads',null);await fbS('/customers',null);leads={};custs={};notif('All data cleared.');render();}catch(e){notif('Error: '+e.message);}}
+async function clearData(){
+  var _r1 = await showConfirm({title:'Clear all data',msg:'This will permanently delete ALL brides (leads + customers + quotes + invoices). Settings will be kept.',yesText:'Continue',dangerous:true});
+  if(!_r1.ok)return;
+  var _r2 = await showConfirm({title:'Final confirmation',msg:'Are you absolutely sure? This cannot be undone.',yesText:'Yes, delete everything',dangerous:true});
+  if(!_r2.ok)return;
+  try{
+    await fetch(FB+'/brides.json',{method:'DELETE'});
+    await fetch(FB+'/leads.json',{method:'DELETE'});
+    await fetch(FB+'/customers.json',{method:'DELETE'});
+    brides={};leads={};custs={};
+    notif('All data cleared.');
+    render();
+  }catch(e){notif('Error: '+e.message);}
+}
 (function(){
   function chk(){var b=document.getElementById('MSB');if(b)b.style.display=window.innerWidth<=900?'flex':'none';}
   chk();window.addEventListener('resize',chk);
