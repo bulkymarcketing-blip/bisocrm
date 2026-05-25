@@ -940,7 +940,7 @@ function cardActions(l){
   } else if(s===2){
     actionBtn='<button onclick="event.stopPropagation();advStage(\''+l.id+'\',3)" class="lcard-cta-btn">✓ Done</button>';
   } else if(s===3){
-    actionBtn='<button onclick="event.stopPropagation();CM(\'detail-modal\');openQM(\''+l.id+'\',null)" class="lcard-cta-btn">Quote</button>';
+    actionBtn='<button onclick="event.stopPropagation();openOverviewForm(\''+l.id+'\',{createQuote:true})" class="lcard-cta-btn">Quote</button>';
   } else if(s===4){
     var openQ=Object.values(l.quotations||{}).find(function(qt){return !qt.convertedToInvoice;});
     if(openQ){
@@ -1941,7 +1941,7 @@ function buildStageCta(id,l){
   }
   if(s===1)return '<button class="btn btn-primary btn-sm" onclick="advStage(\''+id+'\',2)">Book Consultation</button>';
   if(s===2)return '<button class="btn btn-primary btn-sm" onclick="advStage(\''+id+'\',3)">Mark Consultation Done</button>';
-  if(s===3)return '<button class="btn btn-primary btn-sm" onclick="CM(\'detail-modal\');openQM(\''+id+'\',null)">Create Quotation</button>';
+  if(s===3)return '<button class="btn btn-primary btn-sm" onclick="CM(\'detail-modal\');openOverviewForm(\''+id+'\',{createQuote:true})">Create Quotation</button>';
   if(s===4){
     var q=Object.values(l.quotations||{}).find(function(qt){return !qt.convertedToInvoice;});
     if(q)return '<button class="btn btn-primary btn-sm" onclick="CM(\'detail-modal\');openAdv(\'lead\',\''+id+'\',\''+q.id+'\')">Convert to Invoice</button>';
@@ -2252,7 +2252,9 @@ var OF = {
   countryCode:'94'
 };
 
-function openOverviewForm(brideId){
+function openOverviewForm(brideId, opts){
+  opts = opts || {};
+  OF.openQuoteAfterSave = !!opts.createQuote;
   if(brideId&&brides[brideId]){
     OF.brideId=brideId;
     OF.isNew=false;
@@ -2278,7 +2280,12 @@ function openOverviewForm(brideId){
   }
   OF.dirty=false;
   renderOverviewForm();
-  document.getElementById('of-title').textContent=OF.isNew?'New Bride':OF.draft.name||'Bride';
+  var titleEl = document.getElementById('of-title');
+  if(OF.openQuoteAfterSave){
+    titleEl.textContent = OF.isNew ? 'New Bride → Quote' : 'Review & Quote — ' + (OF.draft.name||'Bride');
+  } else {
+    titleEl.textContent = OF.isNew?'New Bride':OF.draft.name||'Bride';
+  }
   OM('lead-modal');
 }
 
@@ -2287,6 +2294,7 @@ async function closeOverview(){
     var r=await showConfirm({title:'Discard changes?',msg:'You have unsaved changes. Discard them?',yesText:'Discard',dangerous:true});
     if(!r.ok)return;
   }
+  OF.openQuoteAfterSave=false;
   CM('lead-modal');
 }
 
@@ -2369,9 +2377,14 @@ function renderOverviewForm(){
     +'<div id="of-validation" style="margin-top:14px"></div>';
   
   document.getElementById('of-body').innerHTML=html;
-  document.getElementById('of-footer').innerHTML=
-    '<button class="btn btn-ghost" onclick="closeOverview()">Cancel</button>'
-    +'<button class="btn btn-primary" onclick="ofSave()">Save</button>';
+  var footerHtml = '<button class="btn btn-ghost" onclick="closeOverview()">Cancel</button>';
+  if(OF.openQuoteAfterSave){
+    footerHtml += '<button class="btn btn-outline" onclick="ofSave()">Save Only</button>';
+    footerHtml += '<button class="btn btn-primary" onclick="ofCreateQuote()">→ Create Quotation</button>';
+  } else {
+    footerHtml += '<button class="btn btn-primary" onclick="ofSave()">Save</button>';
+  }
+  document.getElementById('of-footer').innerHTML = footerHtml;
   // Initialize intl-tel-input on the phone field
   setTimeout(initPhoneInput,50);
 }
@@ -2582,6 +2595,45 @@ async function ofSave(){
     notif(OF.isNew?'Bride created!':'Saved.');
     CM('lead-modal');
     render();
+  }catch(e){
+    notif('Error: '+e.message);
+  }
+}
+
+async function ofCreateQuote(){
+  // Save form first (with validation), then open quote builder pre-loaded with this bride
+  var notesEl=document.getElementById('of-notes');
+  if(notesEl)OF.draft.notes=notesEl.value;
+  var errs=ofValidate();
+  if(errs.length>0){
+    var box=document.getElementById('of-validation');
+    if(box){
+      box.innerHTML='<div style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:8px;padding:12px;font-size:13px;color:var(--danger)"><div style="font-weight:700;margin-bottom:6px">Cannot create quotation:</div>'+errs.map(function(e){return '• '+e;}).join('<br/>')+'</div>';
+      box.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+    return;
+  }
+  // Mirror weddingDate from events for back-compat
+  if(OF.draft.events&&OF.draft.events.wedding&&OF.draft.events.wedding.date){
+    OF.draft.weddingDate=OF.draft.events.wedding.date;
+  } else if(OF.draft.events&&OF.draft.events.homecoming&&OF.draft.events.homecoming.date){
+    OF.draft.weddingDate=OF.draft.events.homecoming.date;
+  }
+  OF.draft.lastActivity=new Date().toISOString();
+  OF.draft._history=OF.draft._history||{};
+  var hid='h-'+Math.random().toString(36).slice(2,10);
+  OF.draft._history[hid]={at:new Date().toISOString(),action:OF.isNew?'created':'updated',by:'system',details:{viaQuote:true}};
+  var brideId = OF.draft.id;
+  try{
+    await saveBride(OF.draft);
+    OF.dirty=false;
+    OF.openQuoteAfterSave=false;
+    CM('lead-modal');
+    // Open quote builder with this bride pre-loaded (as a lead-source quote)
+    setTimeout(function(){
+      openQM(brideId, null);
+      notif('Bride saved. Building quotation...');
+    }, 150);
   }catch(e){
     notif('Error: '+e.message);
   }
