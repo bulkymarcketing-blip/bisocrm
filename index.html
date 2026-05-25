@@ -1446,13 +1446,20 @@ function openDetail(id){
   var docs=Object.values(l.documents||{});
   var events=l.events||{wedding:{enabled:true}};
   // Tabs
-  var cTabs=l.confirmed?'<div class="tab" onclick="stab(this,\'tb-pay\')">Payment</div><div class="tab" onclick="stab(this,\'tb-appt\')">Appts</div>':'';
+  // Tab visibility rules:
+  // Appointments tab: stage >= 2 (Consultation Booked) OR any appointment exists OR confirmed
+  // Payment tab: any quotation/invoice exists OR confirmed
+  var showAppt = l.confirmed || Number(l.stage||0) >= 2 || appts.length > 0;
+  var showPay = l.confirmed || quots.length > 0 || invs.length > 0;
+  var cTabs = '';
+  if(showPay) cTabs += '<div class="tab" onclick="stab(this,\'tb-pay\')">Payment</div>';
+  if(showAppt) cTabs += '<div class="tab" onclick="stab(this,\'tb-appt\')">Appts</div>';
   // ===== Overview Tab =====
   var ovTab=buildOverviewTab(id,l,cancelled);
   // ===== Payment Tab =====
-  var payTab=l.confirmed?buildPaymentTab(id,l,cancelled,quots,invs):'';
+  var payTab=showPay?buildPaymentTab(id,l,cancelled,quots,invs):'';
   // ===== Appointments Tab =====
-  var apptTab=l.confirmed?buildApptTab(id,l,cancelled,appts):'';
+  var apptTab=showAppt?buildApptTab(id,l,cancelled,appts):'';
   // ===== Notes Tab =====
   var notesTab=buildNotesTab(id,l,cancelled,notes);
   // ===== Documents Tab =====
@@ -2332,29 +2339,7 @@ async function ofSave(){
 
 function openLeadModal(){openOverviewForm(null);}
 async function saveLead(){ofSave();}
-function openCust(id){
-  var c=custs[id];if(!c)return;
-  document.getElementById('cm-t').textContent=c.name;
-  document.getElementById('cm-s').textContent=c.phone||'';
-  var qts=Object.values(c.quotes||{});var invs=Object.values(c.invoices||{});
-  var qr='';
-  qts.forEach(function(qt){qr+='<tr style="border-bottom:1px solid var(--border)"><td style="padding:8px 0;font-size:11px;color:var(--muted);font-weight:600">'+qt.id+'</td><td style="font-size:12px;padding:8px 4px">'+fmt(qt.date)+'</td><td style="color:var(--gold);font-weight:700">'+fR(qTot(qt.items))+'</td><td style="text-align:right"><button class="btn btn-outline btn-xs" onclick="openQDoc(\'cust\',\''+id+'\',\''+qt.id+'\')" >View</button></td></tr>';});
-  var ir='';
-  invs.forEach(function(inv){ir+='<tr style="border-bottom:1px solid var(--border)"><td style="padding:8px 0;font-size:11px;color:var(--muted);font-weight:600">'+inv.id+'</td><td style="font-size:12px;padding:8px 4px">'+fmt(inv.date)+'</td><td style="color:var(--gold);font-weight:700">'+fR(qTot(inv.items))+'</td><td style="color:var(--success);font-size:12px">'+fR(inv.advance||0)+' paid</td><td style="text-align:right"><button class="btn btn-outline btn-xs" onclick="openIDoc(\'cust\',\''+id+'\',\''+inv.id+'\')" >View</button></td></tr>';});
-  document.getElementById('cm-b').innerHTML=
-    '<div class="cph"><div class="cpav">'+inits(c.name)+'</div><div><div class="cpn">'+c.name+'</div><div class="cps">'+(c.phone||'—')+'</div>'+(c.email?'<div class="cps">'+c.email+'</div>':'')+'</div></div>'
-    +'<div class="tabs"><div class="tab active" onclick="stab(this,\'ct-info\')">Details</div><div class="tab" onclick="stab(this,\'ct-hist\')">History</div></div>'
-    +'<div id="ct-info">'
-    +'<div class="fg"><div class="fi"><label>Name</label><input type="text" value="'+(c.name||'')+'" onchange="updC(\''+id+'\',{name:this.value})"/></div><div class="fi"><label>WhatsApp</label><input type="text" value="'+(c.phone||'')+'" onchange="updC(\''+id+'\',{phone:this.value})"/></div><div class="fi"><label>Email</label><input type="email" value="'+(c.email||'')+'" onchange="updC(\''+id+'\',{email:this.value})"/></div><div class="fi"><label>Wedding Date</label><input type="date" value="'+(c.weddingDate||'')+'" onchange="updC(\''+id+'\',{weddingDate:this.value})"/></div><div class="fi"><label>Anniversary</label><input type="date" value="'+(c.anniversary||'')+'" onchange="updC(\''+id+'\',{anniversary:this.value})"/></div><div class="fi"><label>Venue</label><input type="text" value="'+(c.venue||'')+'" onchange="updC(\''+id+'\',{venue:this.value})"/></div><div class="fi"><label>Bridesmaids</label><input type="number" value="'+(c.bridesmaids||0)+'" min="0" onchange="updC(\''+id+'\',{bridesmaids:parseInt(this.value)||0})"/></div><div class="fi s2"><label>Notes</label><textarea onchange="updC(\''+id+'\',{notes:this.value})">'+(c.notes||'')+'</textarea></div></div>'
-    +'</div>'
-    +'<div id="ct-hist" style="display:none">'
-    +'<div class="stitle">Quotations</div>'+(qr?'<table style="width:100%;border-collapse:collapse;margin-bottom:14px"><tbody>'+qr+'</tbody></table>':'<div style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:12px">No quotations</div>')
-    +'<div class="stitle">Invoices</div>'+(ir?'<table style="width:100%;border-collapse:collapse"><tbody>'+ir+'</tbody></table>':'<div style="font-size:13px;color:var(--muted);font-style:italic">No invoices</div>')
-    +'<div style="margin-top:14px"><button class="btn btn-primary btn-sm" onclick="CM(\'cust-modal\');openQM(null,\''+id+'\')" >+ Create Quotation</button></div>'
-    +'</div>';
-  document.getElementById('cm-f').innerHTML='<button class="btn btn-ghost" onclick="CM(\'cust-modal\')">Close</button>';
-  OM('cust-modal');
-}
+function openCust(id){openDetail(id);}
 async function updC(id,data){try{await fbP('/customers/'+id,data);custs[id]=Object.assign({},custs[id],data);}catch(e){notif('Error: '+e.message);}}
 function openNC(){openOverviewForm(null);}
 async function saveNC(){ofSave();}
