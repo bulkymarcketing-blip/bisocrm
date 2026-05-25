@@ -494,6 +494,19 @@ function migrateToBrides(leadsObj,custsObj){
 // Project brides back into leads + custs views (for backward compat with existing UI code)
 function projectViews(){
   leads={};custs={};
+  // One-time migration: if any bride has b.quotations, merge into b.quotes and clear quotations
+  Object.values(brides).forEach(function(b){
+    if(b.quotations && Object.keys(b.quotations).length > 0){
+      b.quotes = b.quotes || {};
+      Object.keys(b.quotations).forEach(function(qid){
+        if(!b.quotes[qid]){
+          b.quotes[qid] = b.quotations[qid];
+        }
+      });
+      // Schedule clearing of legacy path on next save - we don't delete here to avoid
+      // accidental data loss; rQuotations and rInvoices now ignore b.quotations anyway
+    }
+  });
   Object.values(brides).forEach(function(b){
     // leads view: everything that's not just-customer (has stage or quotes that became leads)
     var lead={
@@ -1154,8 +1167,12 @@ function rSchedule(){
 
 function rQuotations(){
   var allQ=[];
-  lA().forEach(function(l){Object.values(l.quotations||{}).forEach(function(qt){if(!qt.convertedToInvoice)allQ.push(Object.assign({},qt,{sN:l.name,sId:l.id,src:'lead'}));});});
-  cA().forEach(function(c){Object.values(c.quotes||{}).forEach(function(qt){if(!qt.convertedToInvoice)allQ.push(Object.assign({},qt,{sN:c.name,sId:c.id,src:'cust'}));});});
+  // Read from brides directly to avoid double-counting (leads+custs are derived views of same data)
+  Object.values(brides).forEach(function(b){
+    Object.values(b.quotes||{}).forEach(function(qt){
+      if(!qt.convertedToInvoice)allQ.push(Object.assign({},qt,{sN:b.name||'(unnamed)',sId:b.id,src:'lead'}));
+    });
+  });
   allQ.sort(function(a,b){return new Date(b.date)-new Date(a.date);});
   var filt=allQ.filter(function(qt){return q?qt.sN.toLowerCase().includes(q):true;});
   var rows='';
@@ -1170,8 +1187,12 @@ function rQuotations(){
 }
 function rInvoices(){
   var allI=[];
-  lA().forEach(function(l){Object.values(l.invoices||{}).forEach(function(inv){allI.push(Object.assign({},inv,{sN:l.name,sId:l.id,src:'lead'}));});});
-  cA().forEach(function(c){Object.values(c.invoices||{}).forEach(function(inv){allI.push(Object.assign({},inv,{sN:c.name,sId:c.id,src:'cust'}));});});
+  // Read from brides directly
+  Object.values(brides).forEach(function(b){
+    Object.values(b.invoices||{}).forEach(function(inv){
+      allI.push(Object.assign({},inv,{sN:b.name||'(unnamed)',sId:b.id,src:'lead'}));
+    });
+  });
   allI.sort(function(a,b){return new Date(b.date)-new Date(a.date);});
   var filt=allI.filter(function(i){return q?i.sN.toLowerCase().includes(q):true;});
   var rows='';
@@ -2262,10 +2283,10 @@ function openOverviewForm(brideId, opts){
     var pAll=String(OF.draft.phone||'').replace(/\D/g,'');
     var c=COUNTRIES.find(function(x){return pAll.indexOf(x.c)===0;});
     OF.countryCode=c?c.c:'94';
-    // Load draft quote items: find an existing unsent quote, else seed from events
+    // Load draft quote items from canonical /brides/X/quotes path
     OF.draft.quoteItems = {};
     var existingQuote = null;
-    var quotesObj = OF.draft.quotes || OF.draft.quotations || {};
+    var quotesObj = OF.draft.quotes || {};
     Object.values(quotesObj).forEach(function(qt){
       if(!qt.sent && !qt.convertedToInvoice && !existingQuote)existingQuote = qt;
     });
@@ -2672,13 +2693,11 @@ async function ofSave(){
       };
       var patch = {};
       patch[quoteId] = qt;
+      // Write to single canonical path: /brides/X/quotes/
       await fbP('/brides/'+OF.draft.id+'/quotes', patch);
-      await fbP('/brides/'+OF.draft.id+'/quotations', patch);
       if(brides[OF.draft.id]){
         brides[OF.draft.id].quotes = brides[OF.draft.id].quotes || {};
         brides[OF.draft.id].quotes[quoteId] = qt;
-        brides[OF.draft.id].quotations = brides[OF.draft.id].quotations || {};
-        brides[OF.draft.id].quotations[quoteId] = qt;
       }
       projectViews();
     }
@@ -2853,6 +2872,11 @@ function buildQuoteSection(){
 
 // Determine whether quote section should be visible
 function shouldShowQuoteSection(){
+  // Gate: must have events with dates AND either (a) stage >= 3 (Consultation Done) 
+  // OR (b) entered via explicit Quote button (createQuote flag set)
+  var stage = Number(OF.draft.stage||0);
+  var allowedByStage = stage >= 3 || OF.openQuoteAfterSave;
+  if(!allowedByStage) return false;
   var events = OF.draft.events || {};
   return ['wedding','homecoming','goingAway'].some(function(k){
     var e = events[k];
@@ -3025,15 +3049,11 @@ async function ofCreateQuote(){
     };
     var patch = {};
     patch[qt.id] = qt;
+    // Single canonical path
     await fbP('/brides/'+brideId+'/quotes', patch);
-    // Also write to /quotations path for backward-compat with lead view
-    await fbP('/brides/'+brideId+'/quotations', patch);
-    // Update local state
     if(brides[brideId]){
       brides[brideId].quotes = brides[brideId].quotes || {};
       brides[brideId].quotes[qt.id] = qt;
-      brides[brideId].quotations = brides[brideId].quotations || {};
-      brides[brideId].quotations[qt.id] = qt;
     }
     projectViews();
     CM('lead-modal');
