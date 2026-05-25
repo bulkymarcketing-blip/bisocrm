@@ -622,7 +622,7 @@ function doSearch(){q=document.getElementById('SI').value.toLowerCase();render()
 function openSB(){document.getElementById('SB').classList.add('open');document.getElementById('MOV').classList.add('open');}
 function closeSB(){document.getElementById('SB').classList.remove('open');document.getElementById('MOV').classList.remove('open');}
 function toggleMSB(){var b=document.getElementById('MSBar');var v=b.style.display==='none';b.style.display=v?'block':'none';if(v)document.getElementById('MSI').focus();}
-function handleAdd(){if(view==='customers')openNC();else if(view==='quotations')openQM(null,null);else openLeadModal();}
+function handleAdd(){if(view==='customers')openNC();else if(view==='quotations')openOverviewForm(null,{createQuote:true});else openLeadModal();}
 function render(){var fn={pipeline:rPipeline,clients:rClients,customers:rCustomers,schedule:rSchedule,quotations:rQuotations,invoices:rInvoices,finance:rFinance,settings:rSettings};if(fn[view])fn[view]();}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function fmt(s){if(!s)return '—';return new Date(s).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}
@@ -2601,7 +2601,7 @@ async function ofSave(){
 }
 
 async function ofCreateQuote(){
-  // Save form first (with validation), then open quote builder pre-loaded with this bride
+  // Save bride (with validation), THEN create empty quote record, THEN open line-item editor
   var notesEl=document.getElementById('of-notes');
   if(notesEl)OF.draft.notes=notesEl.value;
   var errs=ofValidate();
@@ -2628,11 +2628,34 @@ async function ofCreateQuote(){
     await saveBride(OF.draft);
     OF.dirty=false;
     OF.openQuoteAfterSave=false;
+    // Now create an empty quote attached to this bride
+    var qt = {
+      id: qNum(),
+      date: new Date().toISOString().slice(0,10),
+      expiry: expD(),
+      items: {},
+      notes: defNotes(),
+      convertedToInvoice: false,
+      sent: false
+    };
+    var patch = {};
+    patch[qt.id] = qt;
+    await fbP('/brides/'+brideId+'/quotes', patch);
+    // Also write to /quotations path for backward-compat with lead view
+    await fbP('/brides/'+brideId+'/quotations', patch);
+    // Update local state
+    if(brides[brideId]){
+      brides[brideId].quotes = brides[brideId].quotes || {};
+      brides[brideId].quotes[qt.id] = qt;
+      brides[brideId].quotations = brides[brideId].quotations || {};
+      brides[brideId].quotations[qt.id] = qt;
+    }
+    projectViews();
     CM('lead-modal');
-    // Open quote builder with this bride pre-loaded (as a lead-source quote)
+    // Open the line-item editor directly on this fresh quote
     setTimeout(function(){
-      openQM(brideId, null);
-      notif('Bride saved. Building quotation...');
+      editQ('lead', brideId, qt.id);
+      notif('Quotation '+qt.id+' started');
     }, 150);
   }catch(e){
     notif('Error: '+e.message);
