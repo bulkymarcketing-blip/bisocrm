@@ -2262,6 +2262,22 @@ function openOverviewForm(brideId, opts){
     var pAll=String(OF.draft.phone||'').replace(/\D/g,'');
     var c=COUNTRIES.find(function(x){return pAll.indexOf(x.c)===0;});
     OF.countryCode=c?c.c:'94';
+    // Load draft quote items: find an existing unsent quote, else seed from events
+    OF.draft.quoteItems = {};
+    var existingQuote = null;
+    var quotesObj = OF.draft.quotes || OF.draft.quotations || {};
+    Object.values(quotesObj).forEach(function(qt){
+      if(!qt.sent && !qt.convertedToInvoice && !existingQuote)existingQuote = qt;
+    });
+    if(existingQuote && existingQuote.items){
+      Object.values(existingQuote.items).forEach(function(it){
+        var k = it.key || 'L-'+Math.random().toString(36).slice(2,9);
+        OF.draft.quoteItems[k] = Object.assign({}, it, {key:k});
+      });
+      OF.draft._existingQuoteId = existingQuote.id;
+    }
+    // Sync to reconcile with current event state
+    syncQuoteItems();
   } else {
     OF.brideId=null;
     OF.isNew=true;
@@ -2274,7 +2290,8 @@ function openOverviewForm(brideId, opts){
       notes:'',
       createdAt:new Date().toISOString(),
       lastActivity:new Date().toISOString(),
-      quotes:{},invoices:{},appointments:{},notesLog:{},documents:{},_history:{}
+      quotes:{},invoices:{},appointments:{},notesLog:{},documents:{},_history:{},
+      quoteItems:{}
     };
     OF.countryCode='94';
   }
@@ -2373,18 +2390,21 @@ function renderOverviewForm(){
     +eventCard('wedding','Wedding',ev.wedding||{})
     +eventCard('homecoming','Homecoming',ev.homecoming||{})
     +eventCard('goingAway','Going Away',ev.goingAway||{})
+    +(shouldShowQuoteSection()
+      ? '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:600;margin:18px 0 10px">Quotation</div>'
+        +'<div style="font-size:12px;color:var(--muted);margin-bottom:10px">Line items auto-fill from events. Edit values, delete lines, or add custom services.</div>'
+        +buildQuoteSection()
+      : ''
+    )
     +'<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:600;margin:18px 0 10px">Notes</div>'
     +'<textarea id="of-notes" style="min-height:80px" oninput="ofMark();OF.draft.notes=this.value">'+(b.notes||'').replace(/</g,'&lt;')+'</textarea>'
     +'<div id="of-validation" style="margin-top:14px"></div>';
   
   document.getElementById('of-body').innerHTML=html;
+  var hasItems = OF.draft.quoteItems && Object.keys(OF.draft.quoteItems).length>0;
+  var saveLabel = hasItems ? 'Save Bride & Quote' : 'Save';
   var footerHtml = '<button class="btn btn-ghost" onclick="closeOverview()">Cancel</button>';
-  if(OF.openQuoteAfterSave){
-    footerHtml += '<button class="btn btn-outline" onclick="ofSave()">Save Only</button>';
-    footerHtml += '<button class="btn btn-primary" onclick="ofCreateQuote()">→ Create Quotation</button>';
-  } else {
-    footerHtml += '<button class="btn btn-primary" onclick="ofSave()">Save</button>';
-  }
+  footerHtml += '<button class="btn btn-primary" onclick="ofSave()">'+saveLabel+'</button>';
   document.getElementById('of-footer').innerHTML = footerHtml;
   // Initialize intl-tel-input on the phone field
   setTimeout(initPhoneInput,50);
@@ -2428,6 +2448,7 @@ function ofToggleEvent(key,checked){
   OF.draft.events=OF.draft.events||{};
   OF.draft.events[key]=OF.draft.events[key]||{};
   OF.draft.events[key].enabled=checked;
+  syncQuoteItems();
   renderOverviewForm();
 }
 
@@ -2438,6 +2459,9 @@ function ofSetEvent(key,field,val){
   OF.draft.events[key][field]=val;
   // If wedding date set, mirror to top-level weddingDate for back-compat
   if(key==='wedding'&&field==='date')OF.draft.weddingDate=val;
+  syncQuoteItems();
+  // Re-render only if the quote section visibility changes
+  if(field==='date')renderOverviewForm();
 }
 
 function ofSetTheme(key,val){
@@ -2450,12 +2474,14 @@ function ofSetTheme(key,val){
     if(!cur || ['Kandyan','Modern Kandyan','Indian','Lehenga','Western'].indexOf(cur)!==-1){
       OF.draft.events[key].theme='';
     }
+    syncQuoteItems();
     renderOverviewForm();
   } else if(val===''){
     OF.draft.events[key].theme='';
+    syncQuoteItems();
   } else {
     OF.draft.events[key].theme=val;
-    // Remove "Other" text field if it was shown
+    syncQuoteItems();
     renderOverviewForm();
   }
 }
@@ -2468,12 +2494,14 @@ function ofSetThemeOther(key,val){
 
 function ofCountChange(id,val){
   ofMark();
-  var parts=id.split('-'); // bm-wedding, fg-wedding, lm-homecoming etc.
+  var parts=id.split('-'); // bm-wedding, fg-wedding, lm-wedding
   var prefix=parts[0],key=parts[1];
   var field=prefix==='bm'?'bridesmaids':prefix==='fg'?'flowerGirls':'littleMaids';
   OF.draft.events=OF.draft.events||{};
   OF.draft.events[key]=OF.draft.events[key]||{};
   OF.draft.events[key][field]=parseInt(val)||0;
+  syncQuoteItems();
+  renderOverviewForm();
 }
 
 function ofPhoneInput(){
@@ -2591,7 +2619,43 @@ async function ofSave(){
   var hid='h-'+Math.random().toString(36).slice(2,10);
   OF.draft._history[hid]={at:new Date().toISOString(),action:OF.isNew?'created':'updated',by:'system'};
   try{
-    await saveBride(OF.draft);
+    // Strip quoteItems and _existingQuoteId from bride record before saving
+    var quoteItems = OF.draft.quoteItems || {};
+    var existingQuoteId = OF.draft._existingQuoteId;
+    var brideClone = Object.assign({}, OF.draft);
+    delete brideClone.quoteItems;
+    delete brideClone._existingQuoteId;
+    await saveBride(brideClone);
+    // If there are line items, also save/update a quote record
+    if(Object.keys(quoteItems).length>0){
+      var quoteId = existingQuoteId || qNum();
+      // Strip linkedTo and custom flags? Keep them - they're useful metadata
+      var items = {};
+      Object.values(quoteItems).forEach(function(it){
+        var k = it.key || 'L-'+Math.random().toString(36).slice(2,9);
+        items[k] = Object.assign({}, it, {key:k});
+      });
+      var qt = {
+        id: quoteId,
+        date: new Date().toISOString().slice(0,10),
+        expiry: expD(),
+        items: items,
+        notes: defNotes(),
+        convertedToInvoice: false,
+        sent: false
+      };
+      var patch = {};
+      patch[quoteId] = qt;
+      await fbP('/brides/'+OF.draft.id+'/quotes', patch);
+      await fbP('/brides/'+OF.draft.id+'/quotations', patch);
+      if(brides[OF.draft.id]){
+        brides[OF.draft.id].quotes = brides[OF.draft.id].quotes || {};
+        brides[OF.draft.id].quotes[quoteId] = qt;
+        brides[OF.draft.id].quotations = brides[OF.draft.id].quotations || {};
+        brides[OF.draft.id].quotations[quoteId] = qt;
+      }
+      projectViews();
+    }
     OF.dirty=false;
     notif(OF.isNew?'Bride created!':'Saved.');
     CM('lead-modal');
@@ -2613,6 +2677,235 @@ async function ofSave(){
 // - Little Maid: Rs 10,000 each flat
 // Bridesmaids/Flower Girls/Little Maids come from Wedding event only (Sri Lankan ceremony order).
 // Add-ons (touch-up, jewellery, tailoring, normal dressing) added manually by user.
+
+// =========================================================
+// Two-way binding between events and quote line items
+// =========================================================
+// Find an existing line by linkedTo key (first match)
+function findLinked(items, key){
+  var ks = Object.keys(items||{});
+  for(var i=0;i<ks.length;i++){
+    if(items[ks[i]].linkedTo===key)return ks[i];
+  }
+  return null;
+}
+
+// Add or update a linked line in OF.draft.quoteItems
+function upsertLinked(linkedTo, desc, qty, unit){
+  OF.draft.quoteItems = OF.draft.quoteItems || {};
+  var existingKey = findLinked(OF.draft.quoteItems, linkedTo);
+  if(existingKey){
+    // Update existing - preserve user edits to price/disc but update description and ensure qty matches event count
+    var ex = OF.draft.quoteItems[existingKey];
+    ex.desc = desc;
+    // Only sync qty if linkedTo is a count-driven field
+    if(linkedTo==='bridesmaids'||linkedTo==='flowerGirls'||linkedTo==='littleMaids'){
+      ex.qty = qty;
+    }
+    return existingKey;
+  }
+  var k = 'L-'+Math.random().toString(36).slice(2,9);
+  OF.draft.quoteItems[k] = {key:k, desc:desc, qty:qty, unit:unit, disc:0, linkedTo:linkedTo, custom:false};
+  return k;
+}
+
+// Remove a linked line by linkedTo key
+function removeLinked(linkedTo){
+  OF.draft.quoteItems = OF.draft.quoteItems || {};
+  var existingKey = findLinked(OF.draft.quoteItems, linkedTo);
+  if(existingKey){
+    delete OF.draft.quoteItems[existingKey];
+    return true;
+  }
+  return false;
+}
+
+// Sync line items from current event state
+function syncQuoteItems(){
+  OF.draft.quoteItems = OF.draft.quoteItems || {};
+  var events = OF.draft.events || {};
+  var w = events.wedding || {};
+  var h = events.homecoming || {};
+  var g = events.goingAway || {};
+  var hasW = !!w.enabled;
+  var hasH = !!h.enabled;
+  var hasG = !!g.enabled;
+  var bmCount = parseInt(w.bridesmaids||0)||0;
+  var fgCount = parseInt(w.flowerGirls||0)||0;
+  var lmCount = parseInt(w.littleMaids||0)||0;
+  // Wedding line
+  if(hasW){
+    var wTheme = w.theme || '';
+    var wDesc = 'Bridal' + (wTheme ? ' — '+wTheme : '');
+    upsertLinked('wedding', wDesc, 1, 125000);
+  } else {
+    removeLinked('wedding');
+  }
+  // Homecoming line
+  if(hasH){
+    var hTheme = h.theme || '';
+    var hDesc = 'Homecoming' + (hTheme ? ' — '+hTheme : '');
+    upsertLinked('homecoming', hDesc, 1, 125000);
+  } else {
+    removeLinked('homecoming');
+  }
+  // Discount line (only when both W and H ticked)
+  if(hasW && hasH){
+    upsertLinked('discount', 'Homecoming Package Discount', 1, -30000);
+  } else {
+    removeLinked('discount');
+  }
+  // Going Away
+  if(hasG){
+    upsertLinked('goingAway', 'Going Away', 1, 65000);
+  } else {
+    removeLinked('goingAway');
+  }
+  // Bridesmaids
+  if(bmCount>0){
+    upsertLinked('bridesmaids', 'Bridesmaid', bmCount, 38000);
+  } else {
+    removeLinked('bridesmaids');
+  }
+  // Flower Girls
+  if(fgCount>0){
+    upsertLinked('flowerGirls', 'Flower Girl', fgCount, 8000);
+  } else {
+    removeLinked('flowerGirls');
+  }
+  // Little Maids
+  if(lmCount>0){
+    upsertLinked('littleMaids', 'Little Maid', lmCount, 10000);
+  } else {
+    removeLinked('littleMaids');
+  }
+}
+
+// Build the quote section HTML for the Overview Form
+function buildQuoteSection(){
+  var items = OF.draft.quoteItems || {};
+  var keys = Object.keys(items);
+  // Sort: events first (W, H, discount, GA, BM, FG, LM), then custom in insertion order
+  var order = ['wedding','homecoming','discount','goingAway','bridesmaids','flowerGirls','littleMaids'];
+  keys.sort(function(a,b){
+    var la = items[a].linkedTo, lb = items[b].linkedTo;
+    var ia = la ? order.indexOf(la) : 999;
+    var ib = lb ? order.indexOf(lb) : 999;
+    if(ia!==-1&&ib!==-1)return ia-ib;
+    if(ia===-1)return 1;
+    if(ib===-1)return -1;
+    return 0;
+  });
+  var rowsHtml = '';
+  var subtotal = 0;
+  keys.forEach(function(k){
+    var it = items[k];
+    var line = (it.qty||1)*(it.unit||0)*(1-(it.disc||0)/100);
+    subtotal += line;
+    var isDiscount = (it.linkedTo==='discount');
+    var linkBadge = it.linkedTo ? '<span style="font-size:9px;color:var(--gold);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-left:6px">⚓ linked</span>' : '';
+    rowsHtml += '<div style="background:'+(isDiscount?'#FEF7E5':'var(--bg)')+';border:1.5px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px">';
+    rowsHtml += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">';
+    rowsHtml += '<div style="flex:1;font-size:13px;font-weight:600;color:'+(isDiscount?'var(--gold)':'var(--navy)')+'">'+it.desc+linkBadge+'</div>';
+    rowsHtml += '<button class="btn btn-ghost btn-xs" onclick="qiDelete(\''+k+'\')" style="color:var(--danger);padding:4px 8px">✕</button>';
+    rowsHtml += '</div>';
+    rowsHtml += '<div style="display:flex;gap:6px;align-items:flex-end">';
+    rowsHtml += '<div style="flex:1"><label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:2px">Qty</label><input type="number" value="'+(it.qty||1)+'" min="1" onchange="qiUpdate(\''+k+'\',\'qty\',parseFloat(this.value)||1)" style="width:100%;padding:6px 8px;font-size:13px;text-align:center;border:1.5px solid var(--border);border-radius:6px"/></div>';
+    rowsHtml += '<div style="flex:2"><label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:2px">Unit Rs</label><input type="number" value="'+(it.unit||0)+'" onchange="qiUpdate(\''+k+'\',\'unit\',parseFloat(this.value)||0)" style="width:100%;padding:6px 8px;font-size:13px;text-align:right;border:1.5px solid var(--border);border-radius:6px"/></div>';
+    rowsHtml += '<div style="flex:1"><label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:2px">Disc %</label><input type="number" value="'+(it.disc||0)+'" min="0" max="100" onchange="qiUpdate(\''+k+'\',\'disc\',parseFloat(this.value)||0)" style="width:100%;padding:6px 8px;font-size:13px;text-align:center;border:1.5px solid var(--border);border-radius:6px"/></div>';
+    rowsHtml += '<div style="flex:1;text-align:right;font-size:13px;font-weight:700;color:'+(line<0?'var(--gold)':'var(--navy)')+';padding-bottom:6px">'+(line<0?'-':'')+'Rs '+Math.abs(Math.round(line)).toLocaleString()+'</div>';
+    rowsHtml += '</div>';
+    rowsHtml += '</div>';
+  });
+  var addCustomBtn = '<button class="btn btn-outline btn-sm" onclick="qiAddCustom()" style="width:100%;margin-top:4px">+ Add custom line</button>';
+  var totalsHtml = '';
+  if(keys.length>0){
+    totalsHtml = '<div style="background:var(--navy);color:#fff;border-radius:10px;padding:12px 16px;margin-top:10px;display:flex;align-items:center;justify-content:space-between"><div style="font-size:11px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;opacity:.85">Total</div><div style="font-size:18px;font-weight:700">Rs '+Math.round(subtotal).toLocaleString()+'</div></div>';
+  }
+  return rowsHtml + addCustomBtn + totalsHtml;
+}
+
+// Determine whether quote section should be visible
+function shouldShowQuoteSection(){
+  var events = OF.draft.events || {};
+  return ['wedding','homecoming','goingAway'].some(function(k){
+    var e = events[k];
+    return e && e.enabled && e.date;
+  });
+}
+
+// Item field updates from line editor
+function qiUpdate(key, field, val){
+  ofMark();
+  OF.draft.quoteItems = OF.draft.quoteItems || {};
+  if(!OF.draft.quoteItems[key])return;
+  OF.draft.quoteItems[key][field] = val;
+  // Re-render just the totals/values
+  renderOverviewForm();
+}
+
+async function qiDelete(key){
+  OF.draft.quoteItems = OF.draft.quoteItems || {};
+  var it = OF.draft.quoteItems[key];
+  if(!it)return;
+  if(it.linkedTo){
+    var label = {
+      wedding:'Wedding',
+      homecoming:'Homecoming',
+      discount:'Homecoming Package Discount',
+      goingAway:'Going Away',
+      bridesmaids:'Bridesmaids',
+      flowerGirls:'Flower Girls',
+      littleMaids:'Little Maids'
+    }[it.linkedTo] || it.linkedTo;
+    var r = await showConfirm({
+      title:'Remove linked line',
+      msg:'This line is linked to '+label+'. Removing it will also untick that from the events. Continue?',
+      yesText:'Remove',
+      dangerous:true
+    });
+    if(!r.ok)return;
+    // Untick the corresponding event/count
+    OF.draft.events = OF.draft.events || {};
+    var lt = it.linkedTo;
+    if(lt==='wedding'){
+      if(OF.draft.events.wedding)OF.draft.events.wedding.enabled = false;
+    } else if(lt==='homecoming'){
+      if(OF.draft.events.homecoming)OF.draft.events.homecoming.enabled = false;
+    } else if(lt==='goingAway'){
+      if(OF.draft.events.goingAway)OF.draft.events.goingAway.enabled = false;
+    } else if(lt==='bridesmaids'){
+      if(OF.draft.events.wedding)OF.draft.events.wedding.bridesmaids = 0;
+    } else if(lt==='flowerGirls'){
+      if(OF.draft.events.wedding)OF.draft.events.wedding.flowerGirls = 0;
+    } else if(lt==='littleMaids'){
+      if(OF.draft.events.wedding)OF.draft.events.wedding.littleMaids = 0;
+    } else if(lt==='discount'){
+      // Discount removal: don't untick events, just allow user to remove the discount
+    }
+    ofMark();
+    syncQuoteItems();
+    renderOverviewForm();
+  } else {
+    // Custom line - just delete
+    delete OF.draft.quoteItems[key];
+    ofMark();
+    renderOverviewForm();
+  }
+}
+
+function qiAddCustom(){
+  ofMark();
+  OF.draft.quoteItems = OF.draft.quoteItems || {};
+  var k = 'L-'+Math.random().toString(36).slice(2,9);
+  OF.draft.quoteItems[k] = {key:k, desc:'Custom service', qty:1, unit:0, disc:0, custom:true};
+  renderOverviewForm();
+  // Focus new line - find the desc field
+  setTimeout(function(){
+    // Could scroll to bottom of quote section
+  }, 50);
+}
+
 function buildLinesFromOverview(bride){
   var events = bride.events || {};
   var w = events.wedding || {};
@@ -2635,12 +2928,16 @@ function buildLinesFromOverview(bride){
     var wDesc = 'Bridal' + (wTheme ? ' — '+wTheme : '');
     addLine(wDesc, 1, 125000, 'Bridal', wTheme);
   }
-  // Homecoming - ONLY discount in the system: Rs 95,000 with wedding, Rs 125,000 alone
+  // Homecoming - always Rs 125,000 at full price
   if(hasH){
     var hTheme = h.theme || '';
     var hDesc = 'Homecoming' + (hTheme ? ' — '+hTheme : '');
-    var hPrice = hasW ? 95000 : 125000;
-    addLine(hDesc, 1, hPrice, 'Homecoming', hTheme);
+    addLine(hDesc, 1, 125000, 'Homecoming', hTheme);
+  }
+  // Homecoming Package Discount - separate line, -Rs 30,000 when Wedding AND Homecoming both ticked
+  // This is the ONLY discount Biso offers. Shows as a visible saving on the quote.
+  if(hasW && hasH){
+    addLine('Homecoming Package Discount', 1, -30000, 'Discount', '');
   }
   // Going Away - flat Rs 65,000 (no combo discount)
   if(hasG){
