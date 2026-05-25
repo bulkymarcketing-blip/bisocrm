@@ -2448,7 +2448,9 @@ function renderOverviewForm(){
     +'<div id="of-validation" style="margin-top:14px"></div>';
   
   document.getElementById('of-body').innerHTML=html;
-  var hasItems = OF.draft.quoteItems && Object.keys(OF.draft.quoteItems).length>0;
+  // Button label respects the same gate as the quote section
+  var showsQuote = shouldShowQuoteSection();
+  var hasItems = showsQuote && OF.draft.quoteItems && Object.keys(OF.draft.quoteItems).length>0;
   var saveLabel = hasItems ? 'Save Bride & Quote' : 'Save';
   var footerHtml = '<button class="btn btn-ghost" onclick="closeOverview()">Cancel</button>';
   footerHtml += '<button class="btn btn-primary" onclick="ofSave()">'+saveLabel+'</button>';
@@ -2673,8 +2675,9 @@ async function ofSave(){
     delete brideClone.quoteItems;
     delete brideClone._existingQuoteId;
     await saveBride(brideClone);
-    // If there are line items, also save/update a quote record
-    if(Object.keys(quoteItems).length>0){
+    // Only persist quote if the quote section is currently shown (gate respected)
+    var shouldSaveQuote = shouldShowQuoteSection() && Object.keys(quoteItems).length>0;
+    if(shouldSaveQuote){
       var quoteId = existingQuoteId || qNum();
       // Strip linkedTo and custom flags? Keep them - they're useful metadata
       var items = {};
@@ -2768,6 +2771,15 @@ function removeLinked(linkedTo){
 // Sync line items from current event state
 function syncQuoteItems(){
   OF.draft.quoteItems = OF.draft.quoteItems || {};
+  // Gate: if quote section shouldn't show, clear all linked items and don't add new ones
+  if(!shouldShowQuoteSection()){
+    Object.keys(OF.draft.quoteItems).forEach(function(k){
+      if(OF.draft.quoteItems[k].linkedTo){
+        delete OF.draft.quoteItems[k];
+      }
+    });
+    return;
+  }
   var events = OF.draft.events || {};
   var w = events.wedding || {};
   var h = events.homecoming || {};
