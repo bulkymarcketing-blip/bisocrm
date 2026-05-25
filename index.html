@@ -971,7 +971,7 @@ function cardActions(l){
   } else if(s===2){
     actionBtn='<button onclick="event.stopPropagation();advStage(\''+l.id+'\',3)" class="lcard-cta-btn">✓ Done</button>';
   } else if(s===3){
-    actionBtn='<button onclick="event.stopPropagation();openOverviewForm(\''+l.id+'\',{createQuote:true})" class="lcard-cta-btn">Quote</button>';
+    actionBtn='<button onclick="event.stopPropagation();openOverviewForm(\''+l.id+'\',{intent:\'quote\'})" class="lcard-cta-btn">Quote</button>';
   } else if(s===4){
     var openQ=Object.values(l.quotations||{}).find(function(qt){return !qt.convertedToInvoice;});
     if(openQ){
@@ -1626,7 +1626,15 @@ function updQBT(){
   QB.items.forEach(function(it,i){var el=document.getElementById('qa-'+i);if(el)el.textContent=fR(cLine(it));});
   var g=document.getElementById('qb-g');if(g)g.textContent=fR(QB.items.reduce(function(s,it){return s+cLine(it);},0));
 }
-function delQBI(key){QB.items=QB.items.filter(function(it){return (it.key||'')!==key&&!it.auto;});applyDisc();renderQB();}
+function delQBI(key){
+  // Support deletion by key OR by index (when item has no key, button passes String(index))
+  QB.items=QB.items.filter(function(it,i){
+    if(it.auto)return true; // never auto-delete auto-items
+    var itKey=it.key||String(i);
+    return itKey!==key;
+  });
+  applyDisc();renderQB();
+}
 function OS(t){
   var n=document.getElementById('qb-n');if(n)QB.notes=n.value;
   document.getElementById(t+'-ov').classList.add('open');
@@ -2030,7 +2038,7 @@ function buildStageCta(id,l){
   }
   if(s===1)return '<button class="btn btn-primary btn-sm" onclick="advStage(\''+id+'\',2)">Book Consultation</button>';
   if(s===2)return '<button class="btn btn-primary btn-sm" onclick="advStage(\''+id+'\',3)">Mark Consultation Done</button>';
-  if(s===3)return '<button class="btn btn-primary btn-sm" onclick="CM(\'detail-modal\');openOverviewForm(\''+id+'\',{createQuote:true})">Create Quotation</button>';
+  if(s===3)return '<button class="btn btn-primary btn-sm" onclick="CM(\'detail-modal\');openOverviewForm(\''+id+'\',{intent:\'quote\'})">Create Quotation</button>';
   if(s===4){
     var q=Object.values(l.quotations||{}).find(function(qt){return !qt.convertedToInvoice;});
     if(q)return '<button class="btn btn-primary btn-sm" onclick="CM(\'detail-modal\');openAdv(\'lead\',\''+id+'\',\''+q.id+'\')">Convert to Invoice</button>';
@@ -2837,7 +2845,7 @@ function ofPhoneBlur(){
     return b.phone === OF.draft.phone && b.id !== OF.draft.id;
   });
   if(existing){
-    msg.innerHTML = '⚠ This number belongs to <strong>'+existing.name+'</strong>. <a href="#" onclick="openExistingBride(\''+existing.id+'\');return false;" style="color:var(--danger);text-decoration:underline;font-weight:600">Click here</a> to open.';
+    msg.innerHTML = '⚠ This number belongs to <strong>'+existing.name+'</strong>. <a href="#" onclick="CM(\'lead-modal\');openDetail(\''+existing.id+'\');return false;" style="color:var(--danger);text-decoration:underline;font-weight:600">Click here</a> to open.';
     msg.style.color = 'var(--danger)';
   } else {
     msg.innerHTML = '✓ Valid';
@@ -3743,15 +3751,7 @@ async function backfillLeads(){
         continue;
       }
       var nid=uid();
-      var hasConvertedQuote=Object.values(c.quotes||{}).some(function(qt){return qt.convertedToInvoice;});
-      var isConfirmed=hasInvoices||hasConvertedQuote;
-      var totals=0;
-      Object.values(c.invoices||{}).forEach(function(inv){totals+=qTot(inv.items);});
-      var advances=0;
-      Object.values(c.invoices||{}).forEach(function(inv){
-        advances+=(inv.advance||0);
-        Object.values(inv.payments||{}).forEach(function(p){advances+=(parseFloat(p.amount)||0);});
-      });
+      // hasConvertedQuote, isConfirmed, totals, advances already computed above
       var nl={
         id:nid,name:c.name,phone:c.phone||'',email:c.email||'',
         source:'walk-in',stage:isConfirmed?5:4,
