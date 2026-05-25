@@ -2395,8 +2395,9 @@ function openOverviewForm(brideId, opts){
     OF.isNew = true;
     // Intent-driven initial stage:
     // 'lead' = stage 0 (just capturing inquiry)
-    // 'quote' or 'invoice' = stage 3 (walk-in skipping pipeline, ready for quote/invoice)
-    var initStage = (intent==='quote' || intent==='invoice') ? 3 : 0;
+    // 'quote' = stage 4 (walk-in skipping pipeline, quote being created)
+    // 'invoice' = stage 5 (walk-in confirming with advance) — will also be set after invoice save
+    var initStage = intent==='invoice' ? 5 : intent==='quote' ? 4 : 0;
     OF.draft = {
       id: 'bride-'+Math.random().toString(36).slice(2,10),
       name:'', phone:'', email:'',
@@ -2494,10 +2495,19 @@ function renderOverviewForm(){
     var allEvents = OF.draft.events || {};
     var wEv = allEvents.wedding;
     var hEv = allEvents.homecoming;
+    var dateDefault = '';
     if(key === 'homecoming' && wEv && wEv.enabled && wEv.date){
       // Homecoming must be AFTER wedding
       var minD = new Date(wEv.date); minD.setDate(minD.getDate()+1);
-      dateMin = ' min="'+minD.toISOString().slice(0,10)+'"';
+      var minStr = minD.toISOString().slice(0,10);
+      dateMin = ' min="'+minStr+'"';
+      // Pre-populate value so iOS/Chrome picker has a valid default (Bug 1 fix)
+      // and commit it to the model so it's not lost
+      dateDefault = minStr;
+      if(!e.date){
+        e.date = minStr;
+        // Note: this mutates the OF.draft.events.homecoming reference too since e is the same object
+      }
       dateHint = '<div style="font-size:10px;color:var(--muted);margin-top:3px">Must be after wedding ('+wEv.date+')</div>';
     }
     if(key === 'wedding' && hEv && hEv.enabled && hEv.date){
@@ -2517,7 +2527,7 @@ function renderOverviewForm(){
       +'</label>'
       +(enabled?(
         '<div class="fg" style="margin-top:10px">'
-        +'<div class="fi"><label>Date *</label><input type="date" value="'+(e.date||'')+'"'+dateMin+dateMax+dateReadonly+' onchange="ofSetEvent(\''+key+'\',\'date\',this.value)"/>'+dateHint+'</div>'
+        +'<div class="fi"><label>Date *</label><input type="date" value="'+(e.date||dateDefault||'')+'"'+dateMin+dateMax+dateReadonly+' onchange="ofSetEvent(\''+key+'\',\'date\',this.value)"/>'+dateHint+'</div>'
         +'<div class="fi"><label>Venue</label><input type="text" value="'+(e.venue||'').replace(/"/g,'&quot;')+'" placeholder="Venue name" onchange="ofSetEvent(\''+key+'\',\'venue\',this.value)"/></div>'
         +themeField
         +'<div class="fi"><label>Start Time</label><input type="time" value="'+(e.startTime||'')+'" onchange="ofSetEvent(\''+key+'\',\'startTime\',this.value)"/></div>'
@@ -2882,6 +2892,12 @@ async function ofSave(){
       if(!brides[OF.draft.id])brides[OF.draft.id] = brideClone;
       brides[OF.draft.id].quotes = brides[OF.draft.id].quotes || {};
       brides[OF.draft.id].quotes[quoteId] = qt;
+      // Advance stage to Quoted (4) if currently below that
+      var curStage = Number(brides[OF.draft.id].stage || 0);
+      if(curStage < 4 && !brides[OF.draft.id].confirmed){
+        await fbP('/brides/'+OF.draft.id, {stage: 4});
+        brides[OF.draft.id].stage = 4;
+      }
       projectViews();
     }
     
