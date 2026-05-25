@@ -691,7 +691,12 @@ function doSearch(){q=document.getElementById('SI').value.toLowerCase();render()
 function openSB(){document.getElementById('SB').classList.add('open');document.getElementById('MOV').classList.add('open');}
 function closeSB(){document.getElementById('SB').classList.remove('open');document.getElementById('MOV').classList.remove('open');}
 function toggleMSB(){var b=document.getElementById('MSBar');var v=b.style.display==='none';b.style.display=v?'block':'none';if(v)document.getElementById('MSI').focus();}
-function handleAdd(){if(view==='customers')openNC();else if(view==='quotations')openOverviewForm(null,{createQuote:true});else openLeadModal();}
+function handleAdd(){
+  if(view==='customers'){openOverviewForm(null,{intent:'lead'});}
+  else if(view==='quotations'){openOverviewForm(null,{intent:'quote'});}
+  else if(view==='invoices'){openOverviewForm(null,{intent:'invoice'});}
+  else {openOverviewForm(null,{intent:'lead'});}
+}
 function render(){var fn={pipeline:rPipeline,clients:rClients,customers:rCustomers,schedule:rSchedule,quotations:rQuotations,invoices:rInvoices,finance:rFinance,settings:rSettings};if(fn[view])fn[view]();}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function fmt(s){if(!s)return '—';return new Date(s).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}
@@ -2321,40 +2326,59 @@ function populateLfSrc(sel){
 // Overview Form - single source of truth
 // Used for: new bride creation, lead/confirmed detail overview tab
 // =========================================================
+function countDropdown(id, val){
+  var opts = '';
+  for(var i = 0; i <= 10; i++){
+    opts += '<option value="'+i+'"'+(i==val?' selected':'')+'>'+i+'</option>';
+  }
+  return '<select id="'+id+'" onchange="ofCountChange(\''+id+'\',this.value)">'+opts+'</select>';
+}
+
 var OF = {
-  brideId:null,        // if editing existing
-  isNew:true,
-  draft:null,          // working copy of bride data
-  dirty:false,
-  countryCode:'94'
+  brideId:null,       // existing bride being edited (null for new)
+  isNew:true,         // true for new bride creation
+  draft:null,         // working copy of bride data
+  dirty:false,        // form has unsaved changes
+  countryCode:'94',
+  intent:null,        // 'lead' | 'quote' | 'invoice' | null
+  existingQuoteId:null // id of an existing draft quote being edited
 };
 
+// ============================================================
+// ENTRY POINT - THE ONLY WAY TO OPEN THE OVERVIEW FORM
+// ============================================================
 function openOverviewForm(brideId, opts){
   opts = opts || {};
-  OF.openQuoteAfterSave = !!opts.createQuote;
-  if(brideId&&brides[brideId]){
-    OF.brideId=brideId;
-    OF.isNew=false;
-    OF.draft=JSON.parse(JSON.stringify(brides[brideId]));
-    var pAll=String(OF.draft.phone||'').replace(/\D/g,'');
-    var c=COUNTRIES.find(function(x){return pAll.indexOf(x.c)===0;});
-    OF.countryCode=c?c.c:'94';
-    // Load draft quote items from canonical /brides/X/quotes path
+  var intent = opts.intent || null; // 'lead', 'quote', 'invoice', or null (edit)
+  OF.intent = intent;
+  OF.existingQuoteId = null;
+  
+  if(brideId && brides[brideId]){
+    // EDITING EXISTING BRIDE
+    OF.brideId = brideId;
+    OF.isNew = false;
+    OF.draft = JSON.parse(JSON.stringify(brides[brideId]));
+    // Resolve country code from phone
+    var pAll = String(OF.draft.phone||'').replace(/\D/g,'');
+    var match = COUNTRIES.find(function(x){return pAll.indexOf(x.c)===0;});
+    OF.countryCode = match ? match.c : '94';
+    
+    // Load latest unsent draft quote items, if any
     OF.draft.quoteItems = {};
-    var existingQuote = null;
-    var quotesObj = OF.draft.quotes || {};
-    Object.values(quotesObj).forEach(function(qt){
-      if(!qt.sent && !qt.convertedToInvoice && !existingQuote)existingQuote = qt;
+    var draftQuote = null;
+    var quotes = OF.draft.quotes || {};
+    Object.values(quotes).forEach(function(qt){
+      if(!qt.sent && !qt.convertedToInvoice && !draftQuote)draftQuote = qt;
     });
-    if(existingQuote && existingQuote.items){
-      Object.values(existingQuote.items).forEach(function(it){
-        var k = it.key || 'L-'+Math.random().toString(36).slice(2,9);
+    if(draftQuote && draftQuote.items){
+      Object.values(draftQuote.items).forEach(function(it){
+        var k = it.key || ('L-'+Math.random().toString(36).slice(2,9));
         var loaded = Object.assign({}, it, {key:k});
-        // Infer linkedTo from description so syncQuoteItems can match (and not duplicate)
-        if(!loaded.linkedTo){
+        // Infer linkedTo from desc if missing (legacy data compatibility)
+        if(!loaded.linkedTo && !loaded.custom){
           var d = (loaded.desc||'').toLowerCase();
           if(d.indexOf('bridal')===0)loaded.linkedTo = 'wedding';
-          else if(d.indexOf('homecoming')===0 && (loaded.unit||0) < 0)loaded.linkedTo = 'discount';
+          else if(d.indexOf('homecoming package discount')===0)loaded.linkedTo = 'discount';
           else if(d.indexOf('homecoming')===0)loaded.linkedTo = 'homecoming';
           else if(d.indexOf('going away')===0)loaded.linkedTo = 'goingAway';
           else if(d.indexOf('bridesmaid')===0)loaded.linkedTo = 'bridesmaids';
@@ -2364,79 +2388,99 @@ function openOverviewForm(brideId, opts){
         }
         OF.draft.quoteItems[k] = loaded;
       });
-      OF.draft._existingQuoteId = existingQuote.id;
+      OF.existingQuoteId = draftQuote.id;
     }
-    // Deduplicate: keep only the first instance of each linkedTo key
-    var seenLinks = {};
+    // Dedupe linked items (keep first of each link key)
+    var seen = {};
     Object.keys(OF.draft.quoteItems).forEach(function(k){
       var it = OF.draft.quoteItems[k];
       if(it.linkedTo){
-        if(seenLinks[it.linkedTo]){
-          // Already have a line for this link - remove the duplicate
-          delete OF.draft.quoteItems[k];
-        } else {
-          seenLinks[it.linkedTo] = k;
-        }
+        if(seen[it.linkedTo]){ delete OF.draft.quoteItems[k]; }
+        else seen[it.linkedTo] = k;
       }
     });
-    // Sync to reconcile with current event state (won't add duplicates now)
-    syncQuoteItems();
   } else {
-    OF.brideId=null;
-    OF.isNew=true;
-    OF.draft={
-      id:'bride-'+Math.random().toString(36).slice(2,10),
-      name:'',phone:'',email:'',
-      source:'whatsapp',
-      stage:0,confirmed:false,cancelled:false,
-      events:{},
-      notes:'',
-      createdAt:new Date().toISOString(),
-      lastActivity:new Date().toISOString(),
-      quotes:{},invoices:{},appointments:{},notesLog:{},documents:{},_history:{},
-      quoteItems:{}
+    // NEW BRIDE
+    OF.brideId = null;
+    OF.isNew = true;
+    // Intent-driven initial stage:
+    // 'lead' = stage 0 (just capturing inquiry)
+    // 'quote' or 'invoice' = stage 3 (walk-in skipping pipeline, ready for quote/invoice)
+    var initStage = (intent==='quote' || intent==='invoice') ? 3 : 0;
+    OF.draft = {
+      id: 'bride-'+Math.random().toString(36).slice(2,10),
+      name:'', phone:'', email:'',
+      source: intent==='quote' || intent==='invoice' ? 'walkin' : 'whatsapp',
+      stage: initStage,
+      confirmed: false,
+      cancelled: false,
+      events: {},
+      notes: '',
+      createdAt: new Date().toISOString(),
+      lastActivity: new Date().toISOString(),
+      quotes: {},
+      invoices: {},
+      appointments: {},
+      notesLog: {},
+      documents: {},
+      _history: {},
+      quoteItems: {}
     };
-    OF.countryCode='94';
+    OF.countryCode = '94';
   }
-  OF.dirty=false;
+  
+  // Sync quote items from events (important for existing brides with old data)
+  syncQuoteItems();
+  OF.dirty = false;
+  
   renderOverviewForm();
+  
+  // Set title based on intent
   var titleEl = document.getElementById('of-title');
-  if(OF.openQuoteAfterSave){
-    titleEl.textContent = OF.isNew ? 'New Bride → Quote' : 'Review & Quote — ' + (OF.draft.name||'Bride');
-  } else {
-    titleEl.textContent = OF.isNew?'New Bride':OF.draft.name||'Bride';
+  if(titleEl){
+    if(OF.isNew){
+      if(intent==='quote')titleEl.textContent = 'New Quotation';
+      else if(intent==='invoice')titleEl.textContent = 'New Invoice';
+      else titleEl.textContent = 'New Bride';
+    } else {
+      titleEl.textContent = OF.draft.name || 'Bride';
+    }
   }
   OM('lead-modal');
 }
 
 async function closeOverview(){
   if(OF.dirty){
-    var r=await showConfirm({title:'Discard changes?',msg:'You have unsaved changes. Discard them?',yesText:'Discard',dangerous:true});
+    var r = await showConfirm({
+      title:'Discard changes?',
+      msg:'You have unsaved changes. Discard them?',
+      yesText:'Discard',
+      dangerous:true
+    });
     if(!r.ok)return;
   }
-  OF.openQuoteAfterSave=false;
+  OF.intent = null;
+  OF.existingQuoteId = null;
   CM('lead-modal');
 }
 
+// ============================================================
+// RENDER
+// ============================================================
 function renderOverviewForm(){
-  var b=OF.draft;
-  var cc=findCountry(OF.countryCode);
-  var localNum=String(b.phone||'').replace(/^94|^0/,'').replace(/\D/g,'');
-  // If draft has phone starting with non-94 country code, strip it
-  if(b.phone&&!b.phone.startsWith('94')){
-    var matched=COUNTRIES.find(function(x){return b.phone.startsWith(x.c);});
-    if(matched){localNum=b.phone.slice(matched.c.length);OF.countryCode=matched.c;cc=matched;}
-  }
+  var b = OF.draft;
+  var cc = findCountry(OF.countryCode);
+  var srcKeys = ['whatsapp','phone','walkin','instagram','facebook','fb-form','fb-ads','google-ads','website','referral'];
+  var srcLabels = {whatsapp:'WhatsApp',phone:'Phone Call',walkin:'Walk-in',instagram:'Instagram DM',facebook:'Facebook DM','fb-form':'Facebook Form','fb-ads':'Facebook Ads','google-ads':'Google Ads',website:'Website Form',referral:'Referral'};
+  var srcOpts = srcKeys.map(function(k){
+    return '<option value="'+k+'"'+(b.source===k?' selected':'')+'>'+(srcLabels[k]||k)+'</option>';
+  }).join('');
   
-  var SRCS=getSources();
-  var srcOpts='';SRCS.forEach(function(s){srcOpts+='<option value="'+s.value+'"'+(b.source===s.value?' selected':'')+'>'+s.label+'</option>';});
-  
-  // Event sections
-  function eventCard(key,label,e){
-    var enabled=!!(e&&e.enabled);
+  // Nested event card builder
+  function eventCard(key, label, e){
+    var enabled = !!(e && e.enabled);
     var needsTheme = (key==='wedding' || key==='homecoming');
     var THEMES = ['Kandyan','Modern Kandyan','Indian','Lehenga','Western','Other'];
-    // Theme dropdown
     var themeField = '';
     if(needsTheme){
       var curTheme = e.theme || '';
@@ -2451,7 +2495,7 @@ function renderOverviewForm(){
         : '';
       themeField = '<div class="fi s2"><label>Theme *</label><select id="theme-'+key+'" onchange="ofSetTheme(\''+key+'\',this.value)">'+themeOpts+'</select>'+otherField+'</div>';
     }
-    // Counts ONLY for Wedding - bridesmaids/flower girls/little maids accompany bride at wedding only
+    // Counts ONLY for Wedding
     var bridesmaidsField = key==='wedding' ? '<div class="fi"><label>Bridesmaids</label>'+countDropdown('bm-'+key,e.bridesmaids||0)+'</div>' : '';
     var flowerGirlsField = key==='wedding' ? '<div class="fi"><label>Flower Girls</label>'+countDropdown('fg-'+key,e.flowerGirls||0)+'</div>' : '';
     var littleMaidsField = key==='wedding' ? '<div class="fi"><label>Little Maids</label>'+countDropdown('lm-'+key,e.littleMaids||0)+'</div>' : '';
@@ -2474,10 +2518,9 @@ function renderOverviewForm(){
       +'</div>';
   }
   
-  var ev=b.events||{};
-  var html=
+  var ev = b.events || {};
+  var html =
     '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:600;margin-bottom:10px">Contact</div>'
-    // Phone (first!) - intl-tel-input initialized after render
     +'<div class="fi" style="margin-bottom:14px"><label>WhatsApp Number *</label>'
     +'<input type="tel" id="of-phone" value="'+(b.phone||'')+'" placeholder="77 123 4567"/>'
     +'<div id="of-phone-msg" style="font-size:11px;color:var(--muted);margin-top:4px"></div>'
@@ -2503,242 +2546,278 @@ function renderOverviewForm(){
     +'<textarea id="of-notes" style="min-height:80px" oninput="ofMark();OF.draft.notes=this.value">'+(b.notes||'').replace(/</g,'&lt;')+'</textarea>'
     +'<div id="of-validation" style="margin-top:14px"></div>';
   
-  document.getElementById('of-body').innerHTML=html;
-  // Button label respects the same gate as the quote section
+  document.getElementById('of-body').innerHTML = html;
+  
+  // Compute save button label based on intent + quote section visibility
   var showsQuote = shouldShowQuoteSection();
-  var hasItems = showsQuote && OF.draft.quoteItems && Object.keys(OF.draft.quoteItems).length>0;
-  var saveLabel = hasItems ? 'Save Bride & Quote' : 'Save';
-  var footerHtml = '<button class="btn btn-ghost" onclick="closeOverview()">Cancel</button>';
-  footerHtml += '<button class="btn btn-primary" onclick="ofSave()">'+saveLabel+'</button>';
+  var saveLabel;
+  if(OF.intent === 'invoice')saveLabel = 'Save & Create Invoice';
+  else if(showsQuote && OF.draft.quoteItems && Object.keys(OF.draft.quoteItems).length > 0)saveLabel = 'Save Bride & Quote';
+  else saveLabel = 'Save';
+  
+  var footerHtml = '<button class="btn btn-ghost" onclick="closeOverview()">Cancel</button>'
+    + '<button class="btn btn-primary" onclick="ofSave()">'+saveLabel+'</button>';
   document.getElementById('of-footer').innerHTML = footerHtml;
-  // Initialize intl-tel-input on the phone field
-  setTimeout(initPhoneInput,50);
+  
+  // Initialize phone input library (if available)
+  setTimeout(initPhoneInput, 50);
 }
 
-var _iti=null;
+// ============================================================
+// PHONE INPUT (with safe fallback if CDN failed)
+// ============================================================
+var _iti = null;
 function initPhoneInput(){
-  var input=document.getElementById('of-phone');
-  if(!input||typeof window.intlTelInput!=='function')return;
-  // Reset any prior instance
-  if(_iti){try{_iti.destroy();}catch(e){}_iti=null;}
-  _iti=window.intlTelInput(input,{
-    initialCountry:'lk',
-    preferredCountries:['lk','in','ae','sa','gb','us','au','qa','kw','om','bh','sg','my'],
-    separateDialCode:true,
-    nationalMode:true,
-    autoPlaceholder:'aggressive',
-    formatOnDisplay:true,
-    utilsScript:'https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/utils.js'
-  });
-  // Initialize country from existing phone if editing
-  if(OF.draft.phone){
-    try{_iti.setNumber('+'+OF.draft.phone);}catch(e){}
+  var input = document.getElementById('of-phone');
+  if(!input) return;
+  // If intl-tel-input library not loaded, skip silently - the field stays as plain tel input
+  if(typeof window.intlTelInput !== 'function') return;
+  if(_iti){ try{_iti.destroy();}catch(e){} _iti = null; }
+  try {
+    _iti = window.intlTelInput(input, {
+      initialCountry: 'lk',
+      preferredCountries: ['lk','in','ae','sa','gb','us','au','qa','kw','om','bh','sg','my'],
+      separateDialCode: true,
+      nationalMode: true,
+      autoPlaceholder: 'aggressive',
+      formatOnDisplay: true,
+      utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/utils.js'
+    });
+    if(OF.draft.phone){
+      try{ _iti.setNumber('+'+OF.draft.phone); }catch(e){}
+    }
+    input.addEventListener('blur', ofPhoneBlur);
+    input.addEventListener('countrychange', ofPhoneBlur);
+    input.addEventListener('input', function(){ OF.dirty = true; });
+  } catch(e) {
+    // intl-tel-input failed for some reason - fall back to plain input
+    _iti = null;
   }
-  input.addEventListener('blur',ofPhoneBlur);
-  input.addEventListener('countrychange',ofPhoneBlur);
-  input.addEventListener('input',function(){OF.dirty=true;});
 }
 
+// ============================================================
+// CHANGE HANDLERS
+// ============================================================
+function ofMark(){ OF.dirty = true; }
 
-function countDropdown(id,val){
-  var opts='';
-  for(var i=0;i<=10;i++)opts+='<option value="'+i+'"'+(i==val?' selected':'')+'>'+i+'</option>';
-  return '<select id="'+id+'" onchange="ofCountChange(\''+id+'\',this.value)">'+opts+'</select>';
-}
-
-function ofMark(){OF.dirty=true;}
-
-function ofToggleEvent(key,checked){
+function ofToggleEvent(key, checked){
   ofMark();
-  OF.draft.events=OF.draft.events||{};
-  OF.draft.events[key]=OF.draft.events[key]||{};
-  OF.draft.events[key].enabled=checked;
+  OF.draft.events = OF.draft.events || {};
+  OF.draft.events[key] = OF.draft.events[key] || {};
+  OF.draft.events[key].enabled = checked;
   syncQuoteItems();
   renderOverviewForm();
 }
 
-function ofSetEvent(key,field,val){
+function ofSetEvent(key, field, val){
   ofMark();
-  OF.draft.events=OF.draft.events||{};
-  OF.draft.events[key]=OF.draft.events[key]||{};
-  OF.draft.events[key][field]=val;
-  // If wedding date set, mirror to top-level weddingDate for back-compat
-  if(key==='wedding'&&field==='date')OF.draft.weddingDate=val;
+  OF.draft.events = OF.draft.events || {};
+  OF.draft.events[key] = OF.draft.events[key] || {};
+  OF.draft.events[key][field] = val;
+  if(key==='wedding' && field==='date')OF.draft.weddingDate = val;
   syncQuoteItems();
-  // Re-render only if the quote section visibility changes
-  if(field==='date')renderOverviewForm();
+  if(field === 'date') renderOverviewForm();
 }
 
-function ofSetTheme(key,val){
+function ofSetTheme(key, val){
   ofMark();
-  OF.draft.events=OF.draft.events||{};
-  OF.draft.events[key]=OF.draft.events[key]||{};
-  if(val==='Other'){
-    // Keep existing custom theme or empty
+  OF.draft.events = OF.draft.events || {};
+  OF.draft.events[key] = OF.draft.events[key] || {};
+  if(val === 'Other'){
     var cur = OF.draft.events[key].theme;
-    if(!cur || ['Kandyan','Modern Kandyan','Indian','Lehenga','Western'].indexOf(cur)!==-1){
-      OF.draft.events[key].theme='';
+    if(!cur || ['Kandyan','Modern Kandyan','Indian','Lehenga','Western'].indexOf(cur) !== -1){
+      OF.draft.events[key].theme = '';
     }
     syncQuoteItems();
     renderOverviewForm();
-  } else if(val===''){
-    OF.draft.events[key].theme='';
+  } else if(val === ''){
+    OF.draft.events[key].theme = '';
     syncQuoteItems();
   } else {
-    OF.draft.events[key].theme=val;
+    OF.draft.events[key].theme = val;
     syncQuoteItems();
     renderOverviewForm();
   }
 }
-function ofSetThemeOther(key,val){
+
+function ofSetThemeOther(key, val){
   ofMark();
-  OF.draft.events=OF.draft.events||{};
-  OF.draft.events[key]=OF.draft.events[key]||{};
-  OF.draft.events[key].theme=val.trim();
+  OF.draft.events = OF.draft.events || {};
+  OF.draft.events[key] = OF.draft.events[key] || {};
+  OF.draft.events[key].theme = val.trim();
+  syncQuoteItems();
 }
 
-function ofCountChange(id,val){
+function ofCountChange(id, val){
   ofMark();
-  var parts=id.split('-'); // bm-wedding, fg-wedding, lm-wedding
-  var prefix=parts[0],key=parts[1];
-  var field=prefix==='bm'?'bridesmaids':prefix==='fg'?'flowerGirls':'littleMaids';
-  OF.draft.events=OF.draft.events||{};
-  OF.draft.events[key]=OF.draft.events[key]||{};
-  OF.draft.events[key][field]=parseInt(val)||0;
+  var parts = id.split('-');
+  var prefix = parts[0], key = parts[1];
+  var field = prefix==='bm' ? 'bridesmaids' : prefix==='fg' ? 'flowerGirls' : 'littleMaids';
+  OF.draft.events = OF.draft.events || {};
+  OF.draft.events[key] = OF.draft.events[key] || {};
+  OF.draft.events[key][field] = parseInt(val) || 0;
   syncQuoteItems();
   renderOverviewForm();
 }
 
-function ofPhoneInput(){
-  ofMark();
-}
+function ofPhoneInput(){ ofMark(); }
 
 function ofPhoneBlur(){
-  var inp=document.getElementById('of-phone');
-  if(!inp||!_iti)return;
-  var msg=document.getElementById('of-phone-msg');
-  if(!msg)return;
-  var raw=inp.value.trim();
-  if(!raw){msg.innerHTML='';OF.draft.phone='';return;}
-  var isValid=_iti.isValidNumber();
-  if(!isValid){
-    var errCode=_iti.getValidationError();
-    var errMsgs=['Invalid number','Invalid country code','Number too short','Number too long','Invalid number'];
-    msg.innerHTML='✗ '+(errMsgs[errCode]||'Invalid number for selected country');
-    msg.style.color='var(--danger)';
-    msg.style.cursor='default';
-    msg.onclick=null;
-    inp.classList.add('iti-tel-error');
-    OF.draft.phone='';
-    return;
-  }
-  inp.classList.remove('iti-tel-error');
-  // Get E.164 format and strip the +
-  var e164=_iti.getNumber(); // e.g. +94771234567
-  var full=e164.replace(/^\+/,'');
-  OF.draft.phone=full;
-  // Check duplicate
-  var existing=Object.values(brides).find(function(b){return b.phone===full&&b.id!==OF.draft.id;});
-  if(existing){
-    msg.innerHTML='⚠ This number belongs to <strong>'+existing.name+'</strong>. <a href="#" onclick="openExistingBride(\''+existing.id+'\');return false;" style="color:var(--danger);text-decoration:underline;font-weight:600">Click here</a> to open.';
-    msg.style.color='var(--danger)';
+  var inp = document.getElementById('of-phone');
+  if(!inp) return;
+  var msg = document.getElementById('of-phone-msg');
+  if(!msg) return;
+  var raw = inp.value.trim();
+  if(!raw){ msg.innerHTML = ''; OF.draft.phone = ''; return; }
+  if(_iti){
+    var isValid = _iti.isValidNumber();
+    if(!isValid){
+      var errCode = _iti.getValidationError();
+      var errMsgs = ['Invalid number','Invalid country code','Number too short','Number too long','Invalid number'];
+      msg.innerHTML = '✗ '+(errMsgs[errCode] || 'Invalid number for selected country');
+      msg.style.color = 'var(--danger)';
+      inp.classList.add('iti-tel-error');
+      OF.draft.phone = '';
+      return;
+    }
+    inp.classList.remove('iti-tel-error');
+    var e164 = _iti.getNumber();
+    OF.draft.phone = e164.replace(/^\+/,'');
   } else {
-    msg.innerHTML='✓ Saved as '+e164;
-    msg.style.color='var(--success)';
-    msg.style.cursor='default';
-    msg.onclick=null;
+    // Fallback: simple validation
+    var digits = raw.replace(/\D/g,'');
+    if(digits.length < 7){
+      msg.innerHTML = '✗ Phone number too short';
+      msg.style.color = 'var(--danger)';
+      return;
+    }
+    if(digits.indexOf('94') !== 0 && digits.length === 9){ digits = '94'+digits; }
+    OF.draft.phone = digits;
+  }
+  // Check duplicate
+  var existing = Object.values(brides).find(function(b){
+    return b.phone === OF.draft.phone && b.id !== OF.draft.id;
+  });
+  if(existing){
+    msg.innerHTML = '⚠ This number belongs to <strong>'+existing.name+'</strong>. <a href="#" onclick="openExistingBride(\''+existing.id+'\');return false;" style="color:var(--danger);text-decoration:underline;font-weight:600">Click here</a> to open.';
+    msg.style.color = 'var(--danger)';
+  } else {
+    msg.innerHTML = '✓ Valid';
+    msg.style.color = 'var(--success)';
   }
 }
 
-function openExistingBride(id){
-  OF.dirty=false; // discard current
-  CM('lead-modal');
-  setTimeout(function(){openDetail(id);},150);
-}
-
-// Validate the form before save
+// ============================================================
+// VALIDATION
+// ============================================================
 function ofValidate(){
-  var errs=[];
-  var b=OF.draft;
+  var errs = [];
+  var b = OF.draft;
   // Name
-  var nameInp=document.getElementById('of-name');
-  if(nameInp)b.name=nameInp.value.trim();
+  var nameInp = document.getElementById('of-name');
+  if(nameInp)b.name = nameInp.value.trim();
   if(!b.name)errs.push('Bride name is required.');
-  // Phone - using intl-tel-input validation
-  var phInp=document.getElementById('of-phone');
+  // Phone
+  var phInp = document.getElementById('of-phone');
   if(phInp){
-    var raw=phInp.value.trim();
-    if(!raw){errs.push('Phone number is required.');}
-    else if(_iti&&!_iti.isValidNumber()){errs.push('Phone number is not valid for the selected country.');}
-    else if(_iti){
-      var e164=_iti.getNumber();
-      if(e164)b.phone=e164.replace(/^\+/,'');
+    var raw = phInp.value.trim();
+    if(!raw){
+      errs.push('Phone number is required.');
+    } else if(_iti){
+      if(!_iti.isValidNumber()){
+        errs.push('Phone number is not valid for the selected country.');
+      } else {
+        var e164 = _iti.getNumber();
+        if(e164)b.phone = e164.replace(/^\+/,'');
+      }
+    } else {
+      // Fallback validation
+      var digits = raw.replace(/\D/g,'');
+      if(digits.length < 7)errs.push('Phone number is too short.');
+      else {
+        if(digits.indexOf('94') !== 0 && digits.length === 9){ digits = '94'+digits; }
+        b.phone = digits;
+      }
     }
   }
-  // Duplicate phone
+  // Duplicate
   if(b.phone){
-    var dup=Object.values(brides).find(function(x){return x.phone===b.phone&&x.id!==b.id;});
+    var dup = Object.values(brides).find(function(x){return x.phone === b.phone && x.id !== b.id;});
     if(dup)errs.push('Phone number already exists for '+dup.name+'.');
   }
   // At least one event with a date
-  var events=b.events||{};
-  var enabledEvents=['wedding','homecoming','goingAway'].filter(function(k){return events[k]&&events[k].enabled;});
-  if(enabledEvents.length===0){
+  var events = b.events || {};
+  var enabled = ['wedding','homecoming','goingAway'].filter(function(k){return events[k] && events[k].enabled;});
+  if(enabled.length === 0){
     errs.push('Tick at least one event (Wedding, Homecoming, or Going Away).');
   } else {
-    enabledEvents.forEach(function(k){
-      var lbl=k==='wedding'?'Wedding':k==='homecoming'?'Homecoming':'Going Away';
-      if(!events[k].date){
-        errs.push(lbl+' is ticked but has no date. Either set a date or untick.');
-      }
-      // Theme required for Wedding and Homecoming, not Going Away
-      if((k==='wedding'||k==='homecoming') && !events[k].theme){
-        errs.push(lbl+' needs a theme. Pick one (or choose Other to type your own).');
+    enabled.forEach(function(k){
+      var lbl = k==='wedding' ? 'Wedding' : k==='homecoming' ? 'Homecoming' : 'Going Away';
+      if(!events[k].date)errs.push(lbl+' is ticked but has no date. Set a date or untick.');
+      if((k==='wedding' || k==='homecoming') && !events[k].theme){
+        errs.push(lbl+' theme is required.');
       }
     });
   }
   return errs;
 }
 
+// ============================================================
+// SAVE - intent-aware
+// ============================================================
 async function ofSave(){
-  var notesEl=document.getElementById('of-notes');
-  if(notesEl)OF.draft.notes=notesEl.value;
-  var errs=ofValidate();
-  if(errs.length>0){
-    var box=document.getElementById('of-validation');
+  // Pull latest values from DOM
+  var notesEl = document.getElementById('of-notes');
+  if(notesEl)OF.draft.notes = notesEl.value;
+  
+  // Validate
+  var errs = ofValidate();
+  if(errs.length > 0){
+    var box = document.getElementById('of-validation');
     if(box){
-      box.innerHTML='<div style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:8px;padding:12px;font-size:13px;color:var(--danger)"><div style="font-weight:700;margin-bottom:6px">Cannot save:</div>'+errs.map(function(e){return '• '+e;}).join('<br/>')+'</div>';
+      box.innerHTML = '<div style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:8px;padding:12px;font-size:13px;color:var(--danger)"><div style="font-weight:700;margin-bottom:6px">Please fix:</div>'+errs.map(function(e){return '• '+e;}).join('<br/>')+'</div>';
       box.scrollIntoView({behavior:'smooth',block:'center'});
     }
     return;
   }
-  // Set weddingDate top-level from events.wedding.date
-  if(OF.draft.events&&OF.draft.events.wedding&&OF.draft.events.wedding.date){
-    OF.draft.weddingDate=OF.draft.events.wedding.date;
-  } else if(OF.draft.events&&OF.draft.events.homecoming&&OF.draft.events.homecoming.date){
-    OF.draft.weddingDate=OF.draft.events.homecoming.date;
+  
+  // Mirror weddingDate for back-compat
+  if(OF.draft.events && OF.draft.events.wedding && OF.draft.events.wedding.date){
+    OF.draft.weddingDate = OF.draft.events.wedding.date;
+  } else if(OF.draft.events && OF.draft.events.homecoming && OF.draft.events.homecoming.date){
+    OF.draft.weddingDate = OF.draft.events.homecoming.date;
   }
-  OF.draft.lastActivity=new Date().toISOString();
-  // Add to history
-  OF.draft._history=OF.draft._history||{};
-  var hid='h-'+Math.random().toString(36).slice(2,10);
-  OF.draft._history[hid]={at:new Date().toISOString(),action:OF.isNew?'created':'updated',by:'system'};
-  try{
-    // Strip quoteItems and _existingQuoteId from bride record before saving
-    var quoteItems = OF.draft.quoteItems || {};
-    var existingQuoteId = OF.draft._existingQuoteId;
-    var brideClone = Object.assign({}, OF.draft);
-    delete brideClone.quoteItems;
-    delete brideClone._existingQuoteId;
+  OF.draft.lastActivity = new Date().toISOString();
+  
+  // History entry
+  OF.draft._history = OF.draft._history || {};
+  var hid = 'h-'+Math.random().toString(36).slice(2,10);
+  OF.draft._history[hid] = {
+    at: new Date().toISOString(),
+    action: OF.isNew ? 'created' : 'updated',
+    by: 'system',
+    details: {intent: OF.intent}
+  };
+  
+  // Strip quote-only fields from the bride record we save
+  var quoteItems = OF.draft.quoteItems || {};
+  var brideClone = Object.assign({}, OF.draft);
+  delete brideClone.quoteItems;
+  // Remove transient fields
+  
+  try {
+    // 1. Save bride
     await saveBride(brideClone);
-    // Only persist quote if the quote section is currently shown (gate respected)
-    var shouldSaveQuote = shouldShowQuoteSection() && Object.keys(quoteItems).length>0;
-    if(shouldSaveQuote){
-      var quoteId = existingQuoteId || qNum();
-      // Strip linkedTo and custom flags? Keep them - they're useful metadata
+    
+    // 2. Decide whether to save a quote
+    var saveQuote = shouldShowQuoteSection() && Object.keys(quoteItems).length > 0;
+    var savedQuoteId = null;
+    if(saveQuote){
+      var quoteId = OF.existingQuoteId || qNum();
+      savedQuoteId = quoteId;
       var items = {};
       Object.values(quoteItems).forEach(function(it){
-        var k = it.key || 'L-'+Math.random().toString(36).slice(2,9);
+        var k = it.key || ('L-'+Math.random().toString(36).slice(2,9));
         items[k] = Object.assign({}, it, {key:k});
       });
       var qt = {
@@ -2750,70 +2829,99 @@ async function ofSave(){
         convertedToInvoice: false,
         sent: false
       };
+      // Single canonical path
       var patch = {};
       patch[quoteId] = qt;
-      // Write to single canonical path: /brides/X/quotes/
       await fbP('/brides/'+OF.draft.id+'/quotes', patch);
-      if(brides[OF.draft.id]){
-        brides[OF.draft.id].quotes = brides[OF.draft.id].quotes || {};
-        brides[OF.draft.id].quotes[quoteId] = qt;
-      }
+      // Update local state
+      brides[OF.draft.id].quotes = brides[OF.draft.id].quotes || {};
+      brides[OF.draft.id].quotes[quoteId] = qt;
       projectViews();
     }
-    OF.dirty=false;
-    notif(OF.isNew?'Bride created!':'Saved.');
+    
+    // 3. If intent is invoice, also create an invoice from the quote
+    if(OF.intent === 'invoice' && savedQuoteId){
+      // For walk-in invoice creation, immediately convert quote to invoice with no advance
+      // This places the bride at stage 5 (Confirmed)
+      var invItems = {};
+      Object.values(quoteItems).forEach(function(it){
+        var k = it.key || ('L-'+Math.random().toString(36).slice(2,9));
+        invItems[k] = Object.assign({}, it, {key:k});
+      });
+      var inv = {
+        id: 'INV-'+savedQuoteId,
+        date: new Date().toISOString().slice(0,10),
+        items: invItems,
+        advance: 0,
+        payments: {},
+        notes: ''
+      };
+      var ipatch = {};
+      ipatch[inv.id] = inv;
+      await fbP('/brides/'+OF.draft.id+'/invoices', ipatch);
+      // Mark quote as converted
+      await fbP('/brides/'+OF.draft.id+'/quotes/'+savedQuoteId, {convertedToInvoice:true});
+      // Update bride stage to confirmed
+      await fbP('/brides/'+OF.draft.id, {stage:5, confirmed:true});
+      // Local state
+      brides[OF.draft.id].invoices = brides[OF.draft.id].invoices || {};
+      brides[OF.draft.id].invoices[inv.id] = inv;
+      brides[OF.draft.id].quotes[savedQuoteId].convertedToInvoice = true;
+      brides[OF.draft.id].stage = 5;
+      brides[OF.draft.id].confirmed = true;
+      projectViews();
+    }
+    
+    OF.dirty = false;
+    OF.intent = null;
+    OF.existingQuoteId = null;
+    
+    // Status messages
+    if(OF.intent === 'invoice'){
+      notif('Bride, quote and invoice created.');
+    } else if(saveQuote){
+      notif(OF.isNew ? 'Bride and quote saved.' : 'Saved.');
+    } else {
+      notif(OF.isNew ? 'Bride created.' : 'Saved.');
+    }
     CM('lead-modal');
     render();
-  }catch(e){
+  } catch(e) {
     notif('Error: '+e.message);
   }
 }
 
-
-// Build auto-populated quote line items from a bride's Overview Form events.
-// PRICING IS DYNAMIC. Only one discount exists: Homecoming Rs 95,000 when booked WITH Wedding
-// (vs Rs 125,000 standalone). Everything else is flat price.
-// - Wedding: Rs 125,000 flat (all themes; journey included)
-// - Homecoming: Rs 95,000 with wedding; Rs 125,000 standalone (ONLY DISCOUNT)
-// - Going Away: Rs 65,000 flat
-// - Bridesmaid: Rs 38,000 each flat
-// - Flower Girl: Rs 8,000 each flat
-// - Little Maid: Rs 10,000 each flat
-// Bridesmaids/Flower Girls/Little Maids come from Wedding event only (Sri Lankan ceremony order).
-// Add-ons (touch-up, jewellery, tailoring, normal dressing) added manually by user.
-
-// =========================================================
-// Two-way binding between events and quote line items
-// =========================================================
-// Find an existing line by linkedTo key (first match)
+// ============================================================
+// QUOTE SECTION HELPERS (two-way binding)
+// ============================================================
 function findLinked(items, key){
-  var ks = Object.keys(items||{});
-  for(var i=0;i<ks.length;i++){
-    if(items[ks[i]].linkedTo===key)return ks[i];
+  var ks = Object.keys(items || {});
+  for(var i = 0; i < ks.length; i++){
+    if(items[ks[i]].linkedTo === key)return ks[i];
   }
   return null;
 }
 
-// Add or update a linked line in OF.draft.quoteItems
 function upsertLinked(linkedTo, desc, qty, unit){
   OF.draft.quoteItems = OF.draft.quoteItems || {};
   var existingKey = findLinked(OF.draft.quoteItems, linkedTo);
   if(existingKey){
-    // Update existing - preserve user edits to price/disc but update description and ensure qty matches event count
     var ex = OF.draft.quoteItems[existingKey];
     ex.desc = desc;
-    // Only sync qty if linkedTo is a count-driven field
-    if(linkedTo==='bridesmaids'||linkedTo==='flowerGirls'||linkedTo==='littleMaids'){
+    // Only sync qty for count-driven lines (user can edit qty for bridal/homecoming)
+    if(linkedTo === 'bridesmaids' || linkedTo === 'flowerGirls' || linkedTo === 'littleMaids'){
       ex.qty = qty;
     }
     return existingKey;
   }
   var k = 'L-'+Math.random().toString(36).slice(2,9);
-  OF.draft.quoteItems[k] = {key:k, desc:desc, qty:qty, unit:unit, disc:0, linkedTo:linkedTo, custom:false};
+  OF.draft.quoteItems[k] = {
+    key: k, desc: desc, qty: qty, unit: unit, disc: 0,
+    linkedTo: linkedTo, custom: false
+  };
   return k;
 }
 
-// Remove a linked line by linkedTo key
 function removeLinked(linkedTo){
   OF.draft.quoteItems = OF.draft.quoteItems || {};
   var existingKey = findLinked(OF.draft.quoteItems, linkedTo);
@@ -2824,15 +2932,12 @@ function removeLinked(linkedTo){
   return false;
 }
 
-// Sync line items from current event state
 function syncQuoteItems(){
   OF.draft.quoteItems = OF.draft.quoteItems || {};
-  // Gate: if quote section shouldn't show, clear all linked items and don't add new ones
+  // Gate: if section shouldn't show, clear linked items
   if(!shouldShowQuoteSection()){
     Object.keys(OF.draft.quoteItems).forEach(function(k){
-      if(OF.draft.quoteItems[k].linkedTo){
-        delete OF.draft.quoteItems[k];
-      }
+      if(OF.draft.quoteItems[k].linkedTo)delete OF.draft.quoteItems[k];
     });
     return;
   }
@@ -2843,79 +2948,59 @@ function syncQuoteItems(){
   var hasW = !!w.enabled;
   var hasH = !!h.enabled;
   var hasG = !!g.enabled;
-  var bmCount = parseInt(w.bridesmaids||0)||0;
-  var fgCount = parseInt(w.flowerGirls||0)||0;
-  var lmCount = parseInt(w.littleMaids||0)||0;
-  // Wedding line
+  var bmCount = parseInt(w.bridesmaids||0) || 0;
+  var fgCount = parseInt(w.flowerGirls||0) || 0;
+  var lmCount = parseInt(w.littleMaids||0) || 0;
+  
+  // Wedding
   if(hasW){
-    var wTheme = w.theme || '';
-    var wDesc = 'Bridal' + (wTheme ? ' — '+wTheme : '');
+    var wDesc = 'Bridal' + (w.theme ? ' — '+w.theme : '');
     upsertLinked('wedding', wDesc, 1, 125000);
-  } else {
-    removeLinked('wedding');
-  }
-  // Homecoming line
+  } else removeLinked('wedding');
+  // Homecoming
   if(hasH){
-    var hTheme = h.theme || '';
-    var hDesc = 'Homecoming' + (hTheme ? ' — '+hTheme : '');
+    var hDesc = 'Homecoming' + (h.theme ? ' — '+h.theme : '');
     upsertLinked('homecoming', hDesc, 1, 125000);
-  } else {
-    removeLinked('homecoming');
-  }
-  // Discount line (only when both W and H ticked)
+  } else removeLinked('homecoming');
+  // Discount (only when both W+H)
   if(hasW && hasH){
     upsertLinked('discount', 'Homecoming Package Discount', 1, -30000);
-  } else {
-    removeLinked('discount');
-  }
+  } else removeLinked('discount');
   // Going Away
   if(hasG){
     upsertLinked('goingAway', 'Going Away', 1, 65000);
-  } else {
-    removeLinked('goingAway');
-  }
+  } else removeLinked('goingAway');
   // Bridesmaids
-  if(bmCount>0){
-    upsertLinked('bridesmaids', 'Bridesmaid', bmCount, 38000);
-  } else {
-    removeLinked('bridesmaids');
-  }
+  if(bmCount > 0)upsertLinked('bridesmaids', 'Bridesmaid', bmCount, 38000);
+  else removeLinked('bridesmaids');
   // Flower Girls
-  if(fgCount>0){
-    upsertLinked('flowerGirls', 'Flower Girl', fgCount, 8000);
-  } else {
-    removeLinked('flowerGirls');
-  }
+  if(fgCount > 0)upsertLinked('flowerGirls', 'Flower Girl', fgCount, 8000);
+  else removeLinked('flowerGirls');
   // Little Maids
-  if(lmCount>0){
-    upsertLinked('littleMaids', 'Little Maid', lmCount, 10000);
-  } else {
-    removeLinked('littleMaids');
-  }
+  if(lmCount > 0)upsertLinked('littleMaids', 'Little Maid', lmCount, 10000);
+  else removeLinked('littleMaids');
 }
 
-// Build the quote section HTML for the Overview Form
 function buildQuoteSection(){
   var items = OF.draft.quoteItems || {};
   var keys = Object.keys(items);
-  // Sort: events first (W, H, discount, GA, BM, FG, LM), then custom in insertion order
   var order = ['wedding','homecoming','discount','goingAway','bridesmaids','flowerGirls','littleMaids'];
-  keys.sort(function(a,b){
+  keys.sort(function(a, b){
     var la = items[a].linkedTo, lb = items[b].linkedTo;
     var ia = la ? order.indexOf(la) : 999;
     var ib = lb ? order.indexOf(lb) : 999;
-    if(ia!==-1&&ib!==-1)return ia-ib;
-    if(ia===-1)return 1;
-    if(ib===-1)return -1;
+    if(ia !== -1 && ib !== -1)return ia - ib;
+    if(ia === -1)return 1;
+    if(ib === -1)return -1;
     return 0;
   });
   var rowsHtml = '';
   var subtotal = 0;
   keys.forEach(function(k){
     var it = items[k];
-    var line = (it.qty||1)*(it.unit||0)*(1-(it.disc||0)/100);
+    var line = (it.qty||1) * (it.unit||0) * (1 - (it.disc||0)/100);
     subtotal += line;
-    var isDiscount = (it.linkedTo==='discount');
+    var isDiscount = (it.linkedTo === 'discount');
     var linkBadge = it.linkedTo ? '<span style="font-size:9px;color:var(--gold);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-left:6px">⚓ linked</span>' : '';
     rowsHtml += '<div style="background:'+(isDiscount?'#FEF7E5':'var(--bg)')+';border:1.5px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px">';
     rowsHtml += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">';
@@ -2927,24 +3012,21 @@ function buildQuoteSection(){
     rowsHtml += '<div style="flex:2"><label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:2px">Unit Rs</label><input type="number" value="'+(it.unit||0)+'" onchange="qiUpdate(\''+k+'\',\'unit\',parseFloat(this.value)||0)" style="width:100%;padding:6px 8px;font-size:13px;text-align:right;border:1.5px solid var(--border);border-radius:6px"/></div>';
     rowsHtml += '<div style="flex:1"><label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:2px">Disc %</label><input type="number" value="'+(it.disc||0)+'" min="0" max="100" onchange="qiUpdate(\''+k+'\',\'disc\',parseFloat(this.value)||0)" style="width:100%;padding:6px 8px;font-size:13px;text-align:center;border:1.5px solid var(--border);border-radius:6px"/></div>';
     rowsHtml += '<div style="flex:1;text-align:right;font-size:13px;font-weight:700;color:'+(line<0?'var(--gold)':'var(--navy)')+';padding-bottom:6px">'+(line<0?'-':'')+'Rs '+Math.abs(Math.round(line)).toLocaleString()+'</div>';
-    rowsHtml += '</div>';
-    rowsHtml += '</div>';
+    rowsHtml += '</div></div>';
   });
   var addCustomBtn = '<button class="btn btn-outline btn-sm" onclick="qiAddCustom()" style="width:100%;margin-top:4px">+ Add custom line</button>';
   var totalsHtml = '';
-  if(keys.length>0){
+  if(keys.length > 0){
     totalsHtml = '<div style="background:var(--navy);color:#fff;border-radius:10px;padding:12px 16px;margin-top:10px;display:flex;align-items:center;justify-content:space-between"><div style="font-size:11px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;opacity:.85">Total</div><div style="font-size:18px;font-weight:700">Rs '+Math.round(subtotal).toLocaleString()+'</div></div>';
   }
   return rowsHtml + addCustomBtn + totalsHtml;
 }
 
-// Determine whether quote section should be visible
 function shouldShowQuoteSection(){
-  // Gate: must have events with dates AND either (a) stage >= 3 (Consultation Done) 
-  // OR (b) entered via explicit Quote button (createQuote flag set)
-  var stage = Number(OF.draft.stage||0);
-  var allowedByStage = stage >= 3 || OF.openQuoteAfterSave;
-  if(!allowedByStage) return false;
+  // Gate: show only when stage >= 3 (Consultation Done) OR intent is 'quote'/'invoice'
+  var stage = Number(OF.draft.stage || 0);
+  var allowedByStage = stage >= 3 || OF.intent === 'quote' || OF.intent === 'invoice';
+  if(!allowedByStage)return false;
   var events = OF.draft.events || {};
   return ['wedding','homecoming','goingAway'].some(function(k){
     var e = events[k];
@@ -2952,13 +3034,11 @@ function shouldShowQuoteSection(){
   });
 }
 
-// Item field updates from line editor
 function qiUpdate(key, field, val){
   ofMark();
   OF.draft.quoteItems = OF.draft.quoteItems || {};
   if(!OF.draft.quoteItems[key])return;
   OF.draft.quoteItems[key][field] = val;
-  // Re-render just the totals/values
   renderOverviewForm();
 }
 
@@ -2967,15 +3047,12 @@ async function qiDelete(key){
   var it = OF.draft.quoteItems[key];
   if(!it)return;
   if(it.linkedTo){
-    var label = {
-      wedding:'Wedding',
-      homecoming:'Homecoming',
-      discount:'Homecoming Package Discount',
-      goingAway:'Going Away',
-      bridesmaids:'Bridesmaids',
-      flowerGirls:'Flower Girls',
-      littleMaids:'Little Maids'
-    }[it.linkedTo] || it.linkedTo;
+    var labels = {
+      wedding:'Wedding', homecoming:'Homecoming',
+      discount:'Homecoming Package Discount', goingAway:'Going Away',
+      bridesmaids:'Bridesmaids', flowerGirls:'Flower Girls', littleMaids:'Little Maids'
+    };
+    var label = labels[it.linkedTo] || it.linkedTo;
     var r = await showConfirm({
       title:'Remove linked line',
       msg:'This line is linked to '+label+'. Removing it will also untick that from the events. Continue?',
@@ -2983,29 +3060,19 @@ async function qiDelete(key){
       dangerous:true
     });
     if(!r.ok)return;
-    // Untick the corresponding event/count
     OF.draft.events = OF.draft.events || {};
     var lt = it.linkedTo;
-    if(lt==='wedding'){
-      if(OF.draft.events.wedding)OF.draft.events.wedding.enabled = false;
-    } else if(lt==='homecoming'){
-      if(OF.draft.events.homecoming)OF.draft.events.homecoming.enabled = false;
-    } else if(lt==='goingAway'){
-      if(OF.draft.events.goingAway)OF.draft.events.goingAway.enabled = false;
-    } else if(lt==='bridesmaids'){
-      if(OF.draft.events.wedding)OF.draft.events.wedding.bridesmaids = 0;
-    } else if(lt==='flowerGirls'){
-      if(OF.draft.events.wedding)OF.draft.events.wedding.flowerGirls = 0;
-    } else if(lt==='littleMaids'){
-      if(OF.draft.events.wedding)OF.draft.events.wedding.littleMaids = 0;
-    } else if(lt==='discount'){
-      // Discount removal: don't untick events, just allow user to remove the discount
-    }
+    if(lt==='wedding' && OF.draft.events.wedding)OF.draft.events.wedding.enabled = false;
+    else if(lt==='homecoming' && OF.draft.events.homecoming)OF.draft.events.homecoming.enabled = false;
+    else if(lt==='goingAway' && OF.draft.events.goingAway)OF.draft.events.goingAway.enabled = false;
+    else if(lt==='bridesmaids' && OF.draft.events.wedding)OF.draft.events.wedding.bridesmaids = 0;
+    else if(lt==='flowerGirls' && OF.draft.events.wedding)OF.draft.events.wedding.flowerGirls = 0;
+    else if(lt==='littleMaids' && OF.draft.events.wedding)OF.draft.events.wedding.littleMaids = 0;
+    // discount removal: just allow the user to remove without unticking
     ofMark();
     syncQuoteItems();
     renderOverviewForm();
   } else {
-    // Custom line - just delete
     delete OF.draft.quoteItems[key];
     ofMark();
     renderOverviewForm();
@@ -3018,130 +3085,23 @@ function qiAddCustom(){
   var k = 'L-'+Math.random().toString(36).slice(2,9);
   OF.draft.quoteItems[k] = {key:k, desc:'Custom service', qty:1, unit:0, disc:0, custom:true};
   renderOverviewForm();
-  // Focus new line - find the desc field
-  setTimeout(function(){
-    // Could scroll to bottom of quote section
-  }, 50);
 }
 
-function buildLinesFromOverview(bride){
-  var events = bride.events || {};
-  var w = events.wedding || {};
-  var h = events.homecoming || {};
-  var g = events.goingAway || {};
-  var hasW = !!w.enabled;
-  var hasH = !!h.enabled;
-  var hasG = !!g.enabled;
-  var bmCount = parseInt(w.bridesmaids||0)||0;
-  var fgCount = parseInt(w.flowerGirls||0)||0;
-  var lmCount = parseInt(w.littleMaids||0)||0;
-  var items = {};
-  function addLine(desc, qty, unit, cat, theme){
-    var k = 'L-'+Math.random().toString(36).slice(2,9);
-    items[k] = {key:k, desc:desc, qty:qty, unit:unit, disc:0, cat:cat||'Bridal', theme:theme||'', auto:true};
-  }
-  // Wedding - flat Rs 125,000
-  if(hasW){
-    var wTheme = w.theme || '';
-    var wDesc = 'Bridal' + (wTheme ? ' — '+wTheme : '');
-    addLine(wDesc, 1, 125000, 'Bridal', wTheme);
-  }
-  // Homecoming - always Rs 125,000 at full price
-  if(hasH){
-    var hTheme = h.theme || '';
-    var hDesc = 'Homecoming' + (hTheme ? ' — '+hTheme : '');
-    addLine(hDesc, 1, 125000, 'Homecoming', hTheme);
-  }
-  // Homecoming Package Discount - separate line, -Rs 30,000 when Wedding AND Homecoming both ticked
-  // This is the ONLY discount Biso offers. Shows as a visible saving on the quote.
-  if(hasW && hasH){
-    addLine('Homecoming Package Discount', 1, -30000, 'Discount', '');
-  }
-  // Going Away - flat Rs 65,000 (no combo discount)
-  if(hasG){
-    addLine('Going Away', 1, 65000, 'Going Away', '');
-  }
-  // Bridesmaids - flat Rs 38,000 each
-  if(bmCount > 0){
-    addLine('Bridesmaid', bmCount, 38000, 'Attendants', '');
-  }
-  // Flower Girls - flat Rs 8,000 each
-  if(fgCount > 0){
-    addLine('Flower Girl', fgCount, 8000, 'Attendants', '');
-  }
-  // Little Maids - flat Rs 10,000 each
-  if(lmCount > 0){
-    addLine('Little Maid', lmCount, 10000, 'Attendants', '');
-  }
-  return items;
-}
-
-async function ofCreateQuote(){
-  // Save bride (with validation), THEN create empty quote record, THEN open line-item editor
-  var notesEl=document.getElementById('of-notes');
-  if(notesEl)OF.draft.notes=notesEl.value;
-  var errs=ofValidate();
-  if(errs.length>0){
-    var box=document.getElementById('of-validation');
-    if(box){
-      box.innerHTML='<div style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:8px;padding:12px;font-size:13px;color:var(--danger)"><div style="font-weight:700;margin-bottom:6px">Cannot create quotation:</div>'+errs.map(function(e){return '• '+e;}).join('<br/>')+'</div>';
-      box.scrollIntoView({behavior:'smooth',block:'center'});
-    }
-    return;
-  }
-  // Mirror weddingDate from events for back-compat
-  if(OF.draft.events&&OF.draft.events.wedding&&OF.draft.events.wedding.date){
-    OF.draft.weddingDate=OF.draft.events.wedding.date;
-  } else if(OF.draft.events&&OF.draft.events.homecoming&&OF.draft.events.homecoming.date){
-    OF.draft.weddingDate=OF.draft.events.homecoming.date;
-  }
-  OF.draft.lastActivity=new Date().toISOString();
-  OF.draft._history=OF.draft._history||{};
-  var hid='h-'+Math.random().toString(36).slice(2,10);
-  OF.draft._history[hid]={at:new Date().toISOString(),action:OF.isNew?'created':'updated',by:'system',details:{viaQuote:true}};
-  var brideId = OF.draft.id;
+// ============================================================
+// LEGACY ENTRY POINT STUBS (route to unified openOverviewForm)
+// ============================================================
+function openLeadModal(){ openOverviewForm(null, {intent:'lead'}); }
+function openNC(){ openOverviewForm(null, {intent:'lead'}); }
+async function saveLead(){ ofSave(); }
+async function saveNC(){ ofSave(); }
+function openCust(id){ openDetail(id); }
+async function updC(id, data){
   try{
-    await saveBride(OF.draft);
-    OF.dirty=false;
-    OF.openQuoteAfterSave=false;
-    // Now create an empty quote attached to this bride
-    var autoItems = buildLinesFromOverview(brides[brideId] || OF.draft);
-    var qt = {
-      id: qNum(),
-      date: new Date().toISOString().slice(0,10),
-      expiry: expD(),
-      items: autoItems,
-      notes: defNotes(),
-      convertedToInvoice: false,
-      sent: false
-    };
-    var patch = {};
-    patch[qt.id] = qt;
-    // Single canonical path
-    await fbP('/brides/'+brideId+'/quotes', patch);
-    if(brides[brideId]){
-      brides[brideId].quotes = brides[brideId].quotes || {};
-      brides[brideId].quotes[qt.id] = qt;
-    }
-    projectViews();
-    CM('lead-modal');
-    // Open the line-item editor directly on this fresh quote
-    setTimeout(function(){
-      editQ('lead', brideId, qt.id);
-      notif('Quotation '+qt.id+' started');
-    }, 150);
-  }catch(e){
-    notif('Error: '+e.message);
-  }
+    await fbP('/customers/'+id, data);
+    custs[id] = Object.assign({}, custs[id], data);
+  }catch(e){ notif('Error: '+e.message); }
 }
 
-
-function openLeadModal(){openOverviewForm(null);}
-async function saveLead(){ofSave();}
-function openCust(id){openDetail(id);}
-async function updC(id,data){try{await fbP('/customers/'+id,data);custs[id]=Object.assign({},custs[id],data);}catch(e){notif('Error: '+e.message);}}
-function openNC(){openOverviewForm(null);}
-async function saveNC(){ofSave();}
 function rFinance(){
   var allI=[];
   lA().forEach(function(l){Object.values(l.invoices||{}).forEach(function(inv){allI.push(Object.assign({},inv,{cn:l.name}));});});
