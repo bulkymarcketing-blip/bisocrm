@@ -656,8 +656,8 @@ function render(){var fn={pipeline:rPipeline,analytics:rAnalytics,clients:rClien
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function fmt(s){if(!s)return '—';return new Date(s).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}
 function fR(n){return 'Rs '+Number(n||0).toLocaleString();}
-function dU(s){if(!s)return null;return Math.ceil((new Date(s)-Date.now())/86400000);}
-function dS(s){if(!s)return 0;return Math.floor((Date.now()-new Date(s))/86400000);}
+function dU(s){if(!s)return null;var t=new Date(s);t.setHours(0,0,0,0);var n=new Date();n.setHours(0,0,0,0);return Math.round((t-n)/86400000);}
+function dS(s){if(!s)return 0;var t=new Date(s);t.setHours(0,0,0,0);var n=new Date();n.setHours(0,0,0,0);return Math.round((n-t)/86400000);}
 function qTot(items){return Object.values(items||{}).reduce(function(s,it){return s+cLine(it);},0);}
 function cLine(it){return(it.qty||1)*(it.unit||0)*(1-(it.disc||0)/100);}
 function inits(n){return(n||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();}
@@ -670,7 +670,27 @@ function cA(){return Object.values(custs);}
 
 function OM(id){document.getElementById(id).classList.add('open');}
 function CM(id){document.getElementById(id).classList.remove('open');}
-document.addEventListener('click',function(e){if(e.target.classList.contains('overlay'))e.target.classList.remove('open');});
+document.addEventListener('click',function(e){
+  if(!e.target.classList.contains('overlay'))return;
+  var id=e.target.id;
+  // Overview Form: route through closeOverview() which checks OF.dirty and prompts
+  if(id==='lead-modal'){closeOverview();return;}
+  // Quotation builder: warn if there are unsaved line items
+  if(id==='quot-modal'&&typeof QB!=='undefined'&&QB.items&&QB.items.length>0){
+    showConfirm({title:'Discard quotation?',msg:'You have unsaved line items. Discard them?',yesText:'Discard',dangerous:true}).then(function(r){if(r.ok)CM('quot-modal');});
+    return;
+  }
+  // Add Payment: warn if user typed an amount
+  if(id==='pay-modal'){
+    var amtEl=document.getElementById('pay-amt');
+    if(amtEl&&parseFloat(amtEl.value)>0){
+      showConfirm({title:'Discard payment?',msg:'You have entered a payment amount. Discard it?',yesText:'Discard',dangerous:true}).then(function(r){if(r.ok)CM('pay-modal');});
+      return;
+    }
+  }
+  // Safe to close silently for read-only or explicit-cancel modals
+  e.target.classList.remove('open');
+});
 
 // Custom confirm modal - replaces native confirm/prompt
 var _cfResolve = null;
@@ -1331,6 +1351,19 @@ function openAddPay(src,sId,iId){
 async function addPay(src,sId,iId){
   var amt=parseFloat((document.getElementById('pay-amt')||{}).value)||0;
   if(amt<=0){notif('Enter a valid amount.');return;}
+  // C3: warn if payment exceeds remaining balance
+  var obj0=src==='lead'?leads[sId]:custs[sId];
+  if(obj0&&obj0.invoices&&obj0.invoices[iId]){
+    var inv0=obj0.invoices[iId];
+    var tot0=qTot(inv0.items);
+    var paid0=(inv0.advance||0)+Object.values(inv0.payments||{}).reduce(function(s,p){return s+(parseFloat(p.amount)||0);},0);
+    var rem0=tot0-paid0;
+    if(amt>rem0+0.01){
+      var over=amt-rem0;
+      var _r=await showConfirm({title:'Payment exceeds balance',msg:'This payment is Rs '+Math.round(over).toLocaleString()+' more than the remaining balance of Rs '+Math.round(Math.max(0,rem0)).toLocaleString()+'. The invoice will be overpaid. Continue anyway?',yesText:'Yes, record it',noText:'Cancel',dangerous:true});
+      if(!_r.ok)return;
+    }
+  }
   var date=(document.getElementById('pay-date')||{}).value||new Date().toISOString().slice(0,10);
   var method=(document.getElementById('pay-method')||{}).value||'';
   var note=(document.getElementById('pay-note')||{}).value||'';
