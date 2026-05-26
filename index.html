@@ -349,6 +349,7 @@ const SVCS=[
   {c:'Normal',d:'Hair or Makeup Only',b:5000,aT:false,aA:false}
 ];
 const NAV=[
+  {id:'dailyBrief',lbl:'Daily Brief',ic:'<svg viewBox=\"0 0 24 24\"><path d=\"M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4\" stroke-width=\"1.5\"/><circle cx=\"12\" cy=\"12\" r=\"9\" stroke-width=\"1.5\" fill=\"none\"/></svg>',sec:'Today'},
   {id:'pipeline',lbl:'Pipeline',ic:'<svg viewBox=\"0 0 24 24\"><rect x=\"3\" y=\"4\" width=\"5\" height=\"16\" rx=\"1\"/><rect x=\"10\" y=\"4\" width=\"5\" height=\"10\" rx=\"1\"/><rect x=\"17\" y=\"4\" width=\"4\" height=\"7\" rx=\"1\"/></svg>',sec:'Sales'},
   {id:'analytics',lbl:'Analytics',ic:'<svg viewBox=\"0 0 24 24\"><line x1=\"18\" y1=\"20\" x2=\"18\" y2=\"10\"/><line x1=\"12\" y1=\"20\" x2=\"12\" y2=\"4\"/><line x1=\"6\" y1=\"20\" x2=\"6\" y2=\"14\"/></svg>',sec:null},
   {id:'clients',lbl:'Confirmed',ic:'<svg viewBox=\"0 0 24 24\"><path d=\"M12 2 14 8h6l-5 4 2 7-5-4-5 4 2-7-5-4h6z\"/></svg>',sec:null},
@@ -359,8 +360,8 @@ const NAV=[
   {id:'finance',lbl:'Finance',ic:'<svg viewBox=\"0 0 24 24\"><line x1=\"12\" y1=\"2\" x2=\"12\" y2=\"22\"/><path d=\"M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6\"/></svg>',sec:null},
   {id:'settings',lbl:'Settings',ic:'<svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z\"/></svg>',sec:'Settings'}
 ];
-const TITLES={pipeline:'Lead Pipeline',analytics:'Analytics',clients:'Confirmed Clients',customers:'Customer Profiles',schedule:'Schedule',quotations:'Quotations',invoices:'Invoices',finance:'Finance',settings:'Settings'};
-let leads={},custs={},view='pipeline',q='';
+const TITLES={dailyBrief:'Daily Brief',pipeline:'Lead Pipeline',analytics:'Analytics',clients:'Confirmed Clients',customers:'Customer Profiles',schedule:'Schedule',quotations:'Quotations',invoices:'Invoices',finance:'Finance',settings:'Settings'};
+let leads={},custs={},view='dailyBrief',q='';
 let QB={lid:null,cid:null,items:[],notes:'',psvc:null,editId:null};
 let _cb=null;
 async function fbG(p){const r=await fetch(FB+p+'.json');if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}
@@ -636,13 +637,23 @@ function buildNav(){
     h+='<div class="nav-item'+(view===n.id?' active':'')+'" onclick="sv(\''+n.id+'\');closeSB()">'+n.lbl+'</div>';
   });
   document.getElementById('SN').innerHTML=h;
-  var mob=['pipeline','clients','schedule','quotations','invoices'];
+  var mob=['dailyBrief','pipeline','schedule','quotations','invoices'];
   document.getElementById('MN').innerHTML=mob.map(function(id){
     var n=NAV.find(function(x){return x.id===id;});
     return '<div class="mn'+(view===id?' active':'')+'" onclick="sv(\''+id+'\')">'+'<span class="mnic">'+n.ic+'</span>'+n.lbl+'</div>';
   }).join('');
 }
-function sv(v){view=v;buildNav();document.getElementById('PT').textContent=TITLES[v]||v;render();}
+// Track last visit timestamp when navigating AWAY from the Brief
+function sv(v){
+  // If leaving Daily Brief, record the visit time so "Since last visit" resets next time
+  if(view==='dailyBrief' && v!=='dailyBrief'){
+    localStorage.setItem('biso_lastBriefVisit', new Date().toISOString());
+  }
+  view=v;
+  buildNav();
+  document.getElementById('PT').textContent=TITLES[v]||v;
+  render();
+}
 function doSearch(){q=document.getElementById('SI').value.toLowerCase();render();}
 function openSB(){document.getElementById('SB').classList.add('open');document.getElementById('MOV').classList.add('open');}
 function closeSB(){document.getElementById('SB').classList.remove('open');document.getElementById('MOV').classList.remove('open');}
@@ -653,7 +664,13 @@ function handleAdd(){
   else if(view==='invoices'){openOverviewForm(null,{intent:'invoice'});}
   else {openOverviewForm(null,{intent:'lead'});}
 }
-function render(){var fn={pipeline:rPipeline,analytics:rAnalytics,clients:rClients,customers:rCustomers,schedule:rSchedule,quotations:rQuotations,invoices:rInvoices,finance:rFinance,settings:rSettings};if(fn[view])fn[view]();}
+function render(){var fn={dailyBrief:rDailyBrief,pipeline:rPipeline,analytics:rAnalytics,clients:rClients,customers:rCustomers,schedule:rSchedule,quotations:rQuotations,invoices:rInvoices,finance:rFinance,settings:rSettings};if(fn[view])fn[view]();}
+
+// Role helper - placeholder for future role separation. Currently always returns 'owner'.
+function currentRole(){
+  // Future: read from auth, localStorage, etc. For now, single-user owner mode.
+  return 'owner';
+}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function fmt(s){if(!s)return '—';return new Date(s).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}
 function fR(n){return 'Rs '+Number(n||0).toLocaleString();}
@@ -826,13 +843,10 @@ function applyDisc(){
 function rPipeline(){
   var all=lA();
   var pl=all.filter(function(l){return !l.confirmed&&!l.lost&&(q?l.name.toLowerCase().includes(q):true);});
-  // Count overdue reminders for the banner
-  var overdueRem = pl.filter(function(l){
-    if(l.remindersStopped||!l.nextReminderAt)return false;
-    return new Date(l.nextReminderAt) <= new Date();
-  }).length;
   // Count lost leads (for sidebar link)
   var lostCount = all.filter(function(l){return l.lost;}).length;
+  // Compute Today's Actions groups
+  var actions = computeTodaysActions();
   // 6-metric pipeline widget
   var m = pipelineMetrics();
   var deltaTxt = m.weekDelta===0 ? 'same as last week' : (m.weekDelta>0?'+':'')+m.weekDelta+'% vs last week';
@@ -841,10 +855,8 @@ function rPipeline(){
   var respSub = m.avgResp===null ? '' : m.avgResp<=1 ? 'excellent' : m.avgResp<=24 ? 'good' : 'slow';
   
   var h='';
-  // Follow-up reminder banner
-  if(overdueRem > 0){
-    h+='<div style="background:#FEF7E5;border:1.5px solid #F0D285;border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px"><div style="font-size:18px">⏰</div><div style="flex:1;font-size:13px;color:var(--navy);font-weight:600">'+overdueRem+' lead'+(overdueRem!==1?'s':'')+' need'+(overdueRem===1?'s':'')+' follow-up today</div></div>';
-  }
+  // === Today's Actions widget ===
+  h += renderTodaysActions(actions);
   h+='<div class="mc-grid">';
   h+=metricCard('New Inquiries', m.thisWeek, '<span style="color:'+deltaColor+'">'+deltaTxt+'</span>');
   h+=metricCard('Booking Rate', m.convRate+'%', m.bookedCount+' of '+m.leadCount+' booked', '#1A2B4A');
@@ -3877,6 +3889,630 @@ async function clearData(){
     render();
   }catch(e){notif('Error: '+e.message);}
 }
+
+// ============================================================
+// DAILY BRIEF — Manager's morning landing page
+// 5 sections: Today's Actions / This Week's Weddings /
+// This Week's Appointments / Since Last Visit / Needs Attention
+// ============================================================
+
+function _briefLastVisit(){
+  var v = localStorage.getItem('biso_lastBriefVisit');
+  if(!v) return null;
+  try { var d = new Date(v); return isNaN(d.getTime()) ? null : d; } catch(e){ return null; }
+}
+
+function _humanAgo(date){
+  if(!date) return '';
+  var hrs = (Date.now() - date.getTime()) / 3600000;
+  if(hrs < 1) return Math.round(hrs * 60) + ' min ago';
+  if(hrs < 24) return Math.round(hrs) + 'h ago';
+  var days = Math.round(hrs / 24);
+  if(days < 7) return days + (days===1?' day ago':' days ago');
+  return fmt(date.toISOString());
+}
+
+// Section 2: weddings in next 7 days (confirmed brides only)
+function _briefWeddings(){
+  var weddings = [];
+  Object.values(brides).forEach(function(b){
+    if(!b.confirmed || b.cancelled || b.lost) return;
+    if(!b.weddingDate) return;
+    var d = dU(b.weddingDate);
+    if(d === null || d < 0 || d > 7) return;
+    // Compute balance
+    var totalDue = 0, totalPaid = 0;
+    Object.values(b.invoices||{}).forEach(function(inv){
+      totalDue += qTot(inv.items);
+      totalPaid += (inv.advance||0) + Object.values(inv.payments||{}).reduce(function(s,p){return s+(parseFloat(p.amount)||0);},0);
+    });
+    var balance = totalDue - totalPaid;
+    // Find final trial
+    var trials = Object.values(b.appointments||{}).filter(function(a){
+      return (a.reason==='Final Trial' || a.reason==='Trial') && !a.cancelled;
+    });
+    var finalTrial = null;
+    if(trials.length > 0){
+      // Prefer 'Final Trial' if exists, else latest 'Trial'
+      var ft = trials.filter(function(a){return a.reason==='Final Trial';});
+      if(ft.length > 0){
+        ft.sort(function(a,b){return new Date(b.date) - new Date(a.date);});
+        finalTrial = ft[0];
+      }
+    }
+    var ev = b.events || {};
+    var theme = (ev.wedding && ev.wedding.theme) || '';
+    var bmCount = (ev.wedding && ev.wedding.bridesmaids) || 0;
+    weddings.push({
+      id:b.id, name:b.name||'(no name)',
+      weddingDate:b.weddingDate, daysAway:d,
+      balance:balance, paidInFull:balance<=0 && totalDue>0,
+      finalTrial:finalTrial, finalTrialMissing:!finalTrial,
+      theme:theme, bmCount:bmCount
+    });
+  });
+  weddings.sort(function(a,b){return a.daysAway - b.daysAway;});
+  return weddings;
+}
+
+// Section 3: all upcoming appointments in next 7 days
+function _briefAppointments(){
+  var now = new Date(); now.setHours(0,0,0,0);
+  var weekEnd = new Date(now); weekEnd.setDate(weekEnd.getDate()+7);
+  var weekEndStr = weekEnd.toISOString().slice(0,10);
+  var todayStr = now.toISOString().slice(0,10);
+  var appts = [];
+  Object.values(brides).forEach(function(b){
+    if(b.lost || b.cancelled) return;
+    Object.values(b.appointments||{}).forEach(function(a){
+      if(a.cancelled || a.done) return;
+      if(!a.date) return;
+      var d = a.date.slice(0,10);
+      if(d >= todayStr && d < weekEndStr){
+        appts.push({
+          brideId:b.id, brideName:b.name||'(no name)',
+          date:a.date, time:a.time||'',
+          reason:a.reason||'Appointment'
+        });
+      }
+    });
+  });
+  appts.sort(function(a,b){
+    var da = a.date+'T'+(a.time||'00:00');
+    var db = b.date+'T'+(b.time||'00:00');
+    return da < db ? -1 : da > db ? 1 : 0;
+  });
+  return appts;
+}
+
+// Section 4: activity since last visit
+function _briefSinceLastVisit(){
+  var lastVisit = _briefLastVisit();
+  // If never visited: show last 24h
+  var since = lastVisit || new Date(Date.now() - 24*3600000);
+  var sinceMs = since.getTime();
+  var groups = {
+    newLeads:[], consultations:[], quotes:[], payments:[],
+    confirmations:[], lost:[], cancellations:[]
+  };
+  Object.values(brides).forEach(function(b){
+    // New leads (createdAt within window)
+    if(b.createdAt && new Date(b.createdAt).getTime() >= sinceMs){
+      groups.newLeads.push({id:b.id, name:b.name||'(no name)', source:b.source||'', at:b.createdAt});
+    }
+    // Parse _history for events
+    var hist = b._history || {};
+    Object.values(hist).forEach(function(h){
+      if(!h.at || new Date(h.at).getTime() < sinceMs) return;
+      var action = h.action || '';
+      if(action === 'contact-attempt' && h.details && h.details.outcome === 'consult_booked'){
+        // Already handled separately below as appt-add for Consultation
+      } else if(action === 'appt-done' && h.details && h.details.reason === 'Consultation'){
+        groups.consultations.push({id:b.id, name:b.name, at:h.at});
+      } else if(action === 'created' || action === 'updated'){
+        // Skip - too noisy
+      } else if(action === 'cancel-booking'){
+        groups.cancellations.push({id:b.id, name:b.name, at:h.at, reason:h.details && h.details.reason});
+      } else if(action === 'auto-lost' || (action === 'contact-attempt' && h.details && h.details.outcome === 'not_interested')){
+        groups.lost.push({id:b.id, name:b.name, at:h.at, reason: h.details && (h.details.reason || h.details.outcome)});
+      }
+    });
+    // Quotes created in window
+    Object.values(b.quotes||{}).forEach(function(qt){
+      if(qt.date){
+        // qt.date is YYYY-MM-DD, not iso datetime — only show if today or future
+        // Better: use _history for quote events. Skipping for now to avoid noise.
+      }
+    });
+    // Payments received in window
+    Object.values(b.invoices||{}).forEach(function(inv){
+      Object.values(inv.payments||{}).forEach(function(p){
+        if(p.createdAt && new Date(p.createdAt).getTime() >= sinceMs){
+          groups.payments.push({id:b.id, name:b.name, amount:parseFloat(p.amount)||0, at:p.createdAt});
+        }
+      });
+      // Confirmed = invoice exists with createdAt? Use _history for confirmations
+    });
+    // Confirmed brides: check stage-change history
+    Object.values(hist).forEach(function(h){
+      if(!h.at || new Date(h.at).getTime() < sinceMs) return;
+      if(h.action === 'stage-change' && h.details && (h.details.to === 5 || h.details.stage === 5)){
+        groups.confirmations.push({id:b.id, name:b.name, at:h.at});
+      }
+    });
+  });
+  return {groups:groups, since:since};
+}
+
+// Section 5: soft warnings — things that need attention this week but not today
+function _briefNeedsAttention(){
+  var warnings = [];
+  Object.values(brides).forEach(function(b){
+    if(b.lost || b.cancelled) return;
+    // 1. Active leads with no next reminder scheduled (and not at end of pipeline)
+    if(!b.confirmed && !b.remindersStopped && !b.nextReminderAt){
+      var s = Number(b.stage||0);
+      // Only care about stage 0-2 (early pipeline) - later stages have other workflows
+      if(s <= 2){
+        var atts = Object.values(b.contactAttempts||{});
+        if(atts.length > 0){
+          warnings.push({type:'no_reminder', id:b.id, name:b.name||'(no name)', text:'No follow-up scheduled'});
+        }
+      }
+    }
+    // 2. Confirmed brides with wedding in 7-21 days but no Final Trial booked
+    if(b.confirmed && !b.cancelled && b.weddingDate){
+      var d = dU(b.weddingDate);
+      if(d !== null && d >= 7 && d <= 21){
+        var hasFinalTrial = Object.values(b.appointments||{}).some(function(a){
+          return a.reason === 'Final Trial' && !a.cancelled;
+        });
+        if(!hasFinalTrial){
+          warnings.push({type:'no_final_trial', id:b.id, name:b.name||'(no name)', text:'Final trial not booked · wedding in '+d+'d'});
+        }
+      }
+    }
+    // 3. Quotes expiring soon (within 7 days) and not yet converted
+    Object.values(b.quotes||{}).forEach(function(qt){
+      if(qt.convertedToInvoice) return;
+      if(!qt.expiry) return;
+      var dE = dU(qt.expiry);
+      if(dE !== null && dE >= 0 && dE <= 7){
+        warnings.push({type:'quote_expiring', id:b.id, name:b.name||'(no name)', text:'Quote '+qt.id+' expires in '+dE+'d'});
+      }
+    });
+  });
+  return warnings;
+}
+
+function rDailyBrief(){
+  var role = currentRole(); // future-proofing
+  var greet = (function(){
+    var h = new Date().getHours();
+    if(h < 12) return 'Good morning';
+    if(h < 18) return 'Good afternoon';
+    return 'Good evening';
+  })();
+  var dateStr = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  
+  var actions = computeTodaysActions();
+  var weddings = _briefWeddings();
+  var appts = _briefAppointments();
+  var sinceData = _briefSinceLastVisit();
+  var warnings = _briefNeedsAttention();
+  
+  var html = '';
+  
+  // Header
+  html += '<div style="margin-bottom:18px"><div style="font-family:Cinzel,serif;font-size:18px;color:var(--navy);letter-spacing:.5px">'+greet+'</div><div style="font-size:12px;color:var(--muted);margin-top:2px">'+dateStr+'</div></div>';
+  
+  // Section 1: Today's Actions (reuse existing widget)
+  html += renderTodaysActions(actions);
+  
+  // Section 2: This Week's Weddings
+  html += '<div style="margin-bottom:18px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><div style="font-size:18px">💍</div><div style="font-family:Cinzel,serif;font-size:13px;color:var(--navy);letter-spacing:1.2px;font-weight:600;text-transform:uppercase">This Week\u2019s Weddings</div><div style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:600">'+weddings.length+'</div></div>';
+  if(weddings.length === 0){
+    html += '<div style="background:var(--surf);border:1.5px solid var(--border);border-radius:10px;padding:18px;text-align:center;color:var(--muted);font-size:12px;font-style:italic">No weddings in the next 7 days</div>';
+  } else {
+    weddings.forEach(function(w){
+      var dayLabel = w.daysAway===0 ? 'TODAY' : w.daysAway===1 ? 'TOMORROW' : 'in '+w.daysAway+' days';
+      var dayColor = w.daysAway<=2 ? 'var(--danger)' : w.daysAway<=5 ? 'var(--warn)' : 'var(--navy)';
+      var wdate = new Date(w.weddingDate).toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short'});
+      var balLine = w.balance > 0 
+        ? '<div style="font-size:12px;color:var(--danger);margin-top:4px">⚠ Balance '+fR(w.balance)+'</div>'
+        : w.paidInFull ? '<div style="font-size:12px;color:var(--success);margin-top:4px">✓ Paid in full</div>'
+        : '<div style="font-size:12px;color:var(--muted);margin-top:4px">No invoice yet</div>';
+      var trialLine = w.finalTrial
+        ? '<div style="font-size:12px;color:var(--text2);margin-top:2px">Final trial: '+fmt(w.finalTrial.date)+(w.finalTrial.time?' at '+w.finalTrial.time:'')+'</div>'
+        : '<div style="font-size:12px;color:var(--warn);margin-top:2px">⚠ Final trial not booked</div>';
+      var details = w.theme || w.bmCount ? '<div style="font-size:11px;color:var(--muted);margin-top:4px">'+(w.theme||'No theme')+(w.bmCount?' · '+w.bmCount+' BM'+(w.bmCount!==1?'s':''):'')+'</div>' : '';
+      html += '<div style="background:var(--surf);border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer" onclick="openDetail(\''+w.id+'\')">'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">'
+        +'<div style="font-size:14px;font-weight:700;color:var(--navy)">'+w.name+'</div>'
+        +'<div style="font-size:10px;font-weight:700;color:'+dayColor+';letter-spacing:.5px">'+dayLabel+'</div>'
+        +'</div>'
+        +'<div style="font-size:11px;color:var(--muted)">'+wdate+'</div>'
+        +balLine+trialLine+details
+        +'</div>';
+    });
+  }
+  html += '</div>';
+  
+  // Section 3: This Week's Appointments
+  html += '<div style="margin-bottom:18px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><div style="font-size:18px">📅</div><div style="font-family:Cinzel,serif;font-size:13px;color:var(--navy);letter-spacing:1.2px;font-weight:600;text-transform:uppercase">This Week\u2019s Appointments</div><div style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:600">'+appts.length+'</div></div>';
+  if(appts.length === 0){
+    html += '<div style="background:var(--surf);border:1.5px solid var(--border);border-radius:10px;padding:18px;text-align:center;color:var(--muted);font-size:12px;font-style:italic">No appointments scheduled this week</div>';
+  } else {
+    html += '<div style="background:var(--surf);border:1.5px solid var(--border);border-radius:10px;overflow:hidden">';
+    appts.forEach(function(a, i){
+      var d = new Date(a.date+'T'+(a.time||'00:00'));
+      var dayLbl = d.toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short'});
+      html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;'+(i<appts.length-1?'border-bottom:1px solid var(--border);':'')+'cursor:pointer" onclick="openDetail(\''+a.brideId+'\')">'
+        +'<div style="min-width:60px;font-size:11px;color:var(--text2);font-weight:600">'+dayLbl+'</div>'
+        +'<div style="min-width:48px;font-size:12px;color:var(--navy);font-weight:600">'+(a.time||'—')+'</div>'
+        +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+a.brideName+'</div><div style="font-size:11px;color:var(--muted)">'+a.reason+'</div></div>'
+        +'</div>';
+    });
+    html += '</div>';
+  }
+  html += '</div>';
+  
+  // Section 4: Since Last Visit
+  var sinceLabel = sinceData.since ? _humanAgo(sinceData.since) : 'last 24 hours';
+  var g = sinceData.groups;
+  var totalActivity = g.newLeads.length + g.consultations.length + g.payments.length + g.confirmations.length + g.lost.length + g.cancellations.length;
+  html += '<div style="margin-bottom:18px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><div style="font-size:18px">📊</div><div style="font-family:Cinzel,serif;font-size:13px;color:var(--navy);letter-spacing:1.2px;font-weight:600;text-transform:uppercase">Since Last Visit</div><div style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:500">'+sinceLabel+'</div></div>';
+  if(totalActivity === 0){
+    html += '<div style="background:var(--surf);border:1.5px solid var(--border);border-radius:10px;padding:18px;text-align:center;color:var(--muted);font-size:12px;font-style:italic">No new activity</div>';
+  } else {
+    html += '<div style="background:var(--surf);border:1.5px solid var(--border);border-radius:10px;padding:12px 14px">';
+    if(g.newLeads.length > 0){
+      var sources = g.newLeads.map(function(l){return l.source||'?';}).join(', ');
+      html += '<div style="font-size:13px;color:var(--text);margin-bottom:6px"><strong style="color:var(--navy)">'+g.newLeads.length+' new lead'+(g.newLeads.length!==1?'s':'')+'</strong> <span style="color:var(--muted);font-size:11px">('+sources+')</span></div>';
+    }
+    if(g.consultations.length > 0){
+      html += '<div style="font-size:13px;color:var(--text);margin-bottom:6px"><strong style="color:var(--navy)">'+g.consultations.length+' consultation'+(g.consultations.length!==1?'s':'')+' completed</strong></div>';
+    }
+    if(g.payments.length > 0){
+      var totalPay = g.payments.reduce(function(s,p){return s+p.amount;},0);
+      html += '<div style="font-size:13px;color:var(--text);margin-bottom:6px"><strong style="color:var(--success)">'+g.payments.length+' payment'+(g.payments.length!==1?'s':'')+' received</strong> <span style="color:var(--muted);font-size:11px">('+fR(totalPay)+' total)</span></div>';
+    }
+    if(g.confirmations.length > 0){
+      html += '<div style="font-size:13px;color:var(--text);margin-bottom:6px"><strong style="color:var(--gold)">'+g.confirmations.length+' booking'+(g.confirmations.length!==1?'s':'')+' confirmed</strong></div>';
+    }
+    if(g.lost.length > 0){
+      html += '<div style="font-size:13px;color:var(--text);margin-bottom:6px"><strong style="color:var(--danger)">'+g.lost.length+' lead'+(g.lost.length!==1?'s':'')+' closed-lost</strong></div>';
+    }
+    if(g.cancellations.length > 0){
+      html += '<div style="font-size:13px;color:var(--text);margin-bottom:6px"><strong style="color:var(--danger)">'+g.cancellations.length+' booking'+(g.cancellations.length!==1?'s':'')+' cancelled</strong></div>';
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+  
+  // Section 5: Needs Attention
+  if(warnings.length > 0){
+    html += '<div style="margin-bottom:18px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><div style="font-size:18px">🔥</div><div style="font-family:Cinzel,serif;font-size:13px;color:var(--navy);letter-spacing:1.2px;font-weight:600;text-transform:uppercase">Needs Attention</div><div style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:600">'+warnings.length+'</div></div>';
+    html += '<div style="background:#FEF7E5;border:1.5px solid #F0D285;border-radius:10px;overflow:hidden">';
+    warnings.forEach(function(w, i){
+      html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;'+(i<warnings.length-1?'border-bottom:1px solid rgba(240,210,133,0.4);':'')+'cursor:pointer" onclick="openDetail(\''+w.id+'\')">'
+        +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+w.name+'</div><div style="font-size:11px;color:var(--warn);margin-top:2px">'+w.text+'</div></div>'
+        +'<div style="color:var(--muted);font-size:14px">›</div>'
+        +'</div>';
+    });
+    html += '</div></div>';
+  }
+  
+  document.getElementById('MC').innerHTML = html;
+}
+
+
+
+// ============================================================
+// TODAY'S ACTIONS WIDGET
+// Grouped, deduplicated, action-required-within-24h
+// ============================================================
+
+// Quiet mode (manually pauses all action surfacing for today)
+function isQuietMode(){
+  var s = gSet();
+  if(!s.quietUntil) return false;
+  return new Date(s.quietUntil) > new Date();
+}
+
+function setQuietMode(hoursFromNow){
+  var s = gSet();
+  if(hoursFromNow > 0){
+    var until = new Date(); until.setHours(until.getHours() + hoursFromNow);
+    s.quietUntil = until.toISOString();
+  } else {
+    delete s.quietUntil;
+  }
+  sSet(s);
+}
+
+// Compute today's actionable items, grouped by type
+function computeTodaysActions(){
+  var now = new Date();
+  var todayEnd = new Date(); todayEnd.setHours(23,59,59,999);
+  
+  // 1. Follow-ups (overdue or due today)
+  var followUps = [];
+  Object.values(brides).forEach(function(b){
+    if(b.confirmed || b.cancelled || b.lost || b.remindersStopped) return;
+    if(!b.nextReminderAt) return;
+    if(new Date(b.nextReminderAt) <= todayEnd){
+      followUps.push({
+        id:b.id, name:b.name||'(no name)',
+        phone:b.phone||'',
+        at:b.nextReminderAt,
+        overdue: new Date(b.nextReminderAt) < now
+      });
+    }
+  });
+  followUps.sort(function(a,b){return new Date(a.at)-new Date(b.at);});
+  
+  // 2. Appointments today + tomorrow (to confirm with bride)
+  // Compare on day-level (not datetime) so an appointment scheduled today still shows after its time has passed
+  var todayStr = now.toISOString().slice(0,10);
+  var tomorrowStr = new Date(now.getTime() + 86400000).toISOString().slice(0,10);
+  var appts = [];
+  Object.values(brides).forEach(function(b){
+    if(b.lost || b.cancelled) return;
+    Object.values(b.appointments||{}).forEach(function(a){
+      if(a.cancelled || a.done) return;
+      if(!a.date) return;
+      var apptDay = a.date.slice(0,10);
+      var isToday = apptDay === todayStr;
+      var isTomorrow = apptDay === tomorrowStr;
+      if(isToday || isTomorrow){
+        appts.push({
+          brideId:b.id, brideName:b.name||'(no name)',
+          phone:b.phone||'',
+          apptKey:a.key,
+          date:a.date, time:a.time||'',
+          reason:a.reason||'Appointment',
+          isToday: isToday
+        });
+      }
+    });
+  });
+  appts.sort(function(a,b){return new Date(a.date+'T'+(a.time||'00:00')) - new Date(b.date+'T'+(b.time||'00:00'));});
+  
+  // 3. Quotes due (stage 3 = Consultation Done, no quote sent yet, consultation 2+ days ago)
+  var quotesDue = [];
+  Object.values(brides).forEach(function(b){
+    if(b.confirmed || b.cancelled || b.lost) return;
+    if(Number(b.stage||0) !== 3) return;
+    var hasQuote = b.quotes && Object.keys(b.quotes).length > 0;
+    if(hasQuote) return;
+    // Find consultation done date (most recent done consultation)
+    var consults = Object.values(b.appointments||{}).filter(function(a){return a.reason==='Consultation' && a.done && !a.cancelled;});
+    if(consults.length === 0){
+      // No marked-done consultation but stage is 3 - use lastActivity as fallback
+      var since = b.lastActivity ? (now - new Date(b.lastActivity))/86400000 : 999;
+      if(since >= 2){
+        quotesDue.push({id:b.id, name:b.name||'(no name)', phone:b.phone||'', daysSince:Math.round(since)});
+      }
+    } else {
+      consults.sort(function(a,b){return new Date(b.doneAt||0) - new Date(a.doneAt||0);});
+      var lastDone = consults[0];
+      var daysSince = (now - new Date(lastDone.doneAt || lastDone.date)) / 86400000;
+      if(daysSince >= 2){
+        quotesDue.push({id:b.id, name:b.name||'(no name)', phone:b.phone||'', daysSince:Math.round(daysSince)});
+      }
+    }
+  });
+  quotesDue.sort(function(a,b){return b.daysSince - a.daysSince;}); // oldest first
+  
+  // 4. Urgent payments: confirmed brides with wedding in <=14 days and balance > 0
+  var urgentPayments = [];
+  Object.values(brides).forEach(function(b){
+    if(!b.confirmed || b.cancelled) return;
+    if(!b.weddingDate) return;
+    var dToWed = dU(b.weddingDate);
+    if(dToWed === null || dToWed > 14 || dToWed < 0) return;
+    // Compute balance from invoices
+    var totalDue = 0, totalPaid = 0;
+    Object.values(b.invoices||{}).forEach(function(inv){
+      var tot = qTot(inv.items);
+      var paid = (inv.advance||0) + Object.values(inv.payments||{}).reduce(function(s,p){return s+(parseFloat(p.amount)||0);},0);
+      totalDue += tot;
+      totalPaid += paid;
+    });
+    var balance = totalDue - totalPaid;
+    if(balance > 0){
+      urgentPayments.push({
+        id:b.id, name:b.name||'(no name)',
+        phone:b.phone||'',
+        daysToWed: dToWed,
+        balance: balance
+      });
+    }
+  });
+  urgentPayments.sort(function(a,b){return a.daysToWed - b.daysToWed;});
+  
+  return {
+    followUps: followUps,
+    appts: appts,
+    quotesDue: quotesDue,
+    urgentPayments: urgentPayments,
+    quietMode: isQuietMode()
+  };
+}
+
+// Expanded state for action groups (per session, not persisted)
+window._expandedActions = window._expandedActions || {};
+
+function toggleActionGroup(key){
+  window._expandedActions[key] = !window._expandedActions[key];
+  render();
+}
+
+function renderTodaysActions(actions){
+  // If quiet mode, show small banner with resume button only
+  if(actions.quietMode){
+    var s = gSet();
+    var until = new Date(s.quietUntil);
+    var hrs = Math.max(0, Math.round((until - new Date()) / 3600000));
+    return '<div style="background:#F3F4F6;border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px">'
+      +'<div style="font-size:16px">🤫</div>'
+      +'<div style="flex:1;font-size:12px;color:var(--text2);font-weight:500">Quiet mode on · resumes in '+hrs+'h</div>'
+      +'<button class="btn btn-ghost btn-xs" onclick="resumeReminders()">Resume now</button>'
+      +'</div>';
+  }
+  
+  var totalCount = actions.followUps.length + actions.appts.length + actions.quotesDue.length + actions.urgentPayments.length;
+  if(totalCount === 0){
+    return ''; // No actions, no widget — keeps Pipeline clean on slow days
+  }
+  
+  var groups = [];
+  
+  // Follow-ups group
+  if(actions.followUps.length > 0){
+    var overdueCount = actions.followUps.filter(function(f){return f.overdue;}).length;
+    var subTxt = overdueCount > 0 ? overdueCount+' overdue' : 'due today';
+    groups.push({
+      key:'followUps',
+      icon:'📞',
+      label:'Follow up with '+actions.followUps.length+' lead'+(actions.followUps.length!==1?'s':''),
+      sub: subTxt,
+      color: overdueCount > 0 ? 'var(--danger)' : 'var(--warn)',
+      items: actions.followUps,
+      renderItem: function(f){
+        var ph = (f.phone||'').replace(/\D/g,'');
+        var waBtn = ph ? '<button class="lcard-icon-btn" onclick="event.stopPropagation();window.open(\'https://wa.me/'+ph+'\',\'_blank\')">💬</button>' : '';
+        var callBtn = ph ? '<button class="lcard-icon-btn" onclick="event.stopPropagation();window.open(\'tel:+'+ph+'\')">📞</button>' : '';
+        var logBtn = '<button class="lcard-cta-btn" onclick="event.stopPropagation();openDisp(\''+f.id+'\')">Log Attempt</button>';
+        var status = f.overdue ? '<span style="color:var(--danger);font-weight:600">Overdue</span>' : '<span style="color:var(--warn)">Due today</span>';
+        return '<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+f.name+'</div><div style="font-size:11px;margin-top:2px">'+status+'</div></div><div style="display:flex;gap:4px;align-items:center">'+waBtn+callBtn+logBtn+'</div></div>';
+      }
+    });
+  }
+  
+  // Appointments group
+  if(actions.appts.length > 0){
+    var todayCount = actions.appts.filter(function(a){return a.isToday;}).length;
+    var apptSub = todayCount > 0 ? todayCount+' today' : 'tomorrow';
+    groups.push({
+      key:'appts',
+      icon:'📅',
+      label:'Confirm '+actions.appts.length+' appointment'+(actions.appts.length!==1?'s':''),
+      sub: apptSub,
+      color: 'var(--navy)',
+      items: actions.appts,
+      renderItem: function(a){
+        var ph = (a.phone||'').replace(/\D/g,'');
+        var waBtn = ph ? '<button class="lcard-icon-btn" onclick="event.stopPropagation();window.open(\'https://wa.me/'+ph+'\',\'_blank\')">💬</button>' : '';
+        var openBtn = '<button class="lcard-icon-btn" onclick="event.stopPropagation();openDetail(\''+a.brideId+'\')">→</button>';
+        var when = (a.isToday ? 'Today' : 'Tomorrow') + (a.time ? ' at '+a.time : '');
+        return '<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+a.brideName+'</div><div style="font-size:11px;color:var(--text2);margin-top:2px">'+a.reason+' · '+when+'</div></div><div style="display:flex;gap:4px">'+waBtn+openBtn+'</div></div>';
+      }
+    });
+  }
+  
+  // Quotes due group
+  if(actions.quotesDue.length > 0){
+    groups.push({
+      key:'quotesDue',
+      icon:'💌',
+      label:'Send '+actions.quotesDue.length+' quote'+(actions.quotesDue.length!==1?'s':''),
+      sub: 'consultation done',
+      color: 'var(--gold)',
+      items: actions.quotesDue,
+      renderItem: function(q){
+        var quoteBtn = '<button class="lcard-cta-btn" onclick="event.stopPropagation();openOverviewForm(\''+q.id+'\',{intent:\'quote\'})">Create Quote</button>';
+        return '<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+q.name+'</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Consultation '+q.daysSince+'d ago</div></div>'+quoteBtn+'</div>';
+      }
+    });
+  }
+  
+  // Urgent payments group
+  if(actions.urgentPayments.length > 0){
+    groups.push({
+      key:'urgentPayments',
+      icon:'⚠️',
+      label:actions.urgentPayments.length+' wedding payment'+(actions.urgentPayments.length!==1?'s':'')+' urgent',
+      sub: 'balance due',
+      color: 'var(--danger)',
+      items: actions.urgentPayments,
+      renderItem: function(u){
+        var openBtn = '<button class="lcard-cta-btn" onclick="event.stopPropagation();openDetail(\''+u.id+'\')">Open</button>';
+        var wedTxt = u.daysToWed === 0 ? 'today' : u.daysToWed === 1 ? 'tomorrow' : 'in '+u.daysToWed+'d';
+        return '<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+u.name+'</div><div style="font-size:11px;color:var(--danger);margin-top:2px;font-weight:600">Balance '+fR(u.balance)+' · Wedding '+wedTxt+'</div></div>'+openBtn+'</div>';
+      }
+    });
+  }
+  
+  // Build the widget HTML
+  var html = '<div style="background:var(--surf);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:16px;box-shadow:var(--sh)">';
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
+  html += '<div style="font-family:Cinzel,serif;font-size:13px;color:var(--navy);letter-spacing:1.2px;font-weight:600;text-transform:uppercase">Today\u2019s Actions</div>';
+  html += '<button class="btn btn-ghost btn-xs" onclick="openQuietPicker()" title="Quiet mode">🤫</button>';
+  html += '</div>';
+  
+  groups.forEach(function(g){
+    var expanded = !!window._expandedActions[g.key];
+    var caret = expanded ? '▾' : '▸';
+    html += '<div style="border:1px solid var(--border);border-radius:8px;margin-bottom:8px;overflow:hidden">';
+    html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;background:'+(expanded?'var(--bg)':'var(--surf)')+'" onclick="toggleActionGroup(\''+g.key+'\')">';
+    html += '<div style="font-size:18px">'+g.icon+'</div>';
+    html += '<div style="flex:1;min-width:0">';
+    html += '<div style="font-size:13px;font-weight:600;color:var(--navy)">'+g.label+'</div>';
+    html += '<div style="font-size:11px;color:'+g.color+';margin-top:1px;font-weight:600">'+g.sub+'</div>';
+    html += '</div>';
+    html += '<div style="font-size:13px;color:var(--muted)">'+caret+'</div>';
+    html += '</div>';
+    if(expanded){
+      html += '<div style="padding:8px 10px 4px;background:var(--surf)">';
+      g.items.forEach(function(it){ html += g.renderItem(it); });
+      html += '</div>';
+    }
+    html += '</div>';
+  });
+  
+  html += '</div>';
+  return html;
+}
+
+function openQuietPicker(){
+  var html = '<div style="font-size:13px;color:var(--text2);margin-bottom:14px">Pause Today\u2019s Actions and follow-up nudges. Useful during a wedding day or off-day.</div>'
+    +'<div style="display:flex;flex-direction:column;gap:6px">'
+    +'<button class="btn btn-outline" style="justify-content:flex-start;padding:12px" onclick="applyQuiet(4)">For 4 hours</button>'
+    +'<button class="btn btn-outline" style="justify-content:flex-start;padding:12px" onclick="applyQuiet(8)">For 8 hours (today)</button>'
+    +'<button class="btn btn-outline" style="justify-content:flex-start;padding:12px" onclick="applyQuiet(24)">For 24 hours</button>'
+    +'</div>';
+  // Reuse showConfirm modal as a generic dialog? No - simpler: inline as a tiny modal
+  // We'll just use showConfirm with a custom approach: 3 buttons via a quick choice modal
+  // Actually simplest: just trigger 3 mini-confirms is bad. Use a custom one-off:
+  document.getElementById('cf-title').textContent = 'Quiet mode';
+  document.getElementById('cf-msg').innerHTML = html;
+  document.getElementById('cf-input-wrap').style.display = 'none';
+  document.getElementById('cf-note-wrap').style.display = 'none';
+  // Hide the default confirm buttons since we use inline buttons above
+  document.getElementById('cf-yes').style.display = 'none';
+  document.getElementById('cf-no').textContent = 'Close';
+  OM('cf-modal');
+}
+
+function applyQuiet(hours){
+  setQuietMode(hours);
+  CM('cf-modal');
+  // Restore confirm button visibility for next use of cf-modal
+  document.getElementById('cf-yes').style.display = '';
+  document.getElementById('cf-no').textContent = 'Cancel';
+  notif('Quiet mode on for '+hours+'h.');
+  render();
+}
+
+function resumeReminders(){
+  setQuietMode(0);
+  notif('Reminders resumed.');
+  render();
+}
+
+
 
 // ============================================================
 // DISPOSITION MODAL - Log contact attempt outcomes
