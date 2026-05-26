@@ -286,6 +286,7 @@ textarea{resize:vertical;min-height:80px}
 <div class="sov" id="amt-ov" onclick="CS('amt')"></div><div class="sheet" id="amt-sheet" style="max-height:48vh"><div class="shdl"></div><div class="shd"><div class="sht" id="amt-t">Enter Amount</div><button class="shc" onclick="CS('amt')">×</button></div><div style="padding:18px"><div style="font-size:12px;color:var(--muted);margin-bottom:8px" id="amt-h"></div><input type="number" id="amt-i" style="width:100%;padding:14px;font-size:22px;font-family:Inter,sans-serif;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);outline:none;text-align:right" placeholder="0"/><button onclick="confirmAmt()" style="width:100%;margin-top:12px;background:var(--navy);color:#fff;border:none;border-radius:8px;padding:13px;font-size:15px;font-family:Inter,sans-serif;font-weight:600;cursor:pointer">Add to Quote</button></div></div>
 <div class="sov" id="cst-ov" onclick="CS('cst')"></div><div class="sheet" id="cst-sheet"><div class="shdl"></div><div class="shd"><div class="sht">Select Customer</div><button class="shc" onclick="CS('cst')">×</button></div><div class="ssw"><span class="ssi">⌕</span><input class="shs" type="text" id="cst-q" placeholder="Search…" oninput="filterCusts(this.value)"/></div><div class="shl" id="cst-list"></div></div>
 <div class="overlay" id="cf-modal" style="z-index:3000"><div class="modal msm"><div class="mhd"><div><div class="mt" id="cf-title">Confirm</div><div class="msb" id="cf-sub" style="display:none"></div></div></div><div class="mbdy"><div id="cf-msg" style="font-size:14px;color:var(--text2);line-height:1.6"></div><div id="cf-input-wrap" style="margin-top:14px;display:none"><label id="cf-input-label" style="display:block;margin-bottom:6px">Amount</label><input type="number" id="cf-input" style="width:100%"/><input type="date" id="cf-input-date" style="width:100%;display:none"/><input type="time" id="cf-input-time" style="width:100%;display:none;margin-top:8px"/></div><div id="cf-note-wrap" style="margin-top:10px;display:none"><label style="display:block;margin-bottom:6px">Note (optional)</label><input type="text" id="cf-note" placeholder="Reason or comment"/></div></div><div class="mft"><button class="btn btn-ghost" onclick="cfNo()" id="cf-no">Cancel</button><button class="btn btn-primary" onclick="cfYes()" id="cf-yes">Confirm</button></div></div></div>
+<div class="overlay" id="disp-modal" style="z-index:2500"><div class="modal msm"><div class="mhd"><div style="flex:1"><div class="mt">Log Contact Attempt</div><div class="msb" id="disp-sub"></div></div><button class="mc" onclick="closeDisp()">×</button></div><div class="mbdy" id="disp-body"></div><div class="mft" id="disp-footer"></div></div></div>
 <div class="notif" id="NF"></div>
 <script>
 const FB='https://biso-crm-default-rtdb.asia-southeast1.firebasedatabase.app';
@@ -675,6 +676,11 @@ document.addEventListener('click',function(e){
   var id=e.target.id;
   // Overview Form: route through closeOverview() which checks OF.dirty and prompts
   if(id==='lead-modal'){closeOverview();return;}
+  // Disposition modal: if user has picked an outcome, treat as dirty
+  if(id==='disp-modal'&&typeof DISP!=='undefined'&&DISP.outcome){
+    showConfirm({title:'Discard attempt?',msg:'You have not saved this contact attempt. Discard?',yesText:'Discard',dangerous:true}).then(function(r){if(r.ok)closeDisp();});
+    return;
+  }
   // Quotation builder: warn if there are unsaved line items
   if(id==='quot-modal'&&typeof QB!=='undefined'&&QB.items&&QB.items.length>0){
     showConfirm({title:'Discard quotation?',msg:'You have unsaved line items. Discard them?',yesText:'Discard',dangerous:true}).then(function(r){if(r.ok)CM('quot-modal');});
@@ -819,7 +825,14 @@ function applyDisc(){
 }
 function rPipeline(){
   var all=lA();
-  var pl=all.filter(function(l){return !l.confirmed&&(q?l.name.toLowerCase().includes(q):true);});
+  var pl=all.filter(function(l){return !l.confirmed&&!l.lost&&(q?l.name.toLowerCase().includes(q):true);});
+  // Count overdue reminders for the banner
+  var overdueRem = pl.filter(function(l){
+    if(l.remindersStopped||!l.nextReminderAt)return false;
+    return new Date(l.nextReminderAt) <= new Date();
+  }).length;
+  // Count lost leads (for sidebar link)
+  var lostCount = all.filter(function(l){return l.lost;}).length;
   // 6-metric pipeline widget
   var m = pipelineMetrics();
   var deltaTxt = m.weekDelta===0 ? 'same as last week' : (m.weekDelta>0?'+':'')+m.weekDelta+'% vs last week';
@@ -827,7 +840,12 @@ function rPipeline(){
   var respTxt = m.avgResp===null ? 'no data yet' : m.avgResp<1 ? '<1 hour' : m.avgResp<24 ? m.avgResp+'h' : Math.round(m.avgResp/24)+'d';
   var respSub = m.avgResp===null ? '' : m.avgResp<=1 ? 'excellent' : m.avgResp<=24 ? 'good' : 'slow';
   
-  var h='<div class="mc-grid">';
+  var h='';
+  // Follow-up reminder banner
+  if(overdueRem > 0){
+    h+='<div style="background:#FEF7E5;border:1.5px solid #F0D285;border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px"><div style="font-size:18px">⏰</div><div style="flex:1;font-size:13px;color:var(--navy);font-weight:600">'+overdueRem+' lead'+(overdueRem!==1?'s':'')+' need'+(overdueRem===1?'s':'')+' follow-up today</div></div>';
+  }
+  h+='<div class="mc-grid">';
   h+=metricCard('New Inquiries', m.thisWeek, '<span style="color:'+deltaColor+'">'+deltaTxt+'</span>');
   h+=metricCard('Booking Rate', m.convRate+'%', m.bookedCount+' of '+m.leadCount+' booked', '#1A2B4A');
   h+=metricCard('Response Time', respTxt, respSub, m.avgResp===null?'var(--muted)':(m.avgResp<=24?'var(--success)':'var(--warn)'));
@@ -845,8 +863,24 @@ function rPipeline(){
     h+='</div></div>';
   });
   h+='</div>';
+  // Closed-Lost link (collapsed by default)
+  if(lostCount > 0){
+    h+='<div style="margin-top:16px;text-align:center"><button class="btn btn-ghost btn-sm" onclick="toggleLostSection()" id="lost-toggle">'+(window._showLost?'▾ Hide':'▸ Show')+' '+lostCount+' closed-lost lead'+(lostCount!==1?'s':'')+'</button></div>';
+    if(window._showLost){
+      h+='<div style="margin-top:14px"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:10px">Closed — Lost</div>';
+      var lostLeads = all.filter(function(l){return l.lost;}).sort(function(a,b){return new Date(b.lostAt||0)-new Date(a.lostAt||0);});
+      lostLeads.forEach(function(l){
+        var reasonLabels = {budget:'Budget mismatch',already_booked:'Already booked elsewhere',browsing:'Just browsing',wrong_number:'Wrong number',postponed:'Postponed/cancelled',unresponsive:'Unresponsive',other:'Other'};
+        var rLbl = reasonLabels[l.lostReason] || l.lostReason || 'No reason';
+        h+='<div style="background:var(--surf);border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;opacity:.85"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+l.name+'</div><div style="font-size:11px;color:var(--muted);margin-top:2px">'+rLbl+(l.lostAt?' · '+fmt(l.lostAt):'')+'</div></div><button class="btn btn-outline btn-xs" onclick="reopenLead(\''+l.id+'\')">Reopen</button></div>';
+      });
+      h+='</div>';
+    }
+  }
   document.getElementById('MC').innerHTML=h;
 }
+
+function toggleLostSection(){window._showLost = !window._showLost; render();}
 
 // =========================================================
 // Pipeline metrics for the top 6-card widget
@@ -938,6 +972,28 @@ function lCard(l){
   var qt=Object.keys(l.quotations||{}).length>0?'<span class="tag tq">Quoted</span>':'';
   var dw=dU(l.weddingDate);
   var dwTag=dw!==null&&dw<60?'<span class="tag tu">Wedding in '+dw+'d</span>':'';
+  // Attempt count + next reminder badges (new)
+  var atts=Object.values(l.contactAttempts||{});
+  var attTag='';
+  var remTag='';
+  if(atts.length>0){
+    var lastAtt=atts.slice().sort(function(a,b){return new Date(b.at)-new Date(a.at);})[0];
+    var lastDays=dS(lastAtt.at);
+    var lastTxt=lastDays===0?'today':lastDays===1?'1d ago':lastDays+'d ago';
+    var icon=lastAtt.outcome==='no_answer'?'📵':lastAtt.outcome==='callback_later'?'📞':'✓';
+    attTag='<span class="tag td">'+icon+' '+atts.length+' attempt'+(atts.length!==1?'s':'')+' · '+lastTxt+'</span>';
+  }
+  if(l.nextReminderAt && !l.remindersStopped && !l.lost){
+    var rDays=dU(l.nextReminderAt.slice(0,10));
+    if(rDays!==null){
+      var rTxt,rCls;
+      if(rDays<0){rTxt='⏰ Overdue '+Math.abs(rDays)+'d';rCls='tu';}
+      else if(rDays===0){rTxt='⏰ Today';rCls='tu';}
+      else if(rDays===1){rTxt='⏰ Tomorrow';rCls='tq';}
+      else {rTxt='⏰ In '+rDays+'d';rCls='td';}
+      remTag='<span class="tag '+rCls+'">'+rTxt+'</span>';
+    }
+  }
   var actions=cardActions(l);
   var expanded=_expandedCards[l.id];
   var summary='';
@@ -960,7 +1016,7 @@ function lCard(l){
     +'<div style="flex:1;min-width:0">'
     +'<div class="lname">'+l.name+'</div>'
     +'<div class="ldate">'+(l.weddingDate?'Wedding: '+fmt(l.weddingDate):'Date TBD')+'</div>'
-    +'<div class="ltags"><span class="tag '+tc+'">'+tl+'</span>'+qt+dwTag+dt+'</div>'
+    +'<div class="ltags"><span class="tag '+tc+'">'+tl+'</span>'+qt+dwTag+dt+attTag+remTag+'</div>'
     +'</div>'
     +'<div class="lcard-actions" onclick="event.stopPropagation()" style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">'
     +actions
@@ -985,9 +1041,9 @@ function cardActions(l){
   var detailBtn='<button onclick="event.stopPropagation();openDetail(\''+l.id+'\')" class="lcard-icon-btn" title="Open">→</button>';
   var actionBtn='';
   if(s===0){
-    actionBtn='<button onclick="event.stopPropagation();advStage(\''+l.id+'\',1)" class="lcard-cta-btn" title="Mark Contacted">✓ Contacted</button>';
+    actionBtn='<button onclick="event.stopPropagation();openDisp(\''+l.id+'\')" class="lcard-cta-btn" title="Log Contact Attempt">📞 Log Attempt</button>';
   } else if(s===1){
-    actionBtn='<button onclick="event.stopPropagation();advStage(\''+l.id+'\',2)" class="lcard-cta-btn">+ Consult</button>';
+    actionBtn='<button onclick="event.stopPropagation();openDisp(\''+l.id+'\')" class="lcard-cta-btn">📞 Log Attempt</button>';
   } else if(s===2){
     actionBtn='<button onclick="event.stopPropagation();advStage(\''+l.id+'\',3)" class="lcard-cta-btn">✓ Done</button>';
   } else if(s===3){
@@ -3821,6 +3877,322 @@ async function clearData(){
     render();
   }catch(e){notif('Error: '+e.message);}
 }
+
+// ============================================================
+// DISPOSITION MODAL - Log contact attempt outcomes
+// ============================================================
+var DISP = {brideId:null, outcome:null, draft:{}};
+
+function openDisp(brideId){
+  var l = leads[brideId]; if(!l) return;
+  DISP = {brideId:brideId, outcome:null, draft:{}};
+  document.getElementById('disp-sub').textContent = l.name + (l.phone?' · '+fmtPhone(l.phone):'');
+  renderDisp();
+  OM('disp-modal');
+}
+
+function closeDisp(){
+  DISP = {brideId:null, outcome:null, draft:{}};
+  CM('disp-modal');
+}
+
+function renderDisp(){
+  var l = leads[DISP.brideId]; if(!l) return;
+  var atts = Object.values(l.contactAttempts||{});
+  var attCount = atts.length;
+  // Step 1: pick outcome (if not chosen)
+  if(!DISP.outcome){
+    var historyTxt = attCount===0 ? 'First contact attempt' : attCount+' previous attempt'+(attCount!==1?'s':'');
+    var historyDetail = '';
+    if(attCount>0){
+      var lastAtt = atts.slice().sort(function(a,b){return new Date(b.at)-new Date(a.at);})[0];
+      var lastLabel = {no_answer:'No answer',callback_later:'Reached - call back later',consult_booked:'Booked consultation',not_interested:'Not interested'}[lastAtt.outcome] || lastAtt.outcome;
+      historyDetail = '<div style="font-size:11px;color:var(--muted);margin-bottom:14px">Last: '+lastLabel+' on '+fmt(lastAtt.at)+(lastAtt.note?' — "'+lastAtt.note+'"':'')+'</div>';
+    }
+    document.getElementById('disp-body').innerHTML =
+      '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:6px">'+historyTxt+'</div>'
+      +historyDetail
+      +'<div style="font-size:13px;color:var(--text);margin-bottom:14px;font-weight:600">What happened?</div>'
+      +'<div style="display:flex;flex-direction:column;gap:8px">'
+      +'<button class="btn btn-outline" style="justify-content:flex-start;padding:14px;text-align:left" onclick="pickDisp(\'no_answer\')">📵 No answer</button>'
+      +'<button class="btn btn-outline" style="justify-content:flex-start;padding:14px;text-align:left" onclick="pickDisp(\'callback_later\')">📞 Reached — call back later</button>'
+      +'<button class="btn btn-outline" style="justify-content:flex-start;padding:14px;text-align:left" onclick="pickDisp(\'consult_booked\')">📅 Reached — book consultation</button>'
+      +'<button class="btn btn-outline" style="justify-content:flex-start;padding:14px;text-align:left;color:var(--danger);border-color:rgba(229,62,62,0.3)" onclick="pickDisp(\'not_interested\')">❌ Reached — not interested</button>'
+      +'</div>';
+    document.getElementById('disp-footer').innerHTML = '<button class="btn btn-ghost" onclick="closeDisp()">Cancel</button>';
+    return;
+  }
+  // Step 2: outcome-specific fields
+  var attNum = attCount + 1; // this attempt's number
+  var defaultDays;
+  if(DISP.outcome === 'no_answer'){
+    if(attNum===1) defaultDays = 2;
+    else if(attNum===2) defaultDays = 4;
+    else defaultDays = null; // attempt 3+ = no auto-next; will auto-Lost after 14d
+  } else if(DISP.outcome === 'callback_later'){
+    defaultDays = 3; // for vague
+  }
+  var defDate = '';
+  if(defaultDays !== null && defaultDays !== undefined){
+    var d = new Date(); d.setDate(d.getDate()+defaultDays); d.setHours(9,0,0,0);
+    defDate = d.toISOString().slice(0,16);
+  }
+  var body = '';
+  if(DISP.outcome === 'no_answer'){
+    body += '<div style="background:#FEF7E5;border:1.5px solid #F0D285;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--navy)"><strong>📵 No answer</strong> · This will be attempt #'+attNum+'</div>';
+    if(attNum >= 3){
+      body += '<div style="background:#FEE2E2;border:1.5px solid #FECACA;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--danger)"><strong>⚠ Final attempt</strong> · No more reminders. Lead auto-closes as unresponsive after 14 days if no reply.</div>';
+    }
+    body += '<div class="fi" style="margin-bottom:14px"><label>Channel used</label><select id="disp-channel"><option value="whatsapp">WhatsApp</option><option value="call">Phone Call</option><option value="both">Both</option></select></div>';
+    if(attNum < 3){
+      body += '<div class="fi" style="margin-bottom:14px"><label>Next reminder</label>'
+        +'<div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">'
+        +'<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;text-transform:none;letter-spacing:0;color:var(--text);font-weight:500"><input type="radio" name="disp-rem" value="default" checked onchange="dispRemChange()"/> In '+defaultDays+' days (suggested)</label>'
+        +'<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;text-transform:none;letter-spacing:0;color:var(--text);font-weight:500"><input type="radio" name="disp-rem" value="custom" onchange="dispRemChange()"/> Pick a different time</label>'
+        +'<input type="datetime-local" id="disp-rem-custom" style="display:none;margin-top:6px" value="'+defDate+'"/>'
+        +'<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;text-transform:none;letter-spacing:0;color:var(--text);font-weight:500"><input type="radio" name="disp-rem" value="snooze" onchange="dispRemChange()"/> Snooze longer</label>'
+        +'<select id="disp-rem-snooze" style="display:none;margin-top:6px"><option value="7">1 week</option><option value="14">2 weeks</option><option value="30">1 month</option></select>'
+        +'<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;text-transform:none;letter-spacing:0;color:var(--text);font-weight:500"><input type="radio" name="disp-rem" value="stop" onchange="dispRemChange()"/> Stop reminders (manual follow-up only)</label>'
+        +'</div></div>';
+    }
+    body += '<div class="fi"><label>Note (optional)</label><input type="text" id="disp-note" placeholder="Any context worth remembering"/></div>';
+  } else if(DISP.outcome === 'callback_later'){
+    body += '<div style="background:#E0EBFE;border:1.5px solid #BFDBFE;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--navy)"><strong>📞 Call back later</strong></div>';
+    body += '<div class="fi" style="margin-bottom:14px"><label>Did they give a specific time?</label>'
+      +'<div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">'
+      +'<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;text-transform:none;letter-spacing:0;color:var(--text);font-weight:500"><input type="radio" name="disp-cb" value="specific" onchange="dispCbChange()" checked/> Yes, specific time</label>'
+      +'<input type="datetime-local" id="disp-cb-time" style="margin-top:4px" value="'+defDate+'"/>'
+      +'<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;text-transform:none;letter-spacing:0;color:var(--text);font-weight:500;margin-top:6px"><input type="radio" name="disp-cb" value="vague" onchange="dispCbChange()"/> Vague ("call later") → remind in 3 days</label>'
+      +'</div></div>';
+    body += '<div class="fi"><label>Note (optional)</label><input type="text" id="disp-note" placeholder="What did they say?"/></div>';
+  } else if(DISP.outcome === 'consult_booked'){
+    var todayStr = new Date().toISOString().slice(0,10);
+    body += '<div style="background:#D1FAE5;border:1.5px solid #6EE7B7;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--navy)"><strong>📅 Booking consultation</strong> · Reminders for this lead will stop</div>';
+    body += '<div class="fg" style="margin-bottom:14px">'
+      +'<div class="fi"><label>Consultation Date *</label><input type="date" id="disp-cs-date" min="'+todayStr+'" value="'+todayStr+'"/></div>'
+      +'<div class="fi"><label>Time</label><input type="time" id="disp-cs-time"/></div>'
+      +'</div>';
+    body += '<div class="fi"><label>Note (optional)</label><input type="text" id="disp-note" placeholder="Anything worth remembering"/></div>';
+  } else if(DISP.outcome === 'not_interested'){
+    body += '<div style="background:#FEE2E2;border:1.5px solid #FECACA;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--danger)"><strong>❌ Closing as Lost</strong> · Lead will be hidden from active pipeline but kept for records</div>';
+    body += '<div class="fi" style="margin-bottom:14px"><label>Reason *</label>'
+      +'<select id="disp-lost-reason" onchange="dispReasonChange()">'
+      +'<option value="">— Select reason —</option>'
+      +'<option value="budget">Budget mismatch</option>'
+      +'<option value="already_booked">Already booked elsewhere</option>'
+      +'<option value="browsing">Just browsing</option>'
+      +'<option value="wrong_number">Wrong number / not the bride</option>'
+      +'<option value="postponed">Wedding postponed/cancelled</option>'
+      +'<option value="other">Other</option>'
+      +'</select>'
+      +'<input type="text" id="disp-lost-other" placeholder="Specify..." style="display:none;margin-top:6px"/>'
+      +'</div>';
+    body += '<div class="fi"><label>Note (optional)</label><input type="text" id="disp-note" placeholder="Any context worth remembering"/></div>';
+  }
+  document.getElementById('disp-body').innerHTML = body;
+  var saveLabel = DISP.outcome === 'consult_booked' ? 'Book & Move to Stage 2' : DISP.outcome === 'not_interested' ? 'Close as Lost' : 'Save Attempt';
+  var saveClass = DISP.outcome === 'not_interested' ? 'btn-danger' : 'btn-primary';
+  document.getElementById('disp-footer').innerHTML =
+    '<button class="btn btn-ghost" onclick="DISP.outcome=null;renderDisp()">‹ Back</button>'
+    +'<button class="btn '+saveClass+'" onclick="saveDisp()">'+saveLabel+'</button>';
+}
+
+function pickDisp(outcome){
+  DISP.outcome = outcome;
+  renderDisp();
+}
+
+function dispRemChange(){
+  var sel = document.querySelector('input[name="disp-rem"]:checked');
+  if(!sel)return;
+  document.getElementById('disp-rem-custom').style.display = sel.value==='custom' ? '' : 'none';
+  document.getElementById('disp-rem-snooze').style.display = sel.value==='snooze' ? '' : 'none';
+}
+
+function dispCbChange(){
+  var sel = document.querySelector('input[name="disp-cb"]:checked');
+  if(!sel)return;
+  document.getElementById('disp-cb-time').style.display = sel.value==='specific' ? '' : 'none';
+}
+
+function dispReasonChange(){
+  var sel = document.getElementById('disp-lost-reason');
+  document.getElementById('disp-lost-other').style.display = (sel && sel.value==='other') ? '' : 'none';
+}
+
+async function saveDisp(){
+  var l = leads[DISP.brideId]; if(!l) return;
+  var brideId = DISP.brideId;
+  var note = (document.getElementById('disp-note')||{}).value || '';
+  var nowIso = new Date().toISOString();
+  var attId = 'att-'+uid();
+  var attempt = {id:attId, at:nowIso, outcome:DISP.outcome, note:note, by:'user'};
+  // Outcome-specific patches
+  var patch = {};
+  patch['contactAttempts/'+attId] = attempt;
+  patch['lastActivity'] = nowIso;
+  if(DISP.outcome === 'no_answer'){
+    var channel = (document.getElementById('disp-channel')||{}).value || 'whatsapp';
+    attempt.channel = channel;
+    patch['contactAttempts/'+attId+'/channel'] = channel;
+    // Advance stage from 0 -> 1 (Contacted) on first attempt only if not already advanced
+    if(Number(l.stage||0) === 0){
+      patch['stage'] = 1;
+    }
+    // Compute next reminder
+    var atts = Object.values(l.contactAttempts||{});
+    var attNum = atts.length + 1;
+    if(attNum >= 3){
+      // Final attempt - no next reminder, will auto-Lost after 14d
+      patch['nextReminderAt'] = null;
+      patch['remindersStopped'] = false; // not stopped, just no scheduled next
+    } else {
+      var remChoice = (document.querySelector('input[name="disp-rem"]:checked')||{}).value || 'default';
+      var next = null;
+      if(remChoice === 'default'){
+        var defD = attNum===1 ? 2 : 4;
+        var nd = new Date(); nd.setDate(nd.getDate()+defD); nd.setHours(9,0,0,0);
+        next = nd.toISOString();
+      } else if(remChoice === 'custom'){
+        var cv = (document.getElementById('disp-rem-custom')||{}).value;
+        if(cv) next = new Date(cv).toISOString();
+      } else if(remChoice === 'snooze'){
+        var sd = parseInt((document.getElementById('disp-rem-snooze')||{}).value || 7);
+        var nd2 = new Date(); nd2.setDate(nd2.getDate()+sd); nd2.setHours(9,0,0,0);
+        next = nd2.toISOString();
+      } else if(remChoice === 'stop'){
+        patch['remindersStopped'] = true;
+        next = null;
+      }
+      patch['nextReminderAt'] = next;
+    }
+  } else if(DISP.outcome === 'callback_later'){
+    var cbChoice = (document.querySelector('input[name="disp-cb"]:checked')||{}).value || 'specific';
+    var next2 = null;
+    if(cbChoice === 'specific'){
+      var ct = (document.getElementById('disp-cb-time')||{}).value;
+      if(!ct){notif('Please pick a callback time.');return;}
+      next2 = new Date(ct).toISOString();
+    } else {
+      var nd3 = new Date(); nd3.setDate(nd3.getDate()+3); nd3.setHours(9,0,0,0);
+      next2 = nd3.toISOString();
+    }
+    patch['nextReminderAt'] = next2;
+    if(Number(l.stage||0) === 0){
+      patch['stage'] = 1;
+    }
+  } else if(DISP.outcome === 'consult_booked'){
+    var csDate = (document.getElementById('disp-cs-date')||{}).value;
+    var csTime = (document.getElementById('disp-cs-time')||{}).value || '';
+    if(!csDate){notif('Consultation date is required.');return;}
+    // Create the consultation appointment
+    var apptKey = 'a-'+uid();
+    var appt = {key:apptKey, date:csDate, time:csTime, reason:'Consultation', note:note, cancelled:false, createdAt:nowIso};
+    patch['appointments/'+apptKey] = appt;
+    patch['stage'] = 2;
+    patch['nextReminderAt'] = null;
+    patch['remindersStopped'] = true; // stage 2+ = no more contact reminders
+  } else if(DISP.outcome === 'not_interested'){
+    var reason = (document.getElementById('disp-lost-reason')||{}).value;
+    if(!reason){notif('Please pick a reason.');return;}
+    var otherTxt = '';
+    if(reason === 'other'){
+      otherTxt = (document.getElementById('disp-lost-other')||{}).value.trim();
+      if(!otherTxt){notif('Please specify the reason.');return;}
+    }
+    patch['lost'] = true;
+    patch['lostReason'] = reason;
+    patch['lostReasonNote'] = otherTxt;
+    patch['lostAt'] = nowIso;
+    patch['nextReminderAt'] = null;
+    patch['remindersStopped'] = true;
+  }
+  window._saving = true;
+  try {
+    await fbP('/brides/'+brideId, patch);
+    // Update local
+    if(!brides[brideId]) brides[brideId] = {};
+    brides[brideId].contactAttempts = brides[brideId].contactAttempts || {};
+    brides[brideId].contactAttempts[attId] = attempt;
+    Object.keys(patch).forEach(function(k){
+      if(k.indexOf('/') === -1){
+        brides[brideId][k] = patch[k];
+      }
+    });
+    if(DISP.outcome === 'consult_booked'){
+      brides[brideId].appointments = brides[brideId].appointments || {};
+      brides[brideId].appointments[apptKey] = appt;
+    }
+    projectViews();
+    try { await logHistory(brideId, 'contact-attempt', {outcome:DISP.outcome, attempt:attNum||1}); } catch(e){}
+    var msg = {no_answer:'Attempt logged.',callback_later:'Callback scheduled.',consult_booked:'Consultation booked.',not_interested:'Lead closed.'}[DISP.outcome];
+    notif(msg);
+    closeDisp();
+    render();
+  } catch(e) {
+    notif('Error: '+e.message);
+  } finally {
+    window._saving = false;
+  }
+}
+
+// Reopen a lost lead
+async function reopenLead(brideId){
+  var r = await showConfirm({title:'Reopen lead',msg:'Move this lead back into the active pipeline?',yesText:'Reopen'});
+  if(!r.ok) return;
+  try {
+    await fbP('/brides/'+brideId, {lost:false, lostReason:null, lostAt:null, remindersStopped:false});
+    if(brides[brideId]){
+      brides[brideId].lost = false;
+      brides[brideId].lostReason = null;
+      brides[brideId].lostAt = null;
+      brides[brideId].remindersStopped = false;
+    }
+    projectViews();
+    try { await logHistory(brideId, 'lead-reopen', {}); } catch(e){}
+    notif('Lead reopened.');
+    render();
+  } catch(e) {
+    notif('Error: '+e.message);
+  }
+}
+
+// Auto-Lost daily check: brides with 3+ no_answer attempts where the 3rd was 14+ days ago
+async function checkAutoLost(){
+  var todayKey = new Date().toISOString().slice(0,10);
+  var lastRun = localStorage.getItem('biso_autoLostLastRun');
+  if(lastRun === todayKey) return; // only run once per calendar day
+  var closed = 0;
+  var brideIds = Object.keys(brides);
+  for(var i = 0; i < brideIds.length; i++){
+    var b = brides[brideIds[i]];
+    if(!b || b.lost || b.confirmed || b.cancelled) continue;
+    var atts = Object.values(b.contactAttempts||{});
+    var noAnswerAtts = atts.filter(function(a){return a.outcome === 'no_answer';})
+      .sort(function(a,b){return new Date(a.at) - new Date(b.at);});
+    if(noAnswerAtts.length < 3) continue;
+    var thirdAttDate = new Date(noAnswerAtts[2].at);
+    var daysSince = (Date.now() - thirdAttDate.getTime()) / 86400000;
+    if(daysSince < 14) continue;
+    // Check no contact attempts at all since 3rd
+    var anyLater = atts.some(function(a){return new Date(a.at) > thirdAttDate;});
+    if(anyLater) continue;
+    // Auto-close
+    try {
+      await fbP('/brides/'+b.id, {lost:true, lostReason:'unresponsive', lostAt:new Date().toISOString(), remindersStopped:true});
+      b.lost = true; b.lostReason = 'unresponsive'; b.lostAt = new Date().toISOString(); b.remindersStopped = true;
+      try { await logHistory(b.id, 'auto-lost', {reason:'unresponsive', daysSince:Math.round(daysSince)}); } catch(e){}
+      closed++;
+    } catch(e){ /* ignore single failure */ }
+  }
+  localStorage.setItem('biso_autoLostLastRun', todayKey);
+  if(closed > 0){
+    projectViews();
+    notif('Auto-closed '+closed+' unresponsive lead'+(closed!==1?'s':'')+'.');
+    if(view === 'pipeline') render();
+  }
+}
+
 (function(){
   try {
     function chk(){var b=document.getElementById('MSB');if(b)b.style.display=window.innerWidth<=900?'flex':'none';}
@@ -3830,7 +4202,10 @@ async function clearData(){
       console.error('Error:', msg, 'at line', line);
       return false;
     };
-    loadData().catch(function(e){
+    loadData().then(function(){
+      // Run auto-Lost check after data loads (once per calendar day)
+      setTimeout(function(){ checkAutoLost().catch(function(e){console.error('autoLost:',e);}); }, 1500);
+    }).catch(function(e){
       var lerr=document.getElementById('lerr'),lm=document.getElementById('lm');
       if(lerr&&lm){lerr.style.display='block';lm.textContent='Load failed: '+e.message;}
     });
