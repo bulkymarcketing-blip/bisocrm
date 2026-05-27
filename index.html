@@ -1120,6 +1120,8 @@ function rCustomers(){
 function rSchedule(){
   // Collect ALL upcoming events: wedding dates, homecoming dates, going-away dates, appointments
   // Skip anniversaries entirely. Skip cancelled appointments.
+  // Schedule modes (window._schedMode): 'appts' (default) | 'followups' | 'both'
+  var mode = window._schedMode || 'appts';
   var allEvents = [];
   var now = new Date();now.setHours(0,0,0,0);
   
@@ -1133,72 +1135,98 @@ function rSchedule(){
     'Final Trial': {color:'#DC2626', bg:'#FEE2E2', label:'Final Trial'},
     'Fabric Appointment': {color:'#0D9488', bg:'#CCFBF1', label:'Fabric'},
     'Pickup': {color:'#6B7280', bg:'#F3F4F6', label:'Pickup'},
-    'Other': {color:'#6B7280', bg:'#F3F4F6', label:'Other'}
+    'Other': {color:'#6B7280', bg:'#F3F4F6', label:'Other'},
+    'Follow-up': {color:'#D69E2E', bg:'#FEF7E5', label:'Follow-up'}
   };
   
-  // First pass: collect every event from every bride
-  lA().forEach(function(b){
-    if(b.cancelled)return; // skip cancelled bookings
-    if(q && !(b.name||'').toLowerCase().includes(q))return;
-    var ev = b.events || {};
-    // Rule 3: Wedding/Homecoming/Going Away only show if bride has an invoice (advance paid)
-    var hasInvoice = b.invoices && Object.keys(b.invoices).length > 0;
-    var weddingDate = hasInvoice ? ((ev.wedding && ev.wedding.date) || b.weddingDate || '') : '';
-    var homecomingDate = hasInvoice && ev.homecoming && ev.homecoming.enabled ? ev.homecoming.date : '';
-    var goingAwayDate = hasInvoice && ev.goingAway && ev.goingAway.enabled ? ev.goingAway.date : '';
-    // Wedding + Homecoming on same day for same bride -> group as one card
-    // For now: each ceremony is a separate card unless same date
-    if(weddingDate){
-      var d = new Date(weddingDate); d.setHours(0,0,0,0);
-      if(d>=now){
-        allEvents.push({
-          brideId: b.id, brideName: b.name||'(no name)',
-          type: 'Wedding',
-          date: weddingDate,
-          time: (ev.wedding && ev.wedding.startTime) || '',
-          venue: (ev.wedding && ev.wedding.venue) || b.venue || '',
-          theme: (ev.wedding && ev.wedding.theme) || '',
-          extra: {homecomingDate:homecomingDate, goingAwayDate:goingAwayDate}
-        });
+  // Collect appointment-style events (skipped when mode === 'followups')
+  if(mode !== 'followups'){
+    lA().forEach(function(b){
+      if(b.cancelled)return; // skip cancelled bookings
+      if(q && !(b.name||'').toLowerCase().includes(q))return;
+      var ev = b.events || {};
+      // Rule 3: Wedding/Homecoming/Going Away only show if bride has an invoice (advance paid)
+      var hasInvoice = b.invoices && Object.keys(b.invoices).length > 0;
+      var weddingDate = hasInvoice ? ((ev.wedding && ev.wedding.date) || b.weddingDate || '') : '';
+      var homecomingDate = hasInvoice && ev.homecoming && ev.homecoming.enabled ? ev.homecoming.date : '';
+      var goingAwayDate = hasInvoice && ev.goingAway && ev.goingAway.enabled ? ev.goingAway.date : '';
+      // Wedding + Homecoming on same day for same bride -> group as one card
+      // For now: each ceremony is a separate card unless same date
+      if(weddingDate){
+        var d = new Date(weddingDate); d.setHours(0,0,0,0);
+        if(d>=now){
+          allEvents.push({
+            brideId: b.id, brideName: b.name||'(no name)',
+            type: 'Wedding',
+            date: weddingDate,
+            time: (ev.wedding && ev.wedding.startTime) || '',
+            venue: (ev.wedding && ev.wedding.venue) || b.venue || '',
+            theme: (ev.wedding && ev.wedding.theme) || '',
+            extra: {homecomingDate:homecomingDate, goingAwayDate:goingAwayDate}
+          });
+        }
       }
-    }
-    if(homecomingDate && homecomingDate !== weddingDate){
-      var d = new Date(homecomingDate); d.setHours(0,0,0,0);
-      if(d>=now){
-        allEvents.push({
-          brideId: b.id, brideName: b.name||'(no name)',
-          type: 'Homecoming', date: homecomingDate,
-          time: ev.homecoming.startTime || '', venue: ev.homecoming.venue || '',
-          theme: ev.homecoming.theme || ''
-        });
+      if(homecomingDate && homecomingDate !== weddingDate){
+        var d = new Date(homecomingDate); d.setHours(0,0,0,0);
+        if(d>=now){
+          allEvents.push({
+            brideId: b.id, brideName: b.name||'(no name)',
+            type: 'Homecoming', date: homecomingDate,
+            time: ev.homecoming.startTime || '', venue: ev.homecoming.venue || '',
+            theme: ev.homecoming.theme || ''
+          });
+        }
       }
-    }
-    if(goingAwayDate){
-      var d = new Date(goingAwayDate); d.setHours(0,0,0,0);
-      if(d>=now){
-        allEvents.push({
-          brideId: b.id, brideName: b.name||'(no name)',
-          type: 'Going Away', date: goingAwayDate,
-          time: ev.goingAway.startTime || '', venue: ev.goingAway.venue || '',
-          theme: ''
-        });
+      if(goingAwayDate){
+        var d = new Date(goingAwayDate); d.setHours(0,0,0,0);
+        if(d>=now){
+          allEvents.push({
+            brideId: b.id, brideName: b.name||'(no name)',
+            type: 'Going Away', date: goingAwayDate,
+            time: ev.goingAway.startTime || '', venue: ev.goingAway.venue || '',
+            theme: ''
+          });
+        }
       }
-    }
-    // Appointments
-    Object.values(b.appointments||{}).forEach(function(a){
-      if(a.cancelled || a.done || !a.date)return;
-      var d = new Date(a.date); d.setHours(0,0,0,0);
-      if(d>=now){
-        var t = a.reason || 'Other';
-        if(!typeMeta[t])t='Other';
-        allEvents.push({
-          brideId: b.id, brideName: b.name||'(no name)',
-          type: t, date: a.date, time: a.time||'',
-          venue: '', note: a.note||''
-        });
-      }
+      // Appointments
+      Object.values(b.appointments||{}).forEach(function(a){
+        if(a.cancelled || a.done || !a.date)return;
+        var d = new Date(a.date); d.setHours(0,0,0,0);
+        if(d>=now){
+          var t = a.reason || 'Other';
+          if(!typeMeta[t])t='Other';
+          allEvents.push({
+            brideId: b.id, brideName: b.name||'(no name)',
+            type: t, date: a.date, time: a.time||'',
+            venue: '', note: a.note||''
+          });
+        }
+      });
     });
-  });
+  }
+  
+  // Collect follow-up reminders (shown when mode === 'followups' or 'both')
+  if(mode !== 'appts'){
+    Object.values(brides).forEach(function(b){
+      if(b.confirmed || b.cancelled || b.lost || b.remindersStopped) return;
+      if(!b.nextReminderAt) return;
+      if(q && !(b.name||'').toLowerCase().includes(q)) return;
+      var rd = new Date(b.nextReminderAt); 
+      var rDay = new Date(rd); rDay.setHours(0,0,0,0);
+      // Include past-due reminders too (they need attention NOW)
+      // For sort: keep the actual reminder timestamp; for the day-grouping, use the day
+      allEvents.push({
+        brideId: b.id, brideName: b.name||'(no name)',
+        type: 'Follow-up',
+        date: rd.toISOString().slice(0,10),
+        time: rd.toTimeString().slice(0,5),
+        venue: '',
+        note: 'Follow-up reminder',
+        isFollowUp: true,
+        overdue: rd < new Date()
+      });
+    });
+  }
   
   // Sort all events ascending by date+time
   allEvents.sort(function(a,b){
@@ -1225,7 +1253,13 @@ function rSchedule(){
     var dateLabel = d.toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short'});
     // Round to nearest day to avoid timezone/time-of-day issues
     var daysAway = Math.round((d - now) / 86400000);
-    var dayBadge = daysAway===0?'Today': daysAway===1?'Tomorrow': daysAway>1&&daysAway<7?'in '+daysAway+'d' : '';
+    var dayBadge;
+    if(daysAway === 0) dayBadge = 'Today';
+    else if(daysAway === 1) dayBadge = 'Tomorrow';
+    else if(daysAway > 1 && daysAway < 7) dayBadge = 'in '+daysAway+'d';
+    else if(daysAway < 0) dayBadge = Math.abs(daysAway)+'d overdue';
+    else dayBadge = '';
+    var dayBadgeColor = (e.isFollowUp && e.overdue) ? 'var(--danger)' : 'var(--gold)';
     var timeLabel = e.time ? ' · '+e.time : '';
     var venueLabel = e.venue ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">📍 '+e.venue+'</div>' : '';
     var themeLabel = e.theme ? '<span style="display:inline-block;background:rgba(0,0,0,0.06);padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;color:var(--text2);margin-left:6px">'+e.theme+'</span>' : '';
@@ -1242,15 +1276,23 @@ function rSchedule(){
       }
       if(extras.length) extraLabel = '<div style="font-size:11px;color:var(--muted);margin-top:4px;font-style:italic">+ '+extras.join(' · ')+'</div>';
     }
-    return '<div onclick="openDetail(\'' + e.brideId + '\')" style="background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer;display:flex;align-items:flex-start;gap:12px;transition:transform .1s">'
+    // Follow-up cards get a small "📞 Log Attempt" CTA so the manager can act from Schedule
+    var followUpCta = '';
+    if(e.isFollowUp){
+      followUpCta = '<button onclick="event.stopPropagation();openDisp(\''+e.brideId+'\')" style="background:var(--navy);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;margin-top:6px">📞 Log Attempt</button>';
+    }
+    // Dashed border for follow-ups to visually distinguish from appointments
+    var cardBorder = e.isFollowUp ? '1.5px dashed '+meta.color : '1.5px solid var(--border)';
+    return '<div onclick="openDetail(\'' + e.brideId + '\')" style="background:#fff;border:'+cardBorder+';border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer;display:flex;align-items:flex-start;gap:12px;transition:transform .1s">'
       +'<div style="width:8px;align-self:stretch;background:'+meta.color+';border-radius:4px;flex-shrink:0"></div>'
       +'<div style="flex:1;min-width:0">'
-      +'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px"><span style="display:inline-block;background:'+meta.bg+';color:'+meta.color+';padding:3px 9px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase">'+meta.label+'</span>'+(dayBadge?'<span style="font-size:10px;color:var(--gold);font-weight:700">'+dayBadge+'</span>':'')+themeLabel+'</div>'
+      +'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px"><span style="display:inline-block;background:'+meta.bg+';color:'+meta.color+';padding:3px 9px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase">'+meta.label+'</span>'+(dayBadge?'<span style="font-size:10px;color:'+dayBadgeColor+';font-weight:700">'+dayBadge+'</span>':'')+themeLabel+'</div>'
       +'<div style="font-weight:700;color:var(--navy);font-size:15px;margin-bottom:2px">'+e.brideName+'</div>'
       +'<div style="font-size:12px;color:var(--text2)">'+dateLabel+timeLabel+'</div>'
       +venueLabel
       +extraLabel
-      +(e.note?'<div style="font-size:11px;color:var(--muted);margin-top:4px;font-style:italic">'+e.note+'</div>':'')
+      +(e.note && !e.isFollowUp?'<div style="font-size:11px;color:var(--muted);margin-top:4px;font-style:italic">'+e.note+'</div>':'')
+      +followUpCta
       +'</div>'
       +'</div>';
   }
@@ -1261,28 +1303,57 @@ function rSchedule(){
     return '<div style="margin-bottom:24px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:8px;border-bottom:1.5px solid var(--border)"><div style="font-family:Cinzel,serif;font-size:14px;letter-spacing:1.5px;color:var(--navy);font-weight:600;text-transform:uppercase">'+title+'</div>'+subtxt+'<div style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:600">'+list.length+'</div></div>'+list.map(eventCard).join('')+'</div>';
   }
   
+  // Mode toggle pill bar
+  function modeBtn(value, label){
+    var active = mode === value;
+    return '<button onclick="setSchedMode(\''+value+'\')" style="background:'+(active?'var(--surf)':'transparent')+';color:'+(active?'var(--navy)':'var(--muted)')+';font-size:11px;font-weight:600;padding:6px 12px;border-radius:6px;cursor:pointer;border:none;box-shadow:'+(active?'0 1px 2px rgba(27,43,75,0.08)':'none')+'">'+label+'</button>';
+  }
+  var toggleBar = '<div style="display:flex;align-items:center;gap:4px;background:var(--bg);border-radius:8px;padding:3px;margin-bottom:14px;width:fit-content">'
+    +modeBtn('appts','Appointments')
+    +modeBtn('followups','Follow-ups')
+    +modeBtn('both','Both')
+    +'</div>';
+  
   var body = '';
   if(allEvents.length===0){
-    body = '<div class="empty" style="padding:60px"><div class="et">No upcoming events</div><div style="font-size:12px;color:var(--muted);margin-top:6px">Wedding dates, consultations, trials and pickups will appear here</div></div>';
+    var emptyMsg = mode==='followups' 
+      ? 'No follow-up reminders scheduled'
+      : mode==='both' 
+        ? 'No upcoming events or follow-ups'
+        : 'No upcoming events';
+    var emptyHint = mode==='followups'
+      ? 'When you log a "No answer" or "Call back later" attempt, the next reminder appears here'
+      : 'Wedding dates, consultations, trials and pickups will appear here';
+    body = '<div class="empty" style="padding:60px"><div class="et">'+emptyMsg+'</div><div style="font-size:12px;color:var(--muted);margin-top:6px">'+emptyHint+'</div></div>';
   } else {
     body = section('This Week', weekly, 'next 7 days') 
          + section('This Month', monthly, 'next 30 days')
          + section('Later', later, '');
   }
   
-  // Legend (color reference)
-  var legendItems = [
-    ['Wedding','#C8A55B'], ['Homecoming','#1A2B4A'], ['Going Away','#6B4FA0'],
-    ['Consultation','#2563EB'], ['Trial','#EA580C'], ['Final Trial','#DC2626'],
-    ['Fabric','#0D9488'], ['Pickup','#6B7280']
-  ];
-  var legend = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;padding:10px 12px;background:var(--bg);border-radius:10px;border:1px solid var(--border)">';
-  legendItems.forEach(function(li){
-    legend += '<div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text2);font-weight:600"><span style="width:8px;height:8px;background:'+li[1]+';border-radius:50%"></span>'+li[0]+'</div>';
-  });
-  legend += '</div>';
+  // Legend (color reference) — only show when in appts or both mode
+  var legend = '';
+  if(mode !== 'followups'){
+    var legendItems = [
+      ['Wedding','#C8A55B'], ['Homecoming','#1A2B4A'], ['Going Away','#6B4FA0'],
+      ['Consultation','#2563EB'], ['Trial','#EA580C'], ['Final Trial','#DC2626'],
+      ['Fabric','#0D9488'], ['Pickup','#6B7280']
+    ];
+    if(mode === 'both') legendItems.push(['Follow-up','#D69E2E']);
+    legend = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;padding:10px 12px;background:var(--bg);border-radius:10px;border:1px solid var(--border)">';
+    legendItems.forEach(function(li){
+      legend += '<div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text2);font-weight:600"><span style="width:8px;height:8px;background:'+li[1]+';border-radius:50%"></span>'+li[0]+'</div>';
+    });
+    legend += '</div>';
+  }
   
-  document.getElementById('MC').innerHTML = legend + body;
+  document.getElementById('MC').innerHTML = toggleBar + legend + body;
+}
+
+// Helper: switch Schedule mode and re-render
+function setSchedMode(m){
+  window._schedMode = m;
+  rSchedule();
 }
 
 function rQuotations(){
