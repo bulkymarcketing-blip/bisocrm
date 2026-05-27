@@ -263,9 +263,11 @@ textarea{resize:vertical;min-height:80px}
 .user-chip .em{color:rgba(255,255,255,0.9);font-weight:500;display:block;font-size:11px;word-break:break-all}
 .user-chip .rl{color:var(--gold-lt);font-size:9px;letter-spacing:1px;text-transform:uppercase;margin-top:2px}
 /* ===== Topbar avatar menu (Phase 1B-1.1) ===== */
-.av-btn{display:none;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:var(--navy);color:#fff;border:2px solid var(--gold);font-family:'Cinzel',serif;font-size:12px;font-weight:600;letter-spacing:.5px;cursor:pointer;flex-shrink:0;padding:0;transition:transform .15s}
+.av-btn{display:none;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:var(--navy);color:#fff;border:2px solid var(--gold);font-family:'Cinzel',serif;font-size:12px;font-weight:600;letter-spacing:.5px;cursor:pointer;flex-shrink:0;padding:0;transition:transform .15s;position:relative}
 .av-btn.show{display:flex}
 .av-btn:active{transform:scale(0.94)}
+.av-dot{display:none;position:absolute;top:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:var(--danger);border:2px solid var(--surf);box-shadow:0 0 0 1px rgba(0,0,0,0.05)}
+.av-dot.show{display:block;animation:pulse 2s infinite}
 .av-menu{position:absolute;top:54px;right:14px;background:var(--surf);border:1px solid var(--border);border-radius:10px;box-shadow:var(--sh2);min-width:220px;max-width:280px;z-index:300;display:none;overflow:hidden}
 .av-menu.show{display:block;animation:avFade .18s ease-out}
 @keyframes avFade{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
@@ -341,10 +343,11 @@ textarea{resize:vertical;min-height:80px}
 <div id="APP" style="display:none"><div class="app">
 <aside class="sidebar" id="SB"><div class="brand"><img class="brand-logo" src="logo.png" alt="" onerror="this.style.display='none'"/><div><div class="brand-name">BISO</div><div class="brand-sub">Bridal CRM</div></div></div><nav class="nav" id="SN"></nav><div class="sidebar-foot"><div class="user-chip" id="UC"><span class="em" id="UC-em"></span><span class="rl" id="UC-rl"></span></div><div class="sync-badge"><div class="sync-dot"></div><div class="sync-txt" id="ST">Connecting…</div></div><button class="logout-btn" id="LO" onclick="doLogout()">Sign Out</button></div></aside>
 <div class="mov" id="MOV" onclick="closeSB()"></div>
-<div class="main"><div class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="hamburger" onclick="openSB()"><svg width="20" height="16" viewBox="0 0 20 16" fill="none"><rect width="20" height="2" rx="1" fill="currentColor"/><rect y="7" width="20" height="2" rx="1" fill="currentColor"/><rect y="14" width="20" height="2" rx="1" fill="currentColor"/></svg></button><div class="page-title" id="PT">Lead Pipeline</div></div><div class="topbar-right"><div class="swrap"><span class="sicon">⌕</span><input type="text" class="sbox" id="SI" placeholder="Search…" oninput="doSearch()"/></div><button id="MSB" style="display:none;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:8px;cursor:pointer" onclick="toggleMSB()">⌕</button><button class="av-btn" id="AV" onclick="toggleAvMenu(event)" aria-label="Account"><span id="AV-in">··</span></button><button class="btn btn-primary" id="AB" onclick="handleAdd()">+ Add</button></div></div>
+<div class="main"><div class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="hamburger" onclick="openSB()"><svg width="20" height="16" viewBox="0 0 20 16" fill="none"><rect width="20" height="2" rx="1" fill="currentColor"/><rect y="7" width="20" height="2" rx="1" fill="currentColor"/><rect y="14" width="20" height="2" rx="1" fill="currentColor"/></svg></button><div class="page-title" id="PT">Lead Pipeline</div></div><div class="topbar-right"><div class="swrap"><span class="sicon">⌕</span><input type="text" class="sbox" id="SI" placeholder="Search…" oninput="doSearch()"/></div><button id="MSB" style="display:none;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:8px;cursor:pointer" onclick="toggleMSB()">⌕</button><button class="av-btn" id="AV" onclick="toggleAvMenu(event)" aria-label="Account"><span id="AV-in">··</span><span class="av-dot" id="AV-dot"></span></button><button class="btn btn-primary" id="AB" onclick="handleAdd()">+ Add</button></div></div>
 <div class="av-bkdrp" id="AV-bk" onclick="closeAvMenu()"></div>
 <div class="av-menu" id="AV-m" onclick="event.stopPropagation()">
   <div class="av-info"><div class="em" id="AV-em"></div><div class="rl" id="AV-rl"></div></div>
+  <button class="av-item" id="AV-myreq" onclick="closeAvMenu();openMyRequests()" style="display:none"><span class="ic">\u2691</span>My Requests <span id="AV-myreq-c" style="margin-left:auto;background:var(--gold);color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:8px"></span></button>
   <button class="av-item dgr" onclick="closeAvMenu();doLogout()"><span class="ic">⏻</span>Sign Out</button>
 </div>
 <div id="MSBar" style="display:none;padding:10px 14px;background:var(--surf);border-bottom:1.5px solid var(--border)"><div class="swrap" style="width:100%"><span class="sicon">⌕</span><input type="text" class="sbox" id="MSI" placeholder="Search…" oninput="document.getElementById('SI').value=this.value;doSearch()" style="width:100%"/></div></div><div class="content" id="MC"></div></div>
@@ -740,9 +743,13 @@ async function loadData(){
         if(window._saving)return;
         brides=newB||{};
         projectViews();
+        // Also refresh requests (lightweight). Errors here are non-fatal.
+        try{await loadRequests();}catch(re){}
         // Don't re-render if a modal is open (the user is interacting)
         var anyOpen = document.querySelector('.overlay.show, .overlay[style*="display: flex"], .overlay[style*="display:flex"]');
         if(!anyOpen)render();
+        // Update avatar red-dot regardless
+        updateAvatarDot();
       }catch(e){}
     },15000);
   }catch(e){
@@ -847,6 +854,172 @@ async function loadRole(){
     window._auth.role='manager';
     throw e; // propagate so startAfterAuth knows it failed
   }
+}
+// ===== Phase 1B-2: Approval Requests =====
+// When manager performs a destructive action, instead of executing directly we record a request
+// at /requests/<id>. Owner approves/rejects in Daily Brief.
+// Cache of pending+resolved requests, populated by loadRequests()
+var REQUESTS={};
+// Actions that require approval when role=manager
+var REQ_TYPES={
+  delete_bride:{label:'Delete bride',reasonRequired:true,destructive:true},
+  delete_payment:{label:'Delete payment',reasonRequired:true,destructive:true},
+  refund:{label:'Cancel booking with refund',reasonRequired:true,destructive:true}
+};
+// Returns true if current user (manager) needs approval for this action type. Owner always direct.
+function needsApproval(type){
+  if(isOwner())return false;
+  return !!REQ_TYPES[type];
+}
+async function loadRequests(){
+  try{
+    var r=await fbG('/requests');
+    REQUESTS=r||{};
+  }catch(e){
+    console.error('[req] loadRequests failed:',e.message);
+    REQUESTS={};
+  }
+}
+function reqId(){return 'req-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+// Create a new request. Returns the request id.
+async function createRequest(opts){
+  // opts: {type, targetPath, payload, reason, snapshot}
+  var id=reqId();
+  var u=window._auth.user||{};
+  var req={
+    id:id,
+    type:opts.type,
+    targetPath:opts.targetPath||'',
+    payload:opts.payload||null,
+    snapshot:opts.snapshot||null,
+    reason:opts.reason||'',
+    requestedBy:u.email||'',
+    requestedByUid:u.uid||'',
+    requestedAt:new Date().toISOString(),
+    status:'pending'
+  };
+  await fbS('/requests/'+id,req);
+  REQUESTS[id]=req;
+  if(typeof updateAvatarDot==='function')updateAvatarDot();
+  return id;
+}
+// List pending requests (for owner queue + manager 'my requests')
+function listPendingRequests(){
+  return Object.values(REQUESTS||{}).filter(function(r){return r&&r.status==='pending';})
+    .sort(function(a,b){return (b.requestedAt||'').localeCompare(a.requestedAt||'');});
+}
+// List a manager's own requests (any status)
+function listMyRequests(){
+  var uid=window._auth.user&&window._auth.user.uid;
+  if(!uid)return [];
+  return Object.values(REQUESTS||{}).filter(function(r){return r&&r.requestedByUid===uid;})
+    .sort(function(a,b){return (b.requestedAt||'').localeCompare(a.requestedAt||'');});
+}
+function pendingRequestCount(){return listPendingRequests().length;}
+// Execute the action for an approved request. Each type has its own executor.
+async function executeRequest(req){
+  if(!req||!req.type)throw new Error('Invalid request');
+  if(req.type==='delete_bride'){
+    // Target path is /brides/<id> (or legacy /leads/<id>)
+    var id=req.targetPath.split('/').pop();
+    await fbD('/brides/'+id);
+    if(typeof leads!=='undefined'&&leads[id])delete leads[id];
+    if(typeof custs!=='undefined'&&custs[id])delete custs[id];
+    if(typeof brides!=='undefined'&&brides[id])delete brides[id];
+    return;
+  }
+  if(req.type==='delete_payment'){
+    // payload: {sId, iId, pid, src, amount, leadAdvanceBefore, leadBalanceBefore}
+    var p=req.payload||{};
+    var path=p.src==='lead'?'/leads/'+p.sId+'/invoices/'+p.iId+'/payments/'+p.pid:'/customers/'+p.sId+'/invoices/'+p.iId+'/payments/'+p.pid;
+    await fbD(path);
+    var obj=p.src==='lead'?leads[p.sId]:custs[p.sId];
+    if(obj&&obj.invoices&&obj.invoices[p.iId]&&obj.invoices[p.iId].payments){
+      delete obj.invoices[p.iId].payments[p.pid];
+    }
+    if(p.src==='lead'&&leads[p.sId]){
+      var amt=p.amount||0;
+      var newAdv=Math.max(0,(leads[p.sId].advance||0)-amt);
+      var newBal=(leads[p.sId].balance||0)+amt;
+      await fbP('/leads/'+p.sId,{advance:newAdv,balance:newBal});
+      leads[p.sId].advance=newAdv;leads[p.sId].balance=newBal;
+    }
+    return;
+  }
+  if(req.type==='refund'){
+    // payload: {leadId, refund, reason}
+    var p2=req.payload||{};
+    var lid=p2.leadId;var refund=p2.refund||0;var reason=p2.reason||'';
+    var l=leads[lid];if(!l)throw new Error('Bride not found');
+    var now=new Date().toISOString();
+    var patch={cancelled:true,cancelledAt:now,cancelReason:reason,refundAmount:refund};
+    var firstInv=Object.values(l.invoices||{})[0];
+    if(refund>0&&firstInv){
+      var pid='p-'+uid();
+      var pay={id:pid,amount:-refund,date:now.slice(0,10),method:'Refund',note:'Cancellation refund: '+reason,createdAt:now};
+      var pp={};pp[pid]=pay;
+      await fbP('/leads/'+lid+'/invoices/'+firstInv.id+'/payments',pp);
+      l.invoices[firstInv.id].payments=l.invoices[firstInv.id].payments||{};
+      l.invoices[firstInv.id].payments[pid]=pay;
+      patch.advance=Math.max(0,(l.advance||0)-refund);
+      patch.balance=(l.balance||0)+refund;
+    }
+    await fbP('/leads/'+lid,patch);
+    Object.assign(l,patch);
+    if(typeof logHistory==='function')await logHistory(lid,'cancel-booking',{reason:reason,refund:refund});
+    return;
+  }
+  throw new Error('Unknown request type: '+req.type);
+}
+async function approveRequest(reqId,note){
+  var req=REQUESTS[reqId];if(!req||req.status!=='pending')return;
+  try{
+    await executeRequest(req);
+    var u=window._auth.user||{};
+    var patch={status:'approved',resolvedBy:u.email||'',resolvedByUid:u.uid||'',resolvedAt:new Date().toISOString(),resolutionNote:note||''};
+    await fbP('/requests/'+reqId,patch);
+    Object.assign(req,patch);
+    notif('Request approved and applied.');
+    if(typeof updateAvatarDot==='function')updateAvatarDot();
+    render();
+  }catch(e){
+    notif('Failed to apply request: '+e.message);
+    console.error('[req] approveRequest:',e);
+  }
+}
+async function rejectRequest(reqId,note){
+  var req=REQUESTS[reqId];if(!req||req.status!=='pending')return;
+  try{
+    var u=window._auth.user||{};
+    var patch={status:'rejected',resolvedBy:u.email||'',resolvedByUid:u.uid||'',resolvedAt:new Date().toISOString(),resolutionNote:note||''};
+    await fbP('/requests/'+reqId,patch);
+    Object.assign(req,patch);
+    notif('Request rejected.');
+    if(typeof updateAvatarDot==='function')updateAvatarDot();
+    render();
+  }catch(e){
+    notif('Failed to reject: '+e.message);
+  }
+}
+// Friendly description of a request, used in UI
+function describeRequest(req){
+  if(!req)return '';
+  if(req.type==='delete_bride'){
+    var bid=(req.targetPath||'').split('/').pop();
+    var br=(typeof brides!=='undefined'?brides[bid]:null)||(typeof leads!=='undefined'?leads[bid]:null)||(typeof custs!=='undefined'?custs[bid]:null)||(req.snapshot||{});
+    var nm=(br&&br.name)||(req.snapshot&&req.snapshot.name)||'(unknown)';
+    return 'Delete bride: '+nm;
+  }
+  if(req.type==='delete_payment'){
+    var p=req.payload||{};
+    return 'Delete payment of '+fR(p.amount||0)+' on invoice';
+  }
+  if(req.type==='refund'){
+    var p2=req.payload||{};
+    var l=leads[p2.leadId]||{};
+    return 'Cancel booking + refund '+fR(p2.refund||0)+' for '+(l.name||'(unknown)');
+  }
+  return req.type;
 }
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function fmt(s){if(!s)return '—';return new Date(s).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}
@@ -983,6 +1156,37 @@ function cfYes(){
 function cfNo(){
   CM('cf-modal');
   if(_cfResolve){_cfResolve({ok:false}); _cfResolve = null;}
+}
+
+// ===== Phase 1B-2: Request-approval wrapper =====
+// Wraps showConfirm with request-flavoured copy. Re-prompts until manager provides a reason.
+// Returns same shape as showConfirm: {ok:bool, value?, note?}
+async function showRequestApprovalConfirm(opts){
+  // opts: {title, msg, reasonLabel, reasonRequired, input, inputType, inputLabel, inputDefault}
+  while(true){
+    var cfOpts={
+      title:opts.title||'Request Owner Approval',
+      msg:opts.msg||'',
+      yesText:'Submit Request',
+      noText:'Cancel',
+      dangerous:false,
+      note:true
+    };
+    if(opts.input){
+      cfOpts.input=true;
+      cfOpts.inputType=opts.inputType||'number';
+      cfOpts.inputLabel=opts.inputLabel||'Value';
+      cfOpts.inputDefault=opts.inputDefault!==undefined?opts.inputDefault:'';
+    }
+    var r=await showConfirm(cfOpts);
+    if(!r.ok)return r;
+    var reason=(r.note||'').trim();
+    if(opts.reasonRequired&&!reason){
+      notif('Please add a reason — required for approval.');
+      continue; // re-prompt
+    }
+    return {ok:true,value:r.value,note:reason};
+  }
 }
 
 function notif(msg){var el=document.getElementById('NF');el.textContent=msg;el.classList.add('show');setTimeout(function(){el.classList.remove('show');},3000);}
@@ -1738,10 +1942,31 @@ async function addPay(src,sId,iId){
   }catch(e){notif('Error: '+e.message);}
 }
 async function delPay(src,sId,iId,pid){
-  var _cr = await showConfirm({title:'Delete payment',msg:'Delete this payment record? This will adjust the balance.',yesText:'Delete',dangerous:true});if(!_cr.ok)return;
   var obj=src==='lead'?leads[sId]:custs[sId];if(!obj||!obj.invoices||!obj.invoices[iId])return;
   var pay=(obj.invoices[iId].payments||{})[pid];if(!pay)return;
   var amt=parseFloat(pay.amount)||0;
+  if(needsApproval('delete_payment')){
+    var rr=await showRequestApprovalConfirm({
+      title:'Request: Delete payment',
+      msg:'You are asking the owner to delete this payment of '+fR(amt)+'. This will adjust the bride\u2019s balance. Add a reason.',
+      reasonRequired:true
+    });
+    if(!rr.ok)return;
+    try{
+      await createRequest({
+        type:'delete_payment',
+        targetPath:(src==='lead'?'/leads/':'/customers/')+sId+'/invoices/'+iId+'/payments/'+pid,
+        payload:{src:src,sId:sId,iId:iId,pid:pid,amount:amt},
+        snapshot:pay,
+        reason:rr.note
+      });
+      notif('Request sent to owner for approval.');
+      openIDoc(src,sId,iId);
+    }catch(e){notif('Could not submit request: '+e.message);}
+    return;
+  }
+  // Owner: direct delete (original behaviour)
+  var _cr = await showConfirm({title:'Delete payment',msg:'Delete this payment record? This will adjust the balance.',yesText:'Delete',dangerous:true});if(!_cr.ok)return;
   var path=src==='lead'?'/leads/'+sId+'/invoices/'+iId+'/payments/'+pid:'/customers/'+sId+'/invoices/'+iId+'/payments/'+pid;
   try{
     await fbD(path);
@@ -2859,6 +3084,32 @@ async function delDoc(id,docId){
 // ---------- Cancellation ----------
 async function openCancelBooking(id){
   var l=leads[id];if(!l)return;
+  if(needsApproval('refund')){
+    // Manager: must request approval for cancellation+refund
+    var rr=await showRequestApprovalConfirm({
+      title:'Request: Cancel booking',
+      msg:'You are asking the owner to cancel '+l.name+'\u2019s booking. Enter refund amount (0 if no refund) and a reason. The owner will see this and decide.',
+      reasonRequired:true,
+      input:true,
+      inputType:'number',
+      inputLabel:'Refund amount (Rs)',
+      inputDefault:'0'
+    });
+    if(!rr.ok)return;
+    var refundReq=parseFloat(rr.value)||0;
+    try{
+      await createRequest({
+        type:'refund',
+        targetPath:'/brides/'+id,
+        payload:{leadId:id,refund:refundReq,reason:rr.note},
+        snapshot:{name:l.name,advance:l.advance||0,balance:l.balance||0,cancelled:l.cancelled||false},
+        reason:rr.note
+      });
+      notif('Request sent to owner for approval.');
+    }catch(e){notif('Could not submit request: '+e.message);}
+    return;
+  }
+  // Owner: direct cancellation (original behaviour)
   var r=await showConfirm({
     title:'Cancel booking',
     msg:'This will mark '+l.name+'\'s booking as cancelled. The record will be kept (locked, read-only) under Confirmed. Enter refund amount if any.',
@@ -3007,7 +3258,41 @@ async function confirmC(id){
   if(!ex){var cid='cust-'+uid();var nc={id:cid,name:l.name,phone:l.phone||'',email:l.email||'',weddingDate:l.weddingDate||'',venue:l.venue||'',bridesmaids:l.bridesmaids||0,notes:'',anniversary:'',createdAt:new Date().toISOString(),quotes:{},invoices:{}};await fbS('/customers/'+cid,nc);custs[cid]=nc;}
   CM('detail-modal');notif(l.name+' confirmed!');sv('clients');
 }
-async function delLead(id){var _cr = await showConfirm({title:'Delete lead',msg:'Delete this lead permanently? This cannot be undone.',yesText:'Delete',dangerous:true});if(!_cr.ok)return;await fbD('/leads/'+id);delete leads[id];CM('detail-modal');notif('Lead deleted.');render();}
+async function delLead(id){
+  var br=leads[id]||custs[id]||(typeof brides!=='undefined'?brides[id]:null);
+  var name=(br&&br.name)||'this bride';
+  if(needsApproval('delete_bride')){
+    // Manager: request approval
+    var rr=await showRequestApprovalConfirm({
+      title:'Request: Delete bride',
+      msg:'You are asking the owner to permanently delete '+name+'. The owner will see this in Daily Brief and decide. Add a reason explaining why.',
+      reasonRequired:true
+    });
+    if(!rr.ok)return;
+    try{
+      await createRequest({
+        type:'delete_bride',
+        targetPath:'/brides/'+id,
+        snapshot:br||null,
+        reason:rr.note
+      });
+      CM('detail-modal');
+      notif('Request sent to owner for approval.');
+      render();
+    }catch(e){notif('Could not submit request: '+e.message);}
+    return;
+  }
+  // Owner: direct delete (original behaviour)
+  var _cr = await showConfirm({title:'Delete bride',msg:'Delete '+name+' permanently? This cannot be undone.',yesText:'Delete',dangerous:true});
+  if(!_cr.ok)return;
+  await fbD('/leads/'+id);
+  delete leads[id];
+  if(typeof custs!=='undefined')delete custs[id];
+  if(typeof brides!=='undefined')delete brides[id];
+  CM('detail-modal');
+  notif('Bride deleted.');
+  render();
+}
 async function addAppt(id){
   var d=document.getElementById('ap-d-'+id);var lb=document.getElementById('ap-l-'+id);
   if(!d||!lb||!d.value||!lb.value.trim()){notif('Enter date and label.');return;}
@@ -4859,6 +5144,14 @@ function rDailyBrief(){
   // Header
   html += '<div style="margin-bottom:18px"><div style="font-family:Cinzel,serif;font-size:18px;color:var(--navy);letter-spacing:.5px">'+greet+'</div><div style="font-size:12px;color:var(--muted);margin-top:2px">'+dateStr+'</div></div>';
   
+  // Section 0: Approval Requests (owner only, only if pending exist)
+  if(isOwner()){
+    var pendingReqs = listPendingRequests();
+    if(pendingReqs.length > 0){
+      html += renderApprovalRequests(pendingReqs);
+    }
+  }
+  
   // Section 1: Today's Actions (reuse existing widget)
   html += renderTodaysActions(actions);
   
@@ -5101,6 +5394,67 @@ window._expandedActions = window._expandedActions || {};
 function toggleActionGroup(key){
   window._expandedActions[key] = !window._expandedActions[key];
   render();
+}
+
+// ===== Phase 1B-2: Approval Requests widget (owner Daily Brief) =====
+function renderApprovalRequests(reqs){
+  if(!reqs||reqs.length===0)return '';
+  var h='';
+  h+='<div style="background:#FFFBEB;border:1.5px solid var(--gold);border-radius:12px;padding:14px 16px;margin-bottom:18px">';
+  h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">';
+  h+='<div style="font-size:18px">\u2691</div>';
+  h+='<div style="font-family:Cinzel,serif;font-size:13px;color:var(--navy);letter-spacing:1.2px;font-weight:600;text-transform:uppercase">Approval Requests</div>';
+  h+='<div style="margin-left:auto;background:var(--gold);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;letter-spacing:.5px">'+reqs.length+' PENDING</div>';
+  h+='</div>';
+  reqs.forEach(function(r){
+    var when=r.requestedAt?timeAgo(r.requestedAt):'';
+    var who=r.requestedBy||'(unknown)';
+    h+='<div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px">';
+    h+='<div style="font-size:13.5px;font-weight:600;color:var(--navy);margin-bottom:4px">'+describeRequest(r)+'</div>';
+    if(r.reason){
+      h+='<div style="font-size:12px;color:var(--text2);font-style:italic;margin-bottom:6px;padding:6px 9px;background:var(--bg);border-radius:6px;border-left:2px solid var(--gold)">\u201C'+escHtml(r.reason)+'\u201D</div>';
+    }
+    h+='<div style="font-size:11px;color:var(--muted);margin-bottom:10px">'+when+' \u00b7 '+escHtml(who)+'</div>';
+    h+='<div style="display:flex;gap:8px">';
+    h+='<button class="btn btn-ghost btn-xs" style="flex:1" onclick="rejectReqUI(\u0027'+r.id+'\u0027)">Reject</button>';
+    h+='<button class="btn btn-primary btn-xs" style="flex:1" onclick="approveReqUI(\u0027'+r.id+'\u0027)">Approve</button>';
+    h+='</div>';
+    h+='</div>';
+  });
+  h+='</div>';
+  return h;
+}
+// Helper: HTML-escape user-provided strings to prevent injection
+function escHtml(s){
+  if(!s)return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+// Helper: relative time. Best-effort, falls back to date.
+function timeAgo(iso){
+  try{
+    var t=new Date(iso).getTime();
+    var now=Date.now();
+    var diff=Math.max(0,Math.floor((now-t)/1000));
+    if(diff<60)return 'just now';
+    if(diff<3600)return Math.floor(diff/60)+'m ago';
+    if(diff<86400)return Math.floor(diff/3600)+'h ago';
+    if(diff<7*86400)return Math.floor(diff/86400)+'d ago';
+    return fmt(iso);
+  }catch(e){return iso||'';}
+}
+async function approveReqUI(rid){
+  var req=REQUESTS[rid];
+  if(!req){notif('Request not found.');return;}
+  var r=await showConfirm({title:'Approve request',msg:'Approve and execute: '+describeRequest(req)+'? This will be permanent.',yesText:'Approve',dangerous:false,note:true});
+  if(!r.ok)return;
+  await approveRequest(rid,r.note||'');
+}
+async function rejectReqUI(rid){
+  var req=REQUESTS[rid];
+  if(!req){notif('Request not found.');return;}
+  var r=await showConfirm({title:'Reject request',msg:'Reject: '+describeRequest(req)+'? The action will not be performed.',yesText:'Reject',dangerous:true,note:true});
+  if(!r.ok)return;
+  await rejectRequest(rid,r.note||'');
 }
 
 function renderTodaysActions(actions){
@@ -5794,6 +6148,8 @@ function updateAuthUI(){
     if(av)av.classList.remove('show');
     closeAvMenu();
   }
+  // Update red dot and My Requests visibility based on auth + role + requests
+  updateAvatarDot();
 }
 function initials(email){
   if(!email)return '··';
@@ -5818,6 +6174,82 @@ function closeAvMenu(){
   if(m)m.classList.remove('show');
   if(bk)bk.classList.remove('show');
 }
+// Red dot on avatar:
+//  - Owner: shown when there are pending requests to approve
+//  - Manager: shown when she has pending requests (still awaiting owner)
+function updateAvatarDot(){
+  var dot=document.getElementById('AV-dot');
+  if(!dot)return;
+  var show=false;
+  var count=0;
+  if(window._auth&&window._auth.enabled&&window._auth.user){
+    if(isOwner()){
+      count=pendingRequestCount();
+      show=count>0;
+    }else{
+      count=listMyRequests().filter(function(r){return r.status==='pending';}).length;
+      show=count>0;
+    }
+  }
+  if(show)dot.classList.add('show');else dot.classList.remove('show');
+  // Show/hide My Requests menu item (manager only)
+  var mr=document.getElementById('AV-myreq');
+  var mrc=document.getElementById('AV-myreq-c');
+  if(mr){
+    if(window._auth&&window._auth.enabled&&isManager()){
+      mr.style.display='flex';
+      var allMine=listMyRequests().length;
+      if(mrc){
+        if(allMine>0){mrc.textContent=allMine;mrc.style.display='';}
+        else{mrc.style.display='none';}
+      }
+    }else{
+      mr.style.display='none';
+    }
+  }
+}
+// Modal for manager to see her own requests
+function openMyRequests(){
+  var mine=listMyRequests();
+  var h='';
+  if(mine.length===0){
+    h+='<div style="padding:30px 16px;text-align:center;color:var(--muted);font-size:13px">You have no requests yet.<br><br>When you request a delete or refund, it will appear here.</div>';
+  }else{
+    mine.forEach(function(r){
+      var st=r.status||'pending';
+      var stColor=st==='approved'?'var(--success)':(st==='rejected'?'var(--danger)':'var(--warn)');
+      var stLabel=st.toUpperCase();
+      h+='<div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px">';
+      h+='<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px">';
+      h+='<div style="flex:1;font-size:13px;font-weight:600;color:var(--navy)">'+describeRequest(r)+'</div>';
+      h+='<div style="font-size:9px;font-weight:700;color:#fff;background:'+stColor+';padding:2px 7px;border-radius:8px;letter-spacing:.5px">'+stLabel+'</div>';
+      h+='</div>';
+      if(r.reason){
+        h+='<div style="font-size:11.5px;color:var(--text2);font-style:italic;margin-bottom:6px">Your reason: \u201C'+escHtml(r.reason)+'\u201D</div>';
+      }
+      h+='<div style="font-size:10.5px;color:var(--muted)">Requested '+timeAgo(r.requestedAt)+'</div>';
+      if(r.resolvedAt){
+        h+='<div style="font-size:10.5px;color:var(--muted);margin-top:2px">Resolved '+timeAgo(r.resolvedAt)+(r.resolvedBy?' by '+escHtml(r.resolvedBy):'')+'</div>';
+      }
+      if(r.resolutionNote){
+        h+='<div style="font-size:11px;color:var(--text2);margin-top:6px;padding:6px 9px;background:var(--bg);border-radius:6px">Owner note: \u201C'+escHtml(r.resolutionNote)+'\u201D</div>';
+      }
+      h+='</div>';
+    });
+  }
+  // Reuse the cf-modal for display only (no confirm/cancel needed)
+  // Actually simpler: use the detail-modal pattern - inject into dm-b
+  var dm=document.getElementById('dm-b');
+  var dmt=document.getElementById('dm-n');
+  var dms=document.getElementById('dm-s');
+  var dmf=document.getElementById('dm-f');
+  if(!dm){notif('Cannot open requests view.');return;}
+  if(dmt)dmt.textContent='My Requests';
+  if(dms)dms.textContent=mine.length+' total';
+  dm.innerHTML=h;
+  if(dmf)dmf.innerHTML='<button class="btn btn-ghost" onclick="CM(\u0027detail-modal\u0027)">Close</button>';
+  OM('detail-modal');
+}
 async function startAfterAuth(){
   // Called after successful login (or if already logged in at boot in auth mode).
   // Order matters: resolve role BEFORE loading data so the right nav is built.
@@ -5838,6 +6270,8 @@ async function startAfterAuth(){
   // Re-update UI now that we know the role (may change the avatar border color)
   updateAuthUI();
   await loadData();
+  // Load approval requests (Phase 1B-2). Best-effort - don't block on failure.
+  try{await loadRequests();}catch(e){console.error('[req] initial load failed:',e.message);}
   setTimeout(function(){ checkAutoLost().catch(function(e){console.error('autoLost:',e);}); }, 1500);
   setTimeout(function(){ checkNoShows().catch(function(e){console.error('noShows:',e);}); }, 2500);
 }
