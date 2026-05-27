@@ -731,11 +731,12 @@ async function loadData(){
 function buildNav(){
   let h='',ls='';
   NAV.forEach(function(n){
+    if(!canViewPage(n.id))return; // hide restricted pages for managers
     if(n.sec&&n.sec!==ls){h+='<div class="nav-sec">'+n.sec+'</div>';ls=n.sec;}
     h+='<div class="nav-item'+(view===n.id?' active':'')+'" onclick="sv(\''+n.id+'\');closeSB()">'+n.lbl+'</div>';
   });
   document.getElementById('SN').innerHTML=h;
-  var mob=['dailyBrief','pipeline','schedule','quotations','invoices'];
+  var mob=['dailyBrief','pipeline','schedule','quotations','invoices'].filter(canViewPage);
   document.getElementById('MN').innerHTML=mob.map(function(id){
     var n=NAV.find(function(x){return x.id===id;});
     return '<div class="mn'+(view===id?' active':'')+'" onclick="sv(\''+id+'\')">'+'<span class="mnic">'+n.ic+'</span>'+n.lbl+'</div>';
@@ -743,6 +744,11 @@ function buildNav(){
 }
 // Track last visit timestamp when navigating AWAY from the Brief
 function sv(v){
+  // Guard: block managers from restricted pages
+  if(!canViewPage(v)){
+    notif('That page is owner-only.');
+    v='dailyBrief';
+  }
   // If leaving Daily Brief, record the visit time so "Since last visit" resets next time
   if(view==='dailyBrief' && v!=='dailyBrief'){
     localStorage.setItem('biso_lastBriefVisit', new Date().toISOString());
@@ -762,12 +768,58 @@ function handleAdd(){
   else if(view==='invoices'){openOverviewForm(null,{intent:'invoice'});}
   else {openOverviewForm(null,{intent:'lead'});}
 }
-function render(){var fn={dailyBrief:rDailyBrief,pipeline:rPipeline,analytics:rAnalytics,clients:rClients,customers:rCustomers,schedule:rSchedule,quotations:rQuotations,invoices:rInvoices,finance:rFinance,settings:rSettings};if(fn[view])fn[view]();}
+function render(){
+  // Defensive: if current view became restricted (e.g. role changed mid-session), bounce to brief
+  if(!canViewPage(view)){view='dailyBrief';buildNav();document.getElementById('PT').textContent=TITLES[view]||view;}
+  var fn={dailyBrief:rDailyBrief,pipeline:rPipeline,analytics:rAnalytics,clients:rClients,customers:rCustomers,schedule:rSchedule,quotations:rQuotations,invoices:rInvoices,finance:rFinance,settings:rSettings};
+  if(fn[view])fn[view]();
+}
 
-// Role helper - placeholder for future role separation. Currently always returns 'owner'.
+// Role helper - reads from auth-cached role. When auth disabled, defaults to 'owner'
+// (today's single-user mode). Possible values: 'owner' | 'manager'.
 function currentRole(){
-  // Future: read from auth, localStorage, etc. For now, single-user owner mode.
+  if(window._auth&&window._auth.enabled){return window._auth.role||'manager';}
   return 'owner';
+}
+function isOwner(){return currentRole()==='owner';}
+function isManager(){return currentRole()==='manager';}
+// Pages a manager is not allowed to view
+var RESTRICTED_PAGES={finance:true,settings:true};
+function canViewPage(v){return isOwner()||!RESTRICTED_PAGES[v];}
+// Load role from /roles/<uid> after auth succeeds. Bootstraps the very first user as owner.
+async function loadRole(){
+  if(!window._auth||!window._auth.enabled||!window._auth.user){
+    window._auth&&(window._auth.role='owner');
+    return;
+  }
+  var uid=window._auth.user.uid;
+  try{
+    var existing=await fbG('/roles/'+uid);
+    if(existing&&typeof existing==='string'){
+      window._auth.role=existing==='owner'?'owner':'manager';
+      return;
+    }
+    if(existing&&existing.role){
+      window._auth.role=existing.role==='owner'?'owner':'manager';
+      return;
+    }
+    // No role recorded yet. Check if ANY roles exist - if not, bootstrap this user as owner.
+    var all=await fbG('/roles');
+    if(!all||Object.keys(all).length===0){
+      // First user signing in - bootstrap as owner
+      await fbS('/roles/'+uid,{role:'owner',email:window._auth.user.email||'',createdAt:new Date().toISOString()});
+      window._auth.role='owner';
+      console.log('[role] Bootstrapped first user as owner:',window._auth.user.email);
+      return;
+    }
+    // Roles exist but this user has none - default to manager (safe default)
+    window._auth.role='manager';
+    console.log('[role] No role for uid, defaulting to manager:',window._auth.user.email);
+  }catch(e){
+    // On error, default to manager (safe). User can still log in but with limited access.
+    console.error('[role] loadRole failed, defaulting to manager:',e.message);
+    window._auth.role='manager';
+  }
 }
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function fmt(s){if(!s)return '—';return new Date(s).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}
@@ -5696,7 +5748,8 @@ function updateAuthUI(){
 }
 async function startAfterAuth(){
   // Called after successful login (or if already logged in at boot in auth mode).
-  // Loads CRM data, then runs the periodic checks.
+  // Order matters: resolve role BEFORE loading data so the right nav is built.
+  await loadRole();
   updateAuthUI();
   await loadData();
   setTimeout(function(){ checkAutoLost().catch(function(e){console.error('autoLost:',e);}); }, 1500);
