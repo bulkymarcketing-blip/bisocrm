@@ -124,6 +124,7 @@ tbody tr:active td{background:var(--navy-dim)}
 label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--muted)}
 input,select,textarea{background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none;width:100%;max-width:100%;box-sizing:border-box;transition:border-color .15s}
 input[type='date'],input[type='time'],input[type='datetime-local']{-webkit-appearance:none;appearance:none;min-height:38px}
+input[type='radio'],input[type='checkbox']{width:auto;min-width:0;padding:0;background:transparent;border:none;flex-shrink:0;margin:0}
 select{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%231B2B4B' stroke-width='2.5'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e");background-repeat:no-repeat;background-position:right 12px center;padding-right:34px}
 input:focus,select:focus,textarea:focus{border-color:var(--navy);background:#fff}
 textarea{resize:vertical;min-height:80px}
@@ -2250,6 +2251,34 @@ async function cancelAppt(id,key){
   try{
     await fbP('/leads/'+id+'/appointments/'+key,{cancelled:true,cancelledAt:appt.cancelledAt,cancelReason:appt.cancelReason});
     await logHistory(id,'appt-cancel',{reason:appt.reason,date:appt.date,note:r.note});
+    // STAGE ROLLBACK: if this was a Consultation and bride is at stage 2 (Consult Booked) with no other live consultation, offer rollback
+    var bride = leads[id];
+    if(appt.reason === 'Consultation' && Number(bride.stage||0) === 2){
+      var liveConsults = Object.values(bride.appointments||{}).filter(function(a){
+        return a.reason === 'Consultation' && !a.cancelled && !a.done;
+      });
+      if(liveConsults.length === 0){
+        // No other live consultation - prompt rollback
+        var rb = await showConfirm({
+          title:'Move bride back to Contacted?',
+          msg:bride.name+' no longer has a booked consultation. Move them back to the Contacted stage so you can rebook through the Log Attempt flow?',
+          yesText:'Move to Contacted',
+          noText:'Keep at Consult Booked'
+        });
+        if(rb.ok){
+          try {
+            await fbP('/brides/'+id, {stage:1, remindersStopped:false});
+            if(brides[id]){
+              brides[id].stage = 1;
+              brides[id].remindersStopped = false;
+            }
+            projectViews();
+            await logHistory(id,'stage-rollback',{from:2,to:1,reason:'consultation_cancelled'});
+            notif('Bride moved back to Contacted. Use Log Attempt to rebook.');
+          } catch(e){ notif('Stage rollback failed: '+e.message); }
+        }
+      }
+    }
     openDetail(id);
   }catch(e){notif('Error: '+e.message);}
 }
@@ -4541,14 +4570,16 @@ function computeTodaysActions(){
   });
   quotesDue.sort(function(a,b){return b.daysSince - a.daysSince;}); // oldest first
   
-  // 4. Urgent payments: confirmed brides with wedding in <=14 days and balance > 0
+  // 4. Urgent payments: confirmed brides with wedding in <=14 days AND balance > 0
+  //    OVERDUE = wedding already happened (daysToWed < 0) AND balance still > 0 - never let these slip
   var urgentPayments = [];
   Object.values(brides).forEach(function(b){
     if(!b.confirmed || b.cancelled) return;
     if(!b.weddingDate) return;
     var dToWed = dU(b.weddingDate);
-    if(dToWed === null || dToWed > 14 || dToWed < 0) return;
-    // Compute balance from invoices using shared helper
+    if(dToWed === null) return;
+    if(dToWed > 14) return; // future weddings >14 days away — not urgent yet
+    // Compute balance
     var totalDue = 0, totalPaid = 0;
     Object.values(b.invoices||{}).forEach(function(inv){
       totalDue += qTot(inv.items);
@@ -4559,12 +4590,13 @@ function computeTodaysActions(){
       urgentPayments.push({
         id:b.id, name:b.name||'(no name)',
         phone:b.phone||'',
-        daysToWed: dToWed,
-        balance: balance
+        daysToWed: dToWed,        // can be negative (overdue)
+        balance: balance,
+        overdue: dToWed < 0
       });
     }
   });
-  urgentPayments.sort(function(a,b){return a.daysToWed - b.daysToWed;});
+  urgentPayments.sort(function(a,b){return a.daysToWed - b.daysToWed;}); // overdue first (most negative first)
   
   return {
     followUps: followUps,
@@ -4664,17 +4696,32 @@ function renderTodaysActions(actions){
   
   // Urgent payments group
   if(actions.urgentPayments.length > 0){
+    var overdueCount = actions.urgentPayments.filter(function(u){return u.overdue;}).length;
+    var urgLabel = overdueCount > 0 
+      ? overdueCount+' OVERDUE payment'+(overdueCount!==1?'s':'')
+      : actions.urgentPayments.length+' wedding payment'+(actions.urgentPayments.length!==1?'s':'')+' urgent';
     groups.push({
       key:'urgentPayments',
-      icon:'⚠️',
-      label:actions.urgentPayments.length+' wedding payment'+(actions.urgentPayments.length!==1?'s':'')+' urgent',
-      sub: 'balance due',
+      icon: overdueCount > 0 ? '🔴' : '⚠️',
+      label: urgLabel,
+      sub: overdueCount > 0 ? 'wedding passed, balance unpaid' : 'balance due',
       color: 'var(--danger)',
       items: actions.urgentPayments,
       renderItem: function(u){
         var openBtn = '<button class="lcard-cta-btn" onclick="event.stopPropagation();openDetail(\''+u.id+'\')">Open</button>';
-        var wedTxt = u.daysToWed === 0 ? 'today' : u.daysToWed === 1 ? 'tomorrow' : 'in '+u.daysToWed+'d';
-        return '<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+u.name+'</div><div style="font-size:11px;color:var(--danger);margin-top:2px;font-weight:600">Balance '+fR(u.balance)+' · Wedding '+wedTxt+'</div></div>'+openBtn+'</div>';
+        var wedTxt;
+        if(u.overdue){
+          wedTxt = 'Wedding was '+Math.abs(u.daysToWed)+'d ago';
+        } else if(u.daysToWed === 0){
+          wedTxt = 'Wedding today';
+        } else if(u.daysToWed === 1){
+          wedTxt = 'Wedding tomorrow';
+        } else {
+          wedTxt = 'Wedding in '+u.daysToWed+'d';
+        }
+        var subColor = u.overdue ? 'var(--danger)' : 'var(--danger)';
+        var weight = u.overdue ? '700' : '600';
+        return '<div style="background:var(--bg);border:1px solid '+(u.overdue?'var(--danger)':'var(--border)')+';border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+u.name+(u.overdue?' <span style="background:var(--danger);color:#fff;font-size:8px;font-weight:700;padding:2px 5px;border-radius:3px;letter-spacing:.5px;margin-left:4px">OVERDUE</span>':'')+'</div><div style="font-size:11px;color:'+subColor+';margin-top:2px;font-weight:'+weight+'">Balance '+fR(u.balance)+' · '+wedTxt+'</div></div>'+openBtn+'</div>';
       }
     });
   }
@@ -4896,15 +4943,20 @@ async function saveDisp(){
   var note = (document.getElementById('disp-note')||{}).value || '';
   var nowIso = new Date().toISOString();
   var attId = 'att-'+uid();
+  // Build the complete attempt object FIRST (no nested patches)
   var attempt = {id:attId, at:nowIso, outcome:DISP.outcome, note:note, by:'user'};
-  // Outcome-specific patches
-  var patch = {};
-  patch['contactAttempts/'+attId] = attempt;
-  patch['lastActivity'] = nowIso;
+  // Outcome-specific fields go ON the attempt object (not as separate patch keys)
   if(DISP.outcome === 'no_answer'){
     var channel = (document.getElementById('disp-channel')||{}).value || 'whatsapp';
     attempt.channel = channel;
-    patch['contactAttempts/'+attId+'/channel'] = channel;
+  }
+  // Outcome-specific patches
+  var patch = {};
+  patch['contactAttempts/'+attId] = attempt;  // Single write per attempt — no sub-key conflicts
+  patch['lastActivity'] = nowIso;
+  // Track for save-confirmation message
+  var savedNextReminderAt = null;
+  if(DISP.outcome === 'no_answer'){
     // Advance stage from 0 -> 1 (Contacted) on first attempt only if not already advanced
     if(Number(l.stage||0) === 0){
       patch['stage'] = 1;
@@ -4935,6 +4987,7 @@ async function saveDisp(){
         next = null;
       }
       patch['nextReminderAt'] = next;
+      savedNextReminderAt = next;
     }
   } else if(DISP.outcome === 'callback_later'){
     var cbChoice = (document.querySelector('input[name="disp-cb"]:checked')||{}).value || 'specific';
@@ -4948,6 +5001,7 @@ async function saveDisp(){
       next2 = nd3.toISOString();
     }
     patch['nextReminderAt'] = next2;
+    savedNextReminderAt = next2;
     if(Number(l.stage||0) === 0){
       patch['stage'] = 1;
     }
@@ -4995,7 +5049,21 @@ async function saveDisp(){
     }
     projectViews();
     try { await logHistory(brideId, 'contact-attempt', {outcome:DISP.outcome, attempt:attNum||1}); } catch(e){}
-    var msg = {no_answer:'Attempt logged.',callback_later:'Callback scheduled.',consult_booked:'Consultation booked.',not_interested:'Lead closed.'}[DISP.outcome];
+    // Save-confirmation message — be explicit about when the next action will surface
+    var msg;
+    if(DISP.outcome === 'no_answer'){
+      if(savedNextReminderAt){
+        msg = 'Attempt logged · Next reminder '+fmtReminderTime(savedNextReminderAt);
+      } else {
+        msg = 'Final attempt logged · Auto-closes in 14 days if no reply';
+      }
+    } else if(DISP.outcome === 'callback_later'){
+      msg = 'Callback scheduled for '+fmtReminderTime(savedNextReminderAt);
+    } else if(DISP.outcome === 'consult_booked'){
+      msg = 'Consultation booked.';
+    } else {
+      msg = 'Lead closed.';
+    }
     notif(msg);
     closeDisp();
     render();
@@ -5004,6 +5072,24 @@ async function saveDisp(){
   } finally {
     window._saving = false;
   }
+}
+
+// Format a reminder timestamp as a friendly relative or absolute label
+function fmtReminderTime(iso){
+  if(!iso) return '';
+  var d = new Date(iso);
+  if(isNaN(d.getTime())) return '';
+  var now = new Date();
+  var today = new Date(); today.setHours(0,0,0,0);
+  var dDay = new Date(d); dDay.setHours(0,0,0,0);
+  var daysAway = Math.round((dDay - today) / 86400000);
+  var timeStr = d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  if(daysAway === 0) return 'today at '+timeStr;
+  if(daysAway === 1) return 'tomorrow at '+timeStr;
+  if(daysAway > 1 && daysAway <= 6){
+    return d.toLocaleDateString('en-GB',{weekday:'long'})+' at '+timeStr;
+  }
+  return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})+' at '+timeStr;
 }
 
 // Reopen a lost lead
