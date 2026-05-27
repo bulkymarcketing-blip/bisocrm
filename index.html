@@ -1631,6 +1631,7 @@ async function convInv(src,sId,qId){
   var date=(document.getElementById('adv-date')||{}).value||new Date().toISOString().slice(0,10);
   var items=Object.assign({},qt.items);var tot=qTot(items);
   var inv={id:iNum(),date:date,items:items,advance:bp,notes:notes};
+  window._saving=true;
   try{
     if(src==='lead'){
       // Write to canonical /brides/X path (single source of truth)
@@ -1708,7 +1709,8 @@ async function convInv(src,sId,qId){
       await fbS('/customers/'+cid,nc);custs[cid]=nc;
     }
     CM('adv-modal');notif('Invoice created!');render();
-  }catch(e){notif('Error: '+e.message);}
+  }catch(e){notif('Error: '+e.message);
+  }finally{window._saving=false;}
 }
 function viewPDF(type,src,sId,dId){
   var obj=src==='lead'?leads[sId]:custs[sId];if(!obj)return;
@@ -1925,6 +1927,7 @@ async function saveQB(){
   if(!QB.items.length){notif('Add at least one service.');return;}
   var items={};QB.items.forEach(function(it){var k=it.key||uid();items[k]=Object.assign({},it,{key:k});});
   var qt={id:qNum(),date:new Date().toISOString().slice(0,10),expiry:expD(),items:items,notes:QB.notes,convertedToInvoice:false,sent:false};
+  window._saving=true;
   try{
     if(QB.cid){await fbP('/customers/'+QB.cid+'/quotes',{[qt.id]:qt});if(!custs[QB.cid])custs[QB.cid]={};custs[QB.cid].quotes=custs[QB.cid].quotes||{};custs[QB.cid].quotes[qt.id]=qt;}
     if(QB.lid){
@@ -1953,7 +1956,8 @@ async function saveQB(){
       }
     }
     CM('quot-modal');notif('Quotation saved!');if(QB.lid)openDetail(QB.lid);render();
-  }catch(e){notif('Error: '+e.message);}
+  }catch(e){notif('Error: '+e.message);
+  }finally{window._saving=false;}
 }
 async function updQB(){
   var n=document.getElementById('qb-n');if(n)QB.notes=n.value;
