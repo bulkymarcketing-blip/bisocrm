@@ -282,6 +282,9 @@ textarea{resize:vertical;min-height:80px}
 .av-bkdrp.show{display:block}
 .notif{position:fixed;bottom:20px;right:20px;background:var(--navy);border-radius:10px;padding:12px 16px;font-size:13px;color:#fff;z-index:9999;transform:translateY(16px);opacity:0;transition:all .3s;pointer-events:none;max-width:280px;box-shadow:var(--sh2)}
 .notif.show{transform:translateY(0);opacity:1}
+/* When a modal is open on mobile, lift the notif above the modal footer so it doesn't cover the buttons */
+.notif.modal-open{bottom:calc(96px + env(safe-area-inset-bottom))}
+@media(min-width:768px){.notif.modal-open{bottom:20px}} /* desktop modal isn't full-screen, no collision */
 .mnav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surf);border-top:1.5px solid var(--border);z-index:200;padding:5px 0 env(safe-area-inset-bottom,5px)}
 .mni{display:flex;justify-content:space-around}
 .mn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 8px;cursor:pointer;color:var(--muted);font-size:9px;font-weight:600;min-width:48px;letter-spacing:.3px}
@@ -1012,7 +1015,9 @@ function describeRequest(req){
   }
   if(req.type==='delete_payment'){
     var p=req.payload||{};
-    return 'Delete payment of '+fR(p.amount||0)+' on invoice';
+    var amt=p.amount||0;
+    var isRefund=amt<0;
+    return (isRefund?'Delete refund of ':'Delete payment of ')+fR(Math.abs(amt))+' on invoice';
   }
   if(req.type==='refund'){
     var p2=req.payload||{};
@@ -1126,6 +1131,11 @@ function showConfirm(opts){
     if(opts.note){
       nw.style.display = '';
       document.getElementById('cf-note').value = '';
+      // Update note label and placeholder if provided
+      var nLbl = nw.querySelector('label');
+      if(nLbl)nLbl.textContent = opts.noteLabel || 'Note (optional)';
+      var nInp = document.getElementById('cf-note');
+      if(nInp)nInp.placeholder = opts.notePlaceholder || 'Reason or comment';
     } else {
       nw.style.display = 'none';
     }
@@ -1170,7 +1180,9 @@ async function showRequestApprovalConfirm(opts){
       yesText:'Submit Request',
       noText:'Cancel',
       dangerous:false,
-      note:true
+      note:true,
+      noteLabel:opts.reasonRequired?'Reason (required)':'Reason (optional)',
+      notePlaceholder:opts.reasonRequired?'Why is this needed?':'Reason or comment'
     };
     if(opts.input){
       cfOpts.input=true;
@@ -1189,7 +1201,15 @@ async function showRequestApprovalConfirm(opts){
   }
 }
 
-function notif(msg){var el=document.getElementById('NF');el.textContent=msg;el.classList.add('show');setTimeout(function(){el.classList.remove('show');},3000);}
+function notif(msg){
+  var el=document.getElementById('NF');
+  el.textContent=msg;
+  // Detect open modal so we don't cover its footer buttons on mobile
+  var modalOpen=!!document.querySelector('.overlay.show, .overlay[style*="display: flex"], .overlay[style*="display:flex"]');
+  if(modalOpen)el.classList.add('modal-open');else el.classList.remove('modal-open');
+  el.classList.add('show');
+  setTimeout(function(){el.classList.remove('show');},3000);
+}
 function stab(el,id){var mb=el.closest('.mbdy');mb.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});el.classList.add('active');mb.querySelectorAll('[id^="tb-"],[id^="ct-"]').forEach(function(t){t.style.display='none';});var t=document.getElementById(id);if(t)t.style.display='';mb.scrollTop=0;}
 
 // Wedding-date-weighted SLA calculation
@@ -1945,10 +1965,13 @@ async function delPay(src,sId,iId,pid){
   var obj=src==='lead'?leads[sId]:custs[sId];if(!obj||!obj.invoices||!obj.invoices[iId])return;
   var pay=(obj.invoices[iId].payments||{})[pid];if(!pay)return;
   var amt=parseFloat(pay.amount)||0;
+  var isRefund=amt<0;
+  var displayAmt=fR(Math.abs(amt));
+  var kind=isRefund?'refund':'payment';
   if(needsApproval('delete_payment')){
     var rr=await showRequestApprovalConfirm({
-      title:'Request: Delete payment',
-      msg:'You are asking the owner to delete this payment of '+fR(amt)+'. This will adjust the bride\u2019s balance. Add a reason.',
+      title:isRefund?'Request: Delete refund':'Request: Delete payment',
+      msg:'You are asking the owner to delete this '+kind+' of '+displayAmt+'. This will adjust the bride\u2019s balance. Add a reason.',
       reasonRequired:true
     });
     if(!rr.ok)return;
@@ -1966,7 +1989,7 @@ async function delPay(src,sId,iId,pid){
     return;
   }
   // Owner: direct delete (original behaviour)
-  var _cr = await showConfirm({title:'Delete payment',msg:'Delete this payment record? This will adjust the balance.',yesText:'Delete',dangerous:true});if(!_cr.ok)return;
+  var _cr = await showConfirm({title:isRefund?'Delete refund':'Delete payment',msg:'Delete this '+kind+' of '+displayAmt+'? This will adjust the balance.',yesText:'Delete',dangerous:true});if(!_cr.ok)return;
   var path=src==='lead'?'/leads/'+sId+'/invoices/'+iId+'/payments/'+pid:'/customers/'+sId+'/invoices/'+iId+'/payments/'+pid;
   try{
     await fbD(path);
