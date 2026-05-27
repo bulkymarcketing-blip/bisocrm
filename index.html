@@ -1298,7 +1298,7 @@ function rPipeline(){
       lostLeads.forEach(function(l){
         var reasonLabels = {budget:'Budget mismatch',already_booked:'Already booked elsewhere',browsing:'Just browsing',wrong_number:'Wrong number',postponed:'Postponed/cancelled',unresponsive:'Unresponsive',other:'Other'};
         var rLbl = reasonLabels[l.lostReason] || l.lostReason || 'No reason';
-        h+='<div style="background:var(--surf);border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;opacity:.85"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+l.name+'</div><div style="font-size:11px;color:var(--muted);margin-top:2px">'+rLbl+(l.lostAt?' · '+fmt(l.lostAt):'')+'</div></div><button class="btn btn-outline btn-xs" onclick="reopenLead(\''+l.id+'\')">Reopen</button></div>';
+        h+='<div style="background:var(--surf);border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;opacity:.85"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+escHtml(l.name)+'</div><div style="font-size:11px;color:var(--muted);margin-top:2px">'+escHtml(rLbl)+(l.lostAt?' · '+fmt(l.lostAt):'')+'</div></div><button class="btn btn-outline btn-xs" onclick="reopenLead(\''+l.id+'\')">Reopen</button></div>';
       });
       h+='</div>';
     }
@@ -1434,14 +1434,14 @@ function lCard(l){
     summary='<div style="padding-top:10px;margin-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--text2);line-height:1.6">'
       +(bits.length?bits.map(function(b){return '• '+b;}).join('<br/>'):'<em>No events yet</em>')
       +(l.phone?'<br/>📞 '+fmtPhone(l.phone):'')
-      +(l.email?'<br/>✉ '+l.email:'')
-      +(l.notes?'<br/><em style="color:var(--muted)">'+(l.notes.length>120?l.notes.slice(0,120)+'…':l.notes)+'</em>':'')
+      +(l.email?'<br/>✉ '+escHtml(l.email):'')
+      +(l.notes?'<br/><em style="color:var(--muted)">'+escHtml(l.notes.length>120?l.notes.slice(0,120)+'…':l.notes)+'</em>':'')
       +'</div>';
   }
   return '<div class="lcard" onclick="toggleLeadCard(\''+l.id+'\')">'
     +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
     +'<div style="flex:1;min-width:0">'
-    +'<div class="lname">'+l.name+'</div>'
+    +'<div class="lname">'+escHtml(l.name)+'</div>'
     +'<div class="ldate">'+(l.weddingDate?'Wedding: '+fmt(l.weddingDate):'Date TBD')+'</div>'
     +'<div class="ltags"><span class="tag '+tc+'">'+tl+'</span>'+qt+dwTag+dt+attTag+remTag+'</div>'
     +'</div>'
@@ -1495,11 +1495,11 @@ function rClients(){
     var bc=tot===0?'bu':pct>=100?'bp':pct>0?'bpa':'bu';
     var bl=tot===0?'—':pct>=100?'Paid':pct>0?pct+'%':'Pending';
     rows+='<tr onclick="openDetail(\''+l.id+'\')">'
-      +'<td><div class="cn">'+l.name+'</div><div style="font-size:11px;color:var(--muted)">'+(l.phone||'')+'</div></td>'
+      +'<td><div class="cn">'+escHtml(l.name)+'</div><div style="font-size:11px;color:var(--muted)">'+escHtml(l.phone||'')+'</div></td>'
       +'<td>'+fmt(l.weddingDate)+dBadge(d)+'</td>'
-      +'<td class="hm" style="font-size:12px">'+(l.package||'—')+'</td>'
+      +'<td class="hm" style="font-size:12px">'+escHtml(l.package||'—')+'</td>'
       +'<td class="hm" style="text-align:center;font-weight:600">'+(l.bridesmaids||0)+'</td>'
-      +'<td class="hm" style="font-size:12px;color:var(--muted)">'+(l.venue||'—')+'</td>'
+      +'<td class="hm" style="font-size:12px;color:var(--muted)">'+escHtml(l.venue||'—')+'</td>'
       +'<td><span class="badge '+bc+'">'+bl+'</span></td></tr>';
   });
   var body=cl.length?'<div style="overflow-x:auto"><table><thead><tr><th>Bride</th><th>Wedding</th><th class="hm">Package</th><th class="hm">BMs</th><th class="hm">Venue</th><th>Payment</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
@@ -1512,8 +1512,8 @@ function rCustomers(){
   all.forEach(function(c){
     var qc=Object.values(c.quotes||{}).length;var ic=Object.values(c.invoices||{}).length;
     rows+='<tr onclick="openCust(\''+c.id+'\')">'
-      +'<td><div class="cn">'+c.name+'</div></td>'
-      +'<td style="font-size:12px">'+(c.phone||'—')+'</td>'
+      +'<td><div class="cn">'+escHtml(c.name)+'</div></td>'
+      +'<td style="font-size:12px">'+escHtml(c.phone||'—')+'</td>'
       +'<td class="hm" style="font-size:12px">'+fmt(c.weddingDate)+'</td>'
       +'<td class="hm" style="font-size:12px;color:var(--gold)">'+(c.anniversary?fmt(c.anniversary):'—')+'</td>'
       +'<td><span class="badge bo">'+qc+'Q</span> <span class="badge bi">'+ic+'I</span></td></tr>';
@@ -1671,8 +1671,8 @@ function rSchedule(){
     else dayBadge = '';
     var dayBadgeColor = (e.isFollowUp && e.overdue) ? 'var(--danger)' : e.noShow ? 'var(--warn)' : 'var(--gold)';
     var timeLabel = e.time ? ' · '+e.time : '';
-    var venueLabel = e.venue ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">📍 '+e.venue+'</div>' : '';
-    var themeLabel = e.theme ? '<span style="display:inline-block;background:rgba(0,0,0,0.06);padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;color:var(--text2);margin-left:6px">'+e.theme+'</span>' : '';
+    var venueLabel = e.venue ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">📍 '+escHtml(e.venue)+'</div>' : '';
+    var themeLabel = e.theme ? '<span style="display:inline-block;background:rgba(0,0,0,0.06);padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;color:var(--text2);margin-left:6px">'+escHtml(e.theme)+'</span>' : '';
     // No-show badge takes precedence visually
     var noShowBadge = e.noShow ? '<span style="display:inline-block;background:var(--warn);color:#fff;padding:2px 7px;border-radius:10px;font-size:9px;font-weight:700;letter-spacing:.5px;margin-right:4px">NO-SHOW</span>' : '';
     var extraLabel = '';
@@ -1708,11 +1708,11 @@ function rSchedule(){
       +'<div style="width:8px;align-self:stretch;background:'+(e.noShow?'var(--warn)':meta.color)+';border-radius:4px;flex-shrink:0"></div>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">'+noShowBadge+'<span style="display:inline-block;background:'+meta.bg+';color:'+meta.color+';padding:3px 9px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase">'+meta.label+'</span>'+(dayBadge?'<span style="font-size:10px;color:'+dayBadgeColor+';font-weight:700">'+dayBadge+'</span>':'')+themeLabel+'</div>'
-      +'<div style="font-weight:700;color:var(--navy);font-size:15px;margin-bottom:2px">'+e.brideName+'</div>'
+      +'<div style="font-weight:700;color:var(--navy);font-size:15px;margin-bottom:2px">'+escHtml(e.brideName)+'</div>'
       +'<div style="font-size:12px;color:var(--text2)">'+dateLabel+timeLabel+'</div>'
       +venueLabel
       +extraLabel
-      +(e.note && !e.isFollowUp?'<div style="font-size:11px;color:var(--muted);margin-top:4px;font-style:italic">'+e.note+'</div>':'')
+      +(e.note && !e.isFollowUp?'<div style="font-size:11px;color:var(--muted);margin-top:4px;font-style:italic">'+escHtml(e.note)+'</div>':'')
       +followUpCta
       +noShowCta
       +'</div>'
@@ -1793,7 +1793,7 @@ function rQuotations(){
     var tot=qTot(qt.items);
     var sc=qt.sent?'bs':'bo';var sl=qt.sent?'SENT':'DRAFT';
     rows+='<div class="lr" onclick="openQDoc(\''+qt.src+'\',\''+qt.sId+'\',\''+qt.id+'\')">'
-      +'<div style="flex:1;min-width:0"><div class="lrn">'+qt.sN+'</div><div class="lrm">'+fmt(qt.date)+' · '+qt.id+'</div><div style="margin-top:4px"><span class="badge '+sc+'">'+sl+'</span></div></div>'
+      +'<div style="flex:1;min-width:0"><div class="lrn">'+escHtml(qt.sN)+'</div><div class="lrm">'+fmt(qt.date)+' · '+qt.id+'</div><div style="margin-top:4px"><span class="badge '+sc+'">'+sl+'</span></div></div>'
       +'<div style="text-align:right;flex-shrink:0"><div class="lra">LKR '+Number(tot).toLocaleString()+'.00</div><div class="lrc">›</div></div></div>';
   });
   document.getElementById('MC').innerHTML='<div class="card"><div class="card-hdr"><div class="card-title">Quotations</div><div style="display:flex;gap:10px;align-items:center"><div style="font-size:12px;color:var(--muted)">'+filt.length+' open</div><button class="btn btn-primary btn-sm" onclick="openOverviewForm(null,{intent:\'quote\'})">+ New</button></div></div>'+(filt.length?rows:'<div class="empty" style="padding:60px"><div class="et">No open quotations</div></div>')+'</div>';
@@ -1817,7 +1817,7 @@ function rInvoices(){
     var sc=pct>=100?'var(--success)':pct>0?'var(--warn)':'var(--danger)';
     var sl=pct>=100?'PAID':pct>0?'PARTIAL':'UNPAID';
     rows+='<div class="lr" onclick="openIDoc(\''+inv.src+'\',\''+inv.sId+'\',\''+inv.id+'\')">'
-      +'<div style="flex:1;min-width:0"><div class="lrn">'+inv.sN+'</div><div class="lrm">'+fmt(inv.date)+' · '+inv.id+'</div>'
+      +'<div style="flex:1;min-width:0"><div class="lrn">'+escHtml(inv.sN)+'</div><div class="lrm">'+fmt(inv.date)+' · '+inv.id+'</div>'
       +'<div style="margin-top:4px;display:flex;align-items:center;gap:6px"><span style="font-size:11px;font-weight:700;color:'+sc+'">'+sl+'</span>'+(bal>0?'<span style="font-size:11px;color:var(--muted)">Bal LKR '+Number(bal).toLocaleString()+'.00</span>':'')+'</div></div>'
       +'<div style="text-align:right;flex-shrink:0"><div class="lra">LKR '+Number(tot).toLocaleString()+'.00</div><div class="lrc">›</div></div></div>';
   });
@@ -1831,12 +1831,12 @@ function openQDoc(src,sId,qId){
   var ih='';
   items.forEach(function(it,i){
     var line=cLine(it);var bb=i<items.length-1?'border-bottom:1px solid var(--border);':'';
-    ih+='<div class="ir" style="'+bb+'"><div><div class="in">'+it.desc+'</div><div class="im">'+it.qty+' x '+Number(it.unit).toLocaleString()+'</div></div><div class="ia">LKR '+Number(line).toLocaleString()+'.00</div></div>';
+    ih+='<div class="ir" style="'+bb+'"><div><div class="in">'+escHtml(it.desc)+'</div><div class="im">'+it.qty+' x '+Number(it.unit).toLocaleString()+'</div></div><div class="ia">LKR '+Number(line).toLocaleString()+'.00</div></div>';
   });
   var sb=qt.sent?'<div style="margin-top:6px"><span class="badge bs">SENT</span></div>':'';
-  var nh=qt.notes?'<div class="nc"><div class="nl">Notes</div><div class="nt">'+qt.notes.replace(/\n/g,'<br/>')+'</div></div>':'';
+  var nh=qt.notes?'<div class="nc"><div class="nl">Notes</div><div class="nt">'+escHtmlMultiline(qt.notes)+'</div></div>':'';
   document.getElementById('doc-b').innerHTML=
-    '<div class="dh"><div class="dha">LKR '+Number(tot).toLocaleString()+'.00</div><div class="dhn">'+obj.name+'</div><div class="dhm">'+fmt(qt.date)+'</div>'+sb+'</div>'
+    '<div class="dh"><div class="dha">LKR '+Number(tot).toLocaleString()+'.00</div><div class="dhn">'+escHtml(obj.name)+'</div><div class="dhm">'+fmt(qt.date)+'</div>'+sb+'</div>'
     +'<div class="da" style="grid-template-columns:repeat(4,1fr)">'
     +'<button class="dab" onclick="editQ(\''+src+'\',\''+sId+'\',\''+qId+'\')" ><span class="dai">Edit</span>Edit</button>'
     +'<button class="dab" onclick="viewPDF(\'Q\',\''+src+'\',\''+sId+'\',\''+qId+'\')" ><span class="dai">PDF</span>PDF</button>'
@@ -1880,22 +1880,22 @@ function openIDoc(src,sId,iId){
   var ih='';
   items.forEach(function(it,i){
     var line=cLine(it);var bb=i<items.length-1?'border-bottom:1px solid var(--border);':'';
-    ih+='<div class="ir" style="'+bb+'"><div><div class="in">'+it.desc+'</div><div class="im">'+it.qty+' x '+Number(it.unit).toLocaleString()+'</div></div><div class="ia">LKR '+Number(line).toLocaleString()+'.00</div></div>';
+    ih+='<div class="ir" style="'+bb+'"><div><div class="in">'+escHtml(it.desc)+'</div><div class="im">'+it.qty+' x '+Number(it.unit).toLocaleString()+'</div></div><div class="ia">LKR '+Number(line).toLocaleString()+'.00</div></div>';
   });
   var bpr=bp>0?'<div class="ifr"><span style="color:var(--muted)">Bespeaking Fee</span><span style="color:var(--success)">(LKR '+Number(bp).toLocaleString()+'.00)</span></div>':'';
   var ph='';
-  pays.forEach(function(p){ph+='<div class="ifr"><span style="color:var(--muted)">Payment '+fmt(p.date)+(p.method?' · '+p.method:'')+'</span><span style="color:var(--success)">(LKR '+Number(p.amount).toLocaleString()+'.00)</span></div>';});
+  pays.forEach(function(p){ph+='<div class="ifr"><span style="color:var(--muted)">Payment '+fmt(p.date)+(p.method?' · '+escHtml(p.method):'')+'</span><span style="color:var(--success)">(LKR '+Number(p.amount).toLocaleString()+'.00)</span></div>';});
   var payLog='';
   if(pays.length){
     var pr='';
     pays.sort(function(a,b){return new Date(b.date)-new Date(a.date);}).forEach(function(p){
-      pr+='<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border)"><div><div style="font-size:13px;font-weight:600;color:var(--navy)">'+fmt(p.date)+(p.method?' · '+p.method:'')+'</div>'+(p.note?'<div style="font-size:11px;color:var(--muted);margin-top:2px">'+p.note+'</div>':'')+'</div><div style="display:flex;align-items:center;gap:8px"><div style="font-size:13px;font-weight:700;color:var(--success)">'+fR(p.amount)+'</div><button onclick="delPay(\''+src+'\',\''+sId+'\',\''+iId+'\',\''+p.id+'\')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:2px 6px">x</button></div></div>';
+      pr+='<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border)"><div><div style="font-size:13px;font-weight:600;color:var(--navy)">'+fmt(p.date)+(p.method?' · '+escHtml(p.method):'')+'</div>'+(p.note?'<div style="font-size:11px;color:var(--muted);margin-top:2px">'+escHtml(p.note)+'</div>':'')+'</div><div style="display:flex;align-items:center;gap:8px"><div style="font-size:13px;font-weight:700;color:var(--success)">'+fR(p.amount)+'</div><button onclick="delPay(\''+src+'\',\''+sId+'\',\''+iId+'\',\''+p.id+'\')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:2px 6px">x</button></div></div>';
     });
     payLog='<div class="ic" style="margin-top:14px"><div style="padding:11px 14px;background:var(--bg);border-bottom:1.5px solid var(--border);font-size:11px;font-weight:700;color:var(--navy);letter-spacing:.5px;text-transform:uppercase">Payments Log</div>'+pr+'</div>';
   }
-  var nh=inv.notes?'<div class="nc"><div class="nl">Notes</div><div class="nt">'+inv.notes.replace(/\n/g,'<br/>')+'</div></div>':'';
+  var nh=inv.notes?'<div class="nc"><div class="nl">Notes</div><div class="nt">'+escHtmlMultiline(inv.notes)+'</div></div>':'';
   document.getElementById('doc-b').innerHTML=
-    '<div class="dh"><div class="dha">LKR '+Number(tot).toLocaleString()+'.00</div><div class="dhn">'+obj.name+'</div><div class="dhm">'+fmt(inv.date)+'</div><div style="margin-top:6px"><span style="background:'+sc+'22;color:'+sc+';font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">'+sl+'</span></div></div>'
+    '<div class="dh"><div class="dha">LKR '+Number(tot).toLocaleString()+'.00</div><div class="dhn">'+escHtml(obj.name)+'</div><div class="dhm">'+fmt(inv.date)+'</div><div style="margin-top:6px"><span style="background:'+sc+'22;color:'+sc+';font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">'+sl+'</span></div></div>'
     +'<div class="da" style="grid-template-columns:1fr 1fr 1fr">'
     +'<button class="dab pr" onclick="openAddPay(\''+src+'\',\''+sId+'\',\''+iId+'\')" ><span class="dai">+</span>Add Payment</button>'
     +'<button class="dab" onclick="viewPDF(\'I\',\''+src+'\',\''+sId+'\',\''+iId+'\')" ><span class="dai">PDF</span>PDF</button>'
@@ -2152,12 +2152,12 @@ function buildPDF(type,l,doc){
     var rv=isD?'—':Number(it.unit).toLocaleString()+'.00';
     var as=isD?'color:#e53e3e':'color:#1B2B4B';
     var av=isD?'('+Number(Math.abs(line)).toLocaleString()+'.00)':Number(line).toLocaleString()+'.00';
-    ir+='<tr style="border-bottom:1px solid #f0f2f8"><td style="padding:11px 8px;font-size:12px;color:#aaa">'+(i+1)+'</td><td style="padding:11px 8px"><div style="font-size:13px;color:#1B2B4B;font-weight:500">'+it.desc+'</div></td><td style="padding:11px 8px;text-align:center;font-size:13px;color:#555">'+it.qty+'</td><td style="padding:11px 8px;text-align:right;font-size:13px;color:#555">'+rv+'</td><td style="padding:11px 8px;text-align:right;font-size:13px;font-weight:600;'+as+'">'+av+'</td></tr>';
+    ir+='<tr style="border-bottom:1px solid #f0f2f8"><td style="padding:11px 8px;font-size:12px;color:#aaa">'+(i+1)+'</td><td style="padding:11px 8px"><div style="font-size:13px;color:#1B2B4B;font-weight:500">'+escHtml(it.desc)+'</div></td><td style="padding:11px 8px;text-align:center;font-size:13px;color:#555">'+it.qty+'</td><td style="padding:11px 8px;text-align:right;font-size:13px;color:#555">'+rv+'</td><td style="padding:11px 8px;text-align:right;font-size:13px;font-weight:600;'+as+'">'+av+'</td></tr>';
   });
   var th='<div style="display:flex;justify-content:space-between;padding:7px 8px;border-bottom:1px solid #f0f2f8;font-size:13px;color:#555"><span>Sub Total</span><span>'+Number(tot).toLocaleString()+'.00</span></div>';
   if(isI&&bp>0)th+='<div style="display:flex;justify-content:space-between;padding:7px 8px;border-bottom:1px solid #f0f2f8;font-size:13px"><span style="color:#555">Bespeaking Fee</span><span style="color:#38A169">('+Number(bp).toLocaleString()+'.00)</span></div>';
   th+='<div style="display:flex;justify-content:space-between;padding:9px 8px;font-size:14px;font-weight:700;border-top:2px solid #1B2B4B"><span>Total</span><span>LKR '+Number(isI?Math.max(0,bal):tot).toLocaleString()+'.00</span></div>';
-  var nh=doc.notes?'<div style="margin-bottom:18px"><div style="font-size:12px;font-weight:600;color:#555;margin-bottom:7px;border-bottom:1px solid #eee;padding-bottom:5px">Notes</div><div style="font-size:12px;color:#666;line-height:1.8">'+doc.notes.replace(/\n/g,'<br/>')+'</div></div>':'';
+  var nh=doc.notes?'<div style="margin-bottom:18px"><div style="font-size:12px;font-weight:600;color:#555;margin-bottom:7px;border-bottom:1px solid #eee;padding-bottom:5px">Notes</div><div style="font-size:12px;color:#666;line-height:1.8">'+escHtmlMultiline(doc.notes)+'</div></div>':'';
   var exp=!isI?'<div style="font-size:11px;color:#e74c3c">Expiry: '+fmt(doc.expiry)+'</div>':'';
   var html=
     '<div id="print-area" style="background:#fff;font-family:Inter,Arial,sans-serif;font-size:13px;max-width:740px;margin:0 auto;padding:36px 44px">'
@@ -2169,8 +2169,8 @@ function buildPDF(type,l,doc){
     +'<div style="height:1px;background:#e0e4ed;margin-bottom:18px"></div>'
     +'<div style="display:flex;justify-content:space-between;margin-bottom:22px">'
     +'<div><div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;font-weight:600">Bill To</div>'
-    +'<div style="font-weight:700;font-size:15px;color:#1B2B4B">'+l.name+'</div>'
-    +(l.phone?'<div style="font-size:12px;color:#555;margin-top:2px">'+l.phone+'</div>':'')+'</div>'
+    +'<div style="font-weight:700;font-size:15px;color:#1B2B4B">'+escHtml(l.name)+'</div>'
+    +(l.phone?'<div style="font-size:12px;color:#555;margin-top:2px">'+escHtml(l.phone)+'</div>':'')+'</div>'
     +'<div style="text-align:right;font-size:12px;color:#555">'+(isI?'Invoice Date':'Quote Date')+': <strong style="color:#1B2B4B">'+fmt(doc.date)+'</strong></div></div>'
     +'<table style="width:100%;border-collapse:collapse;margin-bottom:0"><thead><tr style="border-bottom:2px solid #1B2B4B">'
     +'<th style="padding:9px 8px;text-align:left;font-size:11px;text-transform:uppercase;color:#888;font-weight:600">#</th>'
@@ -2190,7 +2190,7 @@ function buildPDF(type,l,doc){
   document.getElementById('pdf-f').innerHTML=
     '<button class="btn btn-ghost" onclick="CM(\'pdf-modal\')">Close</button>'
     +'<button class="btn btn-outline" onclick="printPDF()">Save as PDF</button>'
-    +'<button class="btn btn-gold" onclick="sendWA(\''+l.phone+'\',\''+l.name+'\',\''+(isI?'Invoice':'Quote')+'\',\''+doc.id+'\','+tot+')">WhatsApp</button>';
+    +'<button class="btn btn-gold" onclick="sendWA(\''+escAttr(l.phone)+'\',\''+escAttr(l.name)+'\',\''+(isI?'Invoice':'Quote')+'\',\''+doc.id+'\','+tot+')">WhatsApp</button>';
   OM('pdf-modal');
 }
 function printPDF(){
@@ -2230,7 +2230,7 @@ function renderQB(){
   var cust=QB.cid?custs[QB.cid]:null;
   var tot=QB.items.reduce(function(s,it){return s+cLine(it);},0);
   var ch=cust
-    ?'<div class="qcsel"><div class="qav">'+inits(cust.name)+'</div><div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--navy)">'+cust.name+'</div><div style="font-size:12px;color:var(--muted)">'+(cust.phone||'')+'</div></div><button class="btn btn-ghost btn-xs" onclick="OS(\'cst\')">Change</button></div>'
+    ?'<div class="qcsel"><div class="qav">'+escHtml(inits(cust.name))+'</div><div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--navy)">'+escHtml(cust.name)+'</div><div style="font-size:12px;color:var(--muted)">'+escHtml(cust.phone||'')+'</div></div><button class="btn btn-ghost btn-xs" onclick="OS(\'cst\')">Change</button></div>'
     :'<div class="qrow" onclick="OS(\'cst\')"><div class="qrl">Select Customer</div><div class="qrv m">Tap to select</div><div style="color:var(--muted);margin-left:8px">›</div></div>';
   var lh='';
   QB.items.forEach(function(it,i){
@@ -2238,7 +2238,7 @@ function renderQB(){
     var rb=it.auto
       ?'<span style="font-size:11px;color:var(--muted);align-self:flex-end;padding-bottom:8px">auto</span>'
       :'<button class="qdel" onclick="delQBI(\''+( it.key||String(i) )+'\')" >x</button>';
-    lh+='<div class="ql"><div class="qln">'+it.desc+'</div><div class="qls">'+(it.cat||'Custom')+(it.theme?' · '+it.theme:'')+'</div>'
+    lh+='<div class="ql"><div class="qln">'+escHtml(it.desc)+'</div><div class="qls">'+escHtml(it.cat||'Custom')+(it.theme?' · '+escHtml(it.theme):'')+'</div>'
       +'<div class="qli">'
       +'<div class="qcl"><span class="qcll">Qty</span><input class="qi" type="number" value="'+(it.qty||1)+'" min="1" style="width:58px;text-align:center" oninput="QB.items['+i+'].qty=parseFloat(this.value)||1;updQBT()"/></div>'
       +'<div class="qcl"><span class="qcll">Unit Rs</span><input class="qi" type="number" value="'+(it.unit||0)+'" style="width:98px;text-align:right" oninput="QB.items['+i+'].unit=parseFloat(this.value)||0;updQBT()"/></div>'
@@ -2252,7 +2252,7 @@ function renderQB(){
     +'<div class="qs"><div class="qsh"><div class="qst">Services</div>'+(QB.items.length?'<div style="font-size:12px;color:var(--muted)">'+QB.items.length+' item'+(QB.items.length!==1?'s':'')+'</div>':'')+'</div>'
     +lh+'<div class="qadd" onclick="OS(\'svc\')"><div class="qac">+</div><div style="font-size:13px;font-weight:600;color:var(--navy)">Add new line</div></div></div>'
     +(QB.items.length?'<div class="qs"><div class="qsh" style="justify-content:flex-end"><div class="qgt" id="qb-g">'+fR(tot)+'</div></div></div>':'')
-    +'<div class="qs"><div style="padding:13px 18px"><textarea id="qb-n" style="width:100%;min-height:68px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:Inter,sans-serif;color:var(--text);outline:none;resize:vertical">'+(QB.notes||defNotes())+'</textarea></div></div>'
+    +'<div class="qs"><div style="padding:13px 18px"><textarea id="qb-n" style="width:100%;min-height:68px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:Inter,sans-serif;color:var(--text);outline:none;resize:vertical">'+escHtml(QB.notes||defNotes())+'</textarea></div></div>'
     +'</div>';
 }
 function updQBT(){
@@ -2286,7 +2286,7 @@ function filterSvcs(sq){
     var pl=(sv.aA&&lp===sv.b)?'From '+fR(sv.b):fR(lp||sv.b);
     h+='<div class="shi" onclick="selSvc(\''+sv.d.replace(/\'/g,"\\'")+'\',' +sv.b+',\''+sv.c+'\','+sv.aT+','+sv.aA+')" ><div><div class="sin">'+sv.d+'</div><div class="sim">'+sv.c+'</div></div><div class="sip">'+pl+'</div></div>';
   });
-  h+='<div class="sadd" onclick="addCustom(\''+sq.replace(/\'/g,"\\'")+'\')"><span style="color:var(--gold);font-weight:600;font-size:13px">+ Add custom line</span></div>';
+  h+='<div class="sadd" onclick="addCustom(\''+escAttr(sq)+'\')"><span style="color:var(--gold);font-weight:600;font-size:13px">+ Add custom line</span></div>';
   document.getElementById('svc-list').innerHTML=h;
 }
 function selSvc(desc,base,cat,aT,aA){
@@ -2332,7 +2332,7 @@ function filterCusts(sq){
   var s=sq.toLowerCase();
   var all=cA().filter(function(c){return !s||c.name.toLowerCase().includes(s)||(c.phone||'').includes(s);});
   var h='';
-  all.forEach(function(c){h+='<div class="ci" onclick="selCust(\''+c.id+'\')" ><div class="qav" style="width:38px;height:38px;font-size:13px">'+inits(c.name)+'</div><div><div style="font-size:13px;font-weight:600;color:var(--navy)">'+c.name+'</div><div style="font-size:11px;color:var(--muted)">'+(c.phone||'')+'</div></div></div>';});
+  all.forEach(function(c){h+='<div class="ci" onclick="selCust(\''+c.id+'\')" ><div class="qav" style="width:38px;height:38px;font-size:13px">'+escHtml(inits(c.name))+'</div><div><div style="font-size:13px;font-weight:600;color:var(--navy)">'+escHtml(c.name)+'</div><div style="font-size:11px;color:var(--muted)">'+escHtml(c.phone||'')+'</div></div></div>';});
   h+='<div class="cn2" onclick="CS(\'cst\');_cb=function(c){QB.cid=c.id;renderQB();};openNC()"><div class="cni">+</div><div><div style="font-size:13px;font-weight:600;color:var(--gold)">New Customer</div><div style="font-size:11px;color:var(--muted)">Create profile</div></div></div>';
   document.getElementById('cst-list').innerHTML=h;
 }
@@ -2463,10 +2463,10 @@ function buildOverviewTab(id,l,cancelled){
   var d=dU(l.weddingDate);
   var ev=l.events||{};
   var dis=cancelled?' disabled':'';
-  var lockNote=cancelled?'<div style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;color:var(--danger)">Booking cancelled '+(l.cancelledAt?fmt(l.cancelledAt):'')+'. '+(l.cancelReason?'Reason: '+l.cancelReason:'')+(l.refundAmount?'. Refund: '+fR(l.refundAmount):'')+'</div>':'';
+  var lockNote=cancelled?'<div style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;color:var(--danger)">Booking cancelled '+(l.cancelledAt?fmt(l.cancelledAt):'')+'. '+(l.cancelReason?'Reason: '+escHtml(l.cancelReason):'')+(l.refundAmount?'. Refund: '+fR(l.refundAmount):'')+'</div>':'';
   // Source dropdown
   var SRCS=getSources();
-  var srcOpts='';SRCS.forEach(function(s){srcOpts+='<option value="'+s.value+'"'+(l.source===s.value?' selected':'')+'>'+s.label+'</option>';});
+  var srcOpts='';SRCS.forEach(function(s){srcOpts+='<option value="'+escHtml(s.value)+'"'+(l.source===s.value?' selected':'')+'>'+escHtml(s.label)+'</option>';});
   // Event checkboxes
   var evHtml='';
   ['wedding','homecoming','goingAway'].forEach(function(k){
@@ -2572,9 +2572,9 @@ function buildApptTab(id,l,cancelled,appts){
     var dToA=dU(a.date);var dCol=dToA!==null&&dToA<=3?'var(--danger)':dToA!==null&&dToA<=7?'var(--warn)':'var(--text2)';
     schHtml+='<div style="background:var(--surf);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
-      +'<div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--navy)">'+(a.reason||'Appointment')+'</div>'
+      +'<div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--navy)">'+escHtml(a.reason||'Appointment')+'</div>'
       +'<div style="font-size:12px;color:'+dCol+';margin-top:2px">'+fmt(a.date)+(a.time?' at '+a.time:'')+(dToA!==null?' · in '+dToA+'d':'')+'</div>'
-      +(a.note?'<div style="font-size:11px;color:var(--muted);margin-top:3px;font-style:italic">'+a.note+'</div>':'')
+      +(a.note?'<div style="font-size:11px;color:var(--muted);margin-top:3px;font-style:italic">'+escHtml(a.note)+'</div>':'')
       +'</div>'
       +(cancelled?'':'<div style="display:flex;flex-direction:column;gap:4px"><button class="btn btn-outline btn-xs" onclick="markApptDone(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px;color:var(--success);border-color:var(--success)">✓ Complete</button><button class="btn btn-ghost btn-xs" onclick="openResched(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px;color:var(--navy)">↻ Reschedule</button><button class="btn btn-ghost btn-xs" onclick="markApptNoShow(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px;color:var(--warn)">⚠ No-show</button><button class="btn btn-ghost btn-xs" onclick="cancelAppt(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px">Cancel</button></div>')
       +'</div></div>';
@@ -2588,9 +2588,9 @@ function buildApptTab(id,l,cancelled,appts){
     var daysAgoTxt=daysAgo!==null?(daysAgo<0?Math.abs(daysAgo)+'d ago':daysAgo===0?'today':daysAgo+'d away'):'';
     noShowHtml+='<div style="background:#FEF7E5;border:1.5px solid var(--warn);border-radius:8px;padding:10px 12px;margin-bottom:8px">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
-      +'<div style="flex:1"><div style="display:flex;align-items:center;gap:6px;margin-bottom:2px"><span style="background:var(--warn);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;letter-spacing:.5px">NO-SHOW</span><div style="font-size:13px;font-weight:700;color:var(--navy)">'+(a.reason||'Appointment')+'</div></div>'
+      +'<div style="flex:1"><div style="display:flex;align-items:center;gap:6px;margin-bottom:2px"><span style="background:var(--warn);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;letter-spacing:.5px">NO-SHOW</span><div style="font-size:13px;font-weight:700;color:var(--navy)">'+escHtml(a.reason||'Appointment')+'</div></div>'
       +'<div style="font-size:12px;color:var(--warn);margin-top:2px">'+fmt(a.date)+(a.time?' at '+a.time:'')+' · '+daysAgoTxt+'</div>'
-      +(a.note?'<div style="font-size:11px;color:var(--muted);margin-top:3px;font-style:italic">'+a.note+'</div>':'')
+      +(a.note?'<div style="font-size:11px;color:var(--muted);margin-top:3px;font-style:italic">'+escHtml(a.note)+'</div>':'')
       +'</div>'
       +(cancelled?'':'<div style="display:flex;flex-direction:column;gap:4px"><button class="btn btn-outline btn-xs" onclick="openResched(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px;color:var(--navy)">↻ Reschedule</button><button class="btn btn-outline btn-xs" onclick="markApptDone(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px;color:var(--success);border-color:var(--success)">✓ Did come</button><button class="btn btn-ghost btn-xs" onclick="cancelAppt(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px;color:var(--danger)">Close</button></div>')
       +'</div></div>';
@@ -2601,9 +2601,9 @@ function buildApptTab(id,l,cancelled,appts){
   doneA.forEach(function(a){
     doneHtml+='<div style="background:#F0FDF4;border:1.5px solid #BBF7D0;border-radius:8px;padding:10px 12px;margin-bottom:8px">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'
-      +'<div><div style="font-size:13px;font-weight:600;color:var(--navy)">✓ '+(a.reason||'Appointment')+' · '+fmt(a.date)+(a.time?' at '+a.time:'')+'</div>'
+      +'<div><div style="font-size:13px;font-weight:600;color:var(--navy)">✓ '+escHtml(a.reason||'Appointment')+' · '+fmt(a.date)+(a.time?' at '+a.time:'')+'</div>'
       +'<div style="font-size:11px;color:var(--success);margin-top:2px">Completed '+(a.doneAt?fmt(a.doneAt):'')+'</div>'
-      +(a.note?'<div style="font-size:11px;color:var(--muted);margin-top:3px;font-style:italic">'+a.note+'</div>':'')
+      +(a.note?'<div style="font-size:11px;color:var(--muted);margin-top:3px;font-style:italic">'+escHtml(a.note)+'</div>':'')
       +'</div></div>'
       +'</div>';
   });
@@ -2615,8 +2615,8 @@ function buildApptTab(id,l,cancelled,appts){
     var newAppt=newKey && leads[id].appointments ? leads[id].appointments[newKey] : null;
     var newTxt = newAppt ? 'Moved to '+fmt(newAppt.date)+(newAppt.time?' at '+newAppt.time:'') : 'Moved';
     reschHtml+='<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;opacity:.75">'
-      +'<div style="font-size:13px;font-weight:600;color:var(--muted);text-decoration:line-through">'+(a.reason||'Appointment')+' · '+fmt(a.date)+(a.time?' at '+a.time:'')+'</div>'
-      +'<div style="font-size:11px;color:var(--navy);margin-top:2px">↻ '+newTxt+(a.rescheduleReason?' · '+a.rescheduleReason:'')+'</div>'
+      +'<div style="font-size:13px;font-weight:600;color:var(--muted);text-decoration:line-through">'+escHtml(a.reason||'Appointment')+' · '+fmt(a.date)+(a.time?' at '+a.time:'')+'</div>'
+      +'<div style="font-size:11px;color:var(--navy);margin-top:2px">↻ '+newTxt+(a.rescheduleReason?' · '+escHtml(a.rescheduleReason):'')+'</div>'
       +'</div>';
   });
   
@@ -2624,8 +2624,8 @@ function buildApptTab(id,l,cancelled,appts){
   var canHtml='';
   cancelledA.forEach(function(a){
     canHtml+='<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;opacity:.7">'
-      +'<div style="font-size:13px;font-weight:600;color:var(--muted);text-decoration:line-through">'+(a.reason||'Appointment')+' · '+fmt(a.date)+(a.time?' at '+a.time:'')+'</div>'
-      +'<div style="font-size:11px;color:var(--muted);margin-top:2px">Cancelled '+(a.cancelledAt?fmt(a.cancelledAt):'')+(a.cancelReason?' · '+a.cancelReason:'')+'</div>'
+      +'<div style="font-size:13px;font-weight:600;color:var(--muted);text-decoration:line-through">'+escHtml(a.reason||'Appointment')+' · '+fmt(a.date)+(a.time?' at '+a.time:'')+'</div>'
+      +'<div style="font-size:11px;color:var(--muted);margin-top:2px">Cancelled '+(a.cancelledAt?fmt(a.cancelledAt):'')+(a.cancelReason?' · '+escHtml(a.cancelReason):'')+'</div>'
       +'</div>';
   });
   // Add appointment form
@@ -2657,14 +2657,14 @@ function buildNotesTab(id,l,cancelled,notes){
   notes.forEach(function(n){
     nHtml+='<div style="background:var(--surf);border:1.5px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px" id="note-'+n.id+'">'
       +'<div id="nv-'+n.id+'">'
-      +'<div style="font-size:13px;color:var(--text);white-space:pre-wrap;line-height:1.5">'+(n.body||'').replace(/</g,'&lt;')+'</div>'
+      +'<div style="font-size:13px;color:var(--text);white-space:pre-wrap;line-height:1.5">'+escHtml(n.body||'')+'</div>'
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">'
       +'<div style="font-size:10px;color:var(--muted)">'+(n.createdAt?fmt(n.createdAt):'')+(n.editedAt?' · edited '+fmt(n.editedAt):'')+'</div>'
       +(cancelled?'':'<div style="display:flex;gap:6px"><button class="btn btn-ghost btn-xs" onclick="editNote(\''+id+'\',\''+n.id+'\')">Edit</button><button class="btn btn-ghost btn-xs" style="color:var(--danger)" onclick="delNote(\''+id+'\',\''+n.id+'\')">Delete</button></div>')
       +'</div>'
       +'</div>'
       +'<div id="ne-'+n.id+'" style="display:none">'
-      +'<textarea id="ne-t-'+n.id+'" style="min-height:80px">'+(n.body||'').replace(/</g,'&lt;')+'</textarea>'
+      +'<textarea id="ne-t-'+n.id+'" style="min-height:80px">'+escHtml(n.body||'')+'</textarea>'
       +'<div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px"><button class="btn btn-ghost btn-xs" onclick="cancelEditNote(\''+n.id+'\')">Cancel</button><button class="btn btn-primary btn-xs" onclick="saveNote(\''+id+'\',\''+n.id+'\')">Save</button></div>'
       +'</div>'
       +'</div>';
@@ -2684,7 +2684,7 @@ function buildDocsTab(id,l,cancelled,docs){
     var icon=doc.type==='application/pdf'?'PDF':doc.type&&doc.type.indexOf('image')>-1?'IMG':'FILE';
     dh+='<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surf);border:1.5px solid var(--border);border-radius:8px;margin-bottom:8px">'
       +'<div style="width:36px;height:36px;background:var(--navy);color:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700">'+icon+'</div>'
-      +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+doc.name+'</div><div style="font-size:11px;color:var(--muted)">'+(doc.uploadedAt?fmt(doc.uploadedAt):'')+' · '+Math.round((doc.size||0)/1024)+' KB'+(doc.category?' · '+doc.category:'')+'</div></div>'
+      +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escHtml(doc.name)+'</div><div style="font-size:11px;color:var(--muted)">'+(doc.uploadedAt?fmt(doc.uploadedAt):'')+' · '+Math.round((doc.size||0)/1024)+' KB'+(doc.category?' · '+escHtml(doc.category):'')+'</div></div>'
       +'<button class="btn btn-ghost btn-xs" onclick="viewDoc(\''+id+'\',\''+doc.id+'\')">View</button>'
       +(cancelled?'':'<button class="btn btn-ghost btn-xs" style="color:var(--danger)" onclick="delDoc(\''+id+'\',\''+doc.id+'\')">Delete</button>')
       +'</div>';
@@ -2706,7 +2706,7 @@ function buildStageCta(id,l){
     var btns='';
     if(ph)btns+='<button class="btn btn-gold btn-sm" onclick="window.open(\'https://wa.me/'+ph+'\',\'_blank\');advStage(\''+id+'\',1)">WhatsApp</button>';
     if(ph)btns+='<button class="btn btn-outline btn-sm" onclick="window.open(\'tel:+'+ph+'\');advStage(\''+id+'\',1)">Call</button>';
-    if(l.email)btns+='<button class="btn btn-outline btn-sm" onclick="window.open(\'mailto:'+l.email+'\');advStage(\''+id+'\',1)">Email</button>';
+    if(l.email)btns+='<button class="btn btn-outline btn-sm" onclick="window.open(\'mailto:'+escAttr(l.email)+'\');advStage(\''+id+'\',1)">Email</button>';
     return btns||'<button class="btn btn-primary btn-sm" onclick="advStage(\''+id+'\',1)">Mark Contacted</button>';
   }
   if(s===1)return '<button class="btn btn-primary btn-sm" onclick="advStage(\''+id+'\',2)">Book Consultation</button>';
@@ -2859,12 +2859,12 @@ function openResched(brideId, apptKey){
   var body = ''
     +'<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:14px">'
     +'<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:3px">Original</div>'
-    +'<div style="font-size:13px;font-weight:600;color:var(--navy)">'+(appt.reason||'Appointment')+'</div>'
-    +'<div style="font-size:12px;color:var(--text2);margin-top:2px">'+fmt(appt.date)+(appt.time?' at '+appt.time:'')+'</div>'
+    +'<div style="font-size:13px;font-weight:600;color:var(--navy)">'+escHtml(appt.reason||'Appointment')+'</div>'
+    +'<div style="font-size:12px;color:var(--text2);margin-top:2px">'+fmt(appt.date)+(appt.time?' at '+escHtml(appt.time):'')+'</div>'
     +'</div>'
     +'<div class="fg" style="margin-bottom:14px">'
-    +'<div class="fi"><label>New Date *</label><input type="date" id="resched-date" value="'+defDate+'"/></div>'
-    +'<div class="fi"><label>New Time</label><input type="time" id="resched-time" value="'+(appt.time||'')+'"/></div>'
+    +'<div class="fi"><label>New Date *</label><input type="date" id="resched-date" value="'+escHtml(defDate)+'"/></div>'
+    +'<div class="fi"><label>New Time</label><input type="time" id="resched-time" value="'+escHtml(appt.time||'')+'"/></div>'
     +'</div>'
     +'<div class="fi"><label>Reason (optional)</label><input type="text" id="resched-reason" placeholder="Why is it being moved?"/></div>';
   document.getElementById('resched-body').innerHTML = body;
@@ -3506,7 +3506,7 @@ function renderOverviewForm(){
         themeOpts += '<option value="'+t+'"'+(displayedTheme===t?' selected':'')+'>'+t+'</option>';
       });
       var otherField = displayedTheme==='Other'
-        ? '<input type="text" id="theme-other-'+key+'" value="'+(isOther?curTheme:'').replace(/"/g,'&quot;')+'" placeholder="Specify theme" oninput="ofSetThemeOther(\''+key+'\',this.value)" style="margin-top:6px"/>'
+        ? '<input type="text" id="theme-other-'+key+'" value="'+escHtml(isOther?curTheme:'')+'" placeholder="Specify theme" oninput="ofSetThemeOther(\''+key+'\',this.value)" style="margin-top:6px"/>'
         : '';
       themeField = '<div class="fi s2"><label>Theme *</label><select id="theme-'+key+'" onchange="ofSetTheme(\''+key+'\',this.value)">'+themeOpts+'</select>'+otherField+'</div>';
     }
@@ -3532,13 +3532,13 @@ function renderOverviewForm(){
         e.date = minStr;
         // Note: this mutates the OF.draft.events.homecoming reference too since e is the same object
       }
-      dateHint = '<div style="font-size:10px;color:var(--muted);margin-top:3px">Must be after wedding ('+wEv.date+')</div>';
+      dateHint = '<div style="font-size:10px;color:var(--muted);margin-top:3px">Must be after wedding ('+escHtml(wEv.date)+')</div>';
     }
     if(key === 'wedding' && hEv && hEv.enabled && hEv.date){
       // Wedding must be BEFORE homecoming
       var maxD = new Date(hEv.date); maxD.setDate(maxD.getDate()-1);
       dateMax = ' max="'+maxD.toISOString().slice(0,10)+'"';
-      dateHint = '<div style="font-size:10px;color:var(--muted);margin-top:3px">Must be before homecoming ('+hEv.date+')</div>';
+      dateHint = '<div style="font-size:10px;color:var(--muted);margin-top:3px">Must be before homecoming ('+escHtml(hEv.date)+')</div>';
     }
     if(key === 'goingAway' && wEv && wEv.enabled && wEv.date){
       // Going Away locked to wedding date
@@ -3552,7 +3552,7 @@ function renderOverviewForm(){
       +(enabled?(
         '<div class="fg" style="margin-top:10px">'
         +'<div class="fi"><label>Date *</label><input type="date" value="'+(e.date||dateDefault||'')+'"'+dateMin+dateMax+dateReadonly+' onchange="ofSetEvent(\''+key+'\',\'date\',this.value)"/>'+dateHint+'</div>'
-        +'<div class="fi"><label>Venue</label><input type="text" value="'+(e.venue||'').replace(/"/g,'&quot;')+'" placeholder="Venue name" onchange="ofSetEvent(\''+key+'\',\'venue\',this.value)"/></div>'
+        +'<div class="fi"><label>Venue</label><input type="text" value="'+escHtml(e.venue||'')+'" placeholder="Venue name" onchange="ofSetEvent(\''+key+'\',\'venue\',this.value)"/></div>'
         +themeField
         +'<div class="fi"><label>Start Time</label><input type="time" value="'+(e.startTime||'')+'" onchange="ofSetEvent(\''+key+'\',\'startTime\',this.value)"/></div>'
         +'<div class="fi"><label>End Time</label><input type="time" value="'+(e.endTime||'')+'" onchange="ofSetEvent(\''+key+'\',\'endTime\',this.value)"/></div>'
@@ -3568,12 +3568,12 @@ function renderOverviewForm(){
   var html =
     '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:600;margin-bottom:10px">Contact</div>'
     +'<div class="fi" style="margin-bottom:14px"><label>WhatsApp Number *</label>'
-    +'<input type="tel" id="of-phone" value="'+(b.phone||'')+'" placeholder="77 123 4567"/>'
+    +'<input type="tel" id="of-phone" value="'+escHtml(b.phone||'')+'" placeholder="77 123 4567"/>'
     +'<div id="of-phone-msg" style="font-size:11px;color:var(--muted);margin-top:4px"></div>'
     +'</div>'
     +'<div class="fg" style="margin-bottom:14px">'
-    +'<div class="fi"><label>Full Name *</label><input type="text" id="of-name" value="'+(b.name||'').replace(/"/g,'&quot;')+'" placeholder="Bride\'s name" oninput="ofMark();OF.draft.name=this.value"/></div>'
-    +'<div class="fi"><label>Email</label><input type="email" value="'+(b.email||'')+'" oninput="ofMark();OF.draft.email=this.value"/></div>'
+    +'<div class="fi"><label>Full Name *</label><input type="text" id="of-name" value="'+escHtml(b.name||'')+'" placeholder="Bride\'s name" oninput="ofMark();OF.draft.name=this.value"/></div>'
+    +'<div class="fi"><label>Email</label><input type="email" value="'+escHtml(b.email||'')+'" oninput="ofMark();OF.draft.email=this.value"/></div>'
     +'<div class="fi"><label>Source</label><select onchange="ofMark();OF.draft.source=this.value">'+srcOpts+'</select></div>'
     +'<div class="fi"><label>Date Inquired</label><input type="date" value="'+(b.createdAt||'').slice(0,10)+'" onchange="ofMark();OF.draft.createdAt=this.value+\'T00:00:00.000Z\'"/></div>'
     +'</div>'
@@ -3589,7 +3589,7 @@ function renderOverviewForm(){
       : ''
     )
     +'<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:600;margin:18px 0 10px">Notes</div>'
-    +'<textarea id="of-notes" style="min-height:80px" oninput="ofMark();OF.draft.notes=this.value">'+(b.notes||'').replace(/</g,'&lt;')+'</textarea>'
+    +'<textarea id="of-notes" style="min-height:80px" oninput="ofMark();OF.draft.notes=this.value">'+escHtml(b.notes||'')+'</textarea>'
     +'<div id="of-validation" style="margin-top:14px"></div>';
   
   document.getElementById('of-body').innerHTML = html;
@@ -3776,7 +3776,7 @@ function ofPhoneBlur(){
     return b.phone === OF.draft.phone && b.id !== OF.draft.id;
   });
   if(existing){
-    msg.innerHTML = '⚠ This number belongs to <strong>'+existing.name+'</strong>. <a href="#" onclick="CM(\'lead-modal\');openDetail(\''+existing.id+'\');return false;" style="color:var(--danger);text-decoration:underline;font-weight:600">Click here</a> to open.';
+    msg.innerHTML = '⚠ This number belongs to <strong>'+escHtml(existing.name)+'</strong>. <a href="#" onclick="CM(\'lead-modal\');openDetail(\''+existing.id+'\');return false;" style="color:var(--danger);text-decoration:underline;font-weight:600">Click here</a> to open.';
     msg.style.color = 'var(--danger)';
   } else {
     msg.innerHTML = '✓ Valid';
@@ -3852,7 +3852,7 @@ async function ofSave(){
   if(errs.length > 0){
     var box = document.getElementById('of-validation');
     if(box){
-      box.innerHTML = '<div style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:8px;padding:12px;font-size:13px;color:var(--danger)"><div style="font-weight:700;margin-bottom:6px">Please fix:</div>'+errs.map(function(e){return '• '+e;}).join('<br/>')+'</div>';
+      box.innerHTML = '<div style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:8px;padding:12px;font-size:13px;color:var(--danger)"><div style="font-weight:700;margin-bottom:6px">Please fix:</div>'+errs.map(function(e){return '• '+escHtml(e);}).join('<br/>')+'</div>';
       box.scrollIntoView({behavior:'smooth',block:'center'});
     }
     return;
@@ -4095,7 +4095,7 @@ function buildQuoteSection(){
     var linkBadge = it.linkedTo ? '<span style="font-size:9px;color:var(--gold);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-left:6px">⚓ linked</span>' : '';
     rowsHtml += '<div style="background:'+(isDiscount?'#FEF7E5':'var(--bg)')+';border:1.5px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px">';
     rowsHtml += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">';
-    rowsHtml += '<div style="flex:1;font-size:13px;font-weight:600;color:'+(isDiscount?'var(--gold)':'var(--navy)')+'">'+it.desc+linkBadge+'</div>';
+    rowsHtml += '<div style="flex:1;font-size:13px;font-weight:600;color:'+(isDiscount?'var(--gold)':'var(--navy)')+'">'+escHtml(it.desc)+linkBadge+'</div>';
     rowsHtml += '<button class="btn btn-ghost btn-xs" onclick="qiDelete(\''+k+'\')" style="color:var(--danger);padding:4px 8px">✕</button>';
     rowsHtml += '</div>';
     rowsHtml += '<div style="display:flex;gap:6px;align-items:flex-end">';
@@ -4351,7 +4351,7 @@ function rFinance(){
       var mb = i < out.length-1 ? 'margin-bottom:10px' : '';
       html += '<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;'+mb+'" onclick="openDetail(\''+brideId+'\')">';
       html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px">';
-      html += '<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:2px">'+x.inv.cn+'</div><div style="font-size:10px;color:var(--muted);font-weight:500">'+x.inv.id+' · '+pctPaid+'% paid</div></div>';
+      html += '<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:2px">'+escHtml(x.inv.cn)+'</div><div style="font-size:10px;color:var(--muted);font-weight:500">'+x.inv.id+' · '+pctPaid+'% paid</div></div>';
       html += '<div style="text-align:right;flex-shrink:0"><div style="font-family:Cinzel,serif;font-size:15px;color:var(--warn);font-weight:600">'+fRshort(x.bal)+'</div></div>';
       html += '</div>';
       // Mini progress bar
@@ -4385,7 +4385,7 @@ function rFinance(){
       html += '<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;'+mb+'" onclick="openDetail(\''+inv.brideId+'\')">';
       // Header: name + total
       html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:4px">';
-      html += '<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;color:var(--navy)">'+inv.cn+'</div></div>';
+      html += '<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;color:var(--navy)">'+escHtml(inv.cn)+'</div></div>';
       html += '<div style="text-align:right;flex-shrink:0"><div style="font-family:Cinzel,serif;font-size:16px;color:var(--gold);font-weight:600">'+fRshort(t)+'</div></div>';
       html += '</div>';
       // Subheader: date + ID
@@ -4517,7 +4517,7 @@ function aLeadSourcePerf(from, to){
     // Header: source name + revenue
     html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px">';
     html += '<div style="flex:1;min-width:0">';
-    html += '<div style="font-size:14px;font-weight:700;color:var(--navy)">'+r.label+'</div>';
+    html += '<div style="font-size:14px;font-weight:700;color:var(--navy)">'+escHtml(r.label)+'</div>';
     html += '<div style="font-size:10px;color:var(--muted);margin-top:2px">'+leadShare+'% of all leads</div>';
     html += '</div>';
     html += '<div style="text-align:right;flex-shrink:0">';
@@ -4804,7 +4804,7 @@ function rSettings(tab){
     var pid='p-'+sv.d.replace(/[^a-z0-9]/gi,'_');
     pi+='<div style="display:flex;align-items:center;gap:10px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 13px"><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+sv.d+'</div><div style="font-size:11px;color:var(--muted)">'+sv.c+' · Default Rs '+sv.b.toLocaleString()+'</div></div><input type="number" id="'+pid+'" value="'+(lp[sv.d]||'')+'" placeholder="'+sv.b+'" style="width:110px;text-align:right;background:#fff;border:1.5px solid var(--border);border-radius:6px;padding:6px 9px;font-size:13px;font-family:Inter,sans-serif;color:var(--text);outline:none"/></div>';
   });
-  var it='<div class="fi" style="margin-bottom:18px"><label>Default Notes / Terms</label><textarea id="s-notes" style="min-height:130px">'+(s.defaultNotes||defNotes()).replace(/</g,'&lt;')+'</textarea></div><div class="fi" style="margin-bottom:18px"><label>Company Logo URL</label><input type="text" id="s-logo" value="'+(s.logoUrl||'')+'" placeholder="https://... image URL"/></div><button class="btn btn-primary" onclick="saveInvS()">Save Invoice Settings</button>';
+  var it='<div class="fi" style="margin-bottom:18px"><label>Default Notes / Terms</label><textarea id="s-notes" style="min-height:130px">'+escHtml(s.defaultNotes||defNotes())+'</textarea></div><div class="fi" style="margin-bottom:18px"><label>Company Logo URL</label><input type="text" id="s-logo" value="'+escHtml(s.logoUrl||'')+'" placeholder="https://... image URL"/></div><button class="btn btn-primary" onclick="saveInvS()">Save Invoice Settings</button>';
   var pt='<div style="margin-bottom:12px;font-size:13px;color:var(--muted)">Override defaults. Leave blank to use default.</div><div style="display:flex;flex-direction:column;gap:8px">'+pi+'</div><button class="btn btn-primary" style="margin-top:14px" onclick="savePriceS()">Save Prices</button>';
   var dt='<div style="background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:10px;padding:18px;margin-bottom:14px"><div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:7px">Backfill Missing Leads</div><div style="font-size:13px;color:var(--text2);margin-bottom:14px">Creates lead records for any customer who has quotes or invoices but no matching lead. Use this if customers have quotes but the pipeline shows empty.</div><button class="btn btn-primary" onclick="backfillLeads()">Backfill Leads from Customers</button></div><div style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:10px;padding:18px"><div style="font-size:14px;font-weight:600;color:var(--danger);margin-bottom:7px">Clear Test Data</div><div style="font-size:13px;color:var(--text2);margin-bottom:14px">Permanently deletes all leads, customers, quotations and invoices. Settings and prices are kept.</div><button class="btn btn-danger" onclick="clearData()">Delete All Test Data</button></div>';
   // Sources tab
@@ -4812,7 +4812,7 @@ function rSettings(tab){
   var srcRows='';
   srcs.forEach(function(s,idx){
     srcRows+='<div style="display:flex;align-items:center;gap:8px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:6px">'
-      +'<input type="text" value="'+s.label.replace(/"/g,'&quot;')+'" data-idx="'+idx+'" class="src-lbl" style="flex:1"/>'
+      +'<input type="text" value="'+escHtml(s.label)+'" data-idx="'+idx+'" class="src-lbl" style="flex:1"/>'
       +'<button class="btn btn-ghost btn-xs" style="color:var(--danger)" onclick="removeSrc('+idx+')">Remove</button>'
       +'</div>';
   });
@@ -5194,10 +5194,10 @@ function rDailyBrief(){
       var trialLine = w.finalTrial
         ? '<div style="font-size:12px;color:var(--text2);margin-top:2px">Final trial: '+fmt(w.finalTrial.date)+(w.finalTrial.time?' at '+w.finalTrial.time:'')+'</div>'
         : '<div style="font-size:12px;color:var(--warn);margin-top:2px">⚠ Final trial not booked</div>';
-      var details = w.theme || w.bmCount ? '<div style="font-size:11px;color:var(--muted);margin-top:4px">'+(w.theme||'No theme')+(w.bmCount?' · '+w.bmCount+' BM'+(w.bmCount!==1?'s':''):'')+'</div>' : '';
+      var details = w.theme || w.bmCount ? '<div style="font-size:11px;color:var(--muted);margin-top:4px">'+escHtml(w.theme||'No theme')+(w.bmCount?' · '+w.bmCount+' BM'+(w.bmCount!==1?'s':''):'')+'</div>' : '';
       html += '<div style="background:var(--surf);border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer" onclick="openDetail(\''+w.id+'\')">'
         +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">'
-        +'<div style="font-size:14px;font-weight:700;color:var(--navy)">'+w.name+'</div>'
+        +'<div style="font-size:14px;font-weight:700;color:var(--navy)">'+escHtml(w.name)+'</div>'
         +'<div style="font-size:10px;font-weight:700;color:'+dayColor+';letter-spacing:.5px">'+dayLabel+'</div>'
         +'</div>'
         +'<div style="font-size:11px;color:var(--muted)">'+wdate+'</div>'
@@ -5219,7 +5219,7 @@ function rDailyBrief(){
       html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;'+(i<appts.length-1?'border-bottom:1px solid var(--border);':'')+'cursor:pointer" onclick="openDetail(\''+a.brideId+'\')">'
         +'<div style="min-width:60px;font-size:11px;color:var(--text2);font-weight:600">'+dayLbl+'</div>'
         +'<div style="min-width:48px;font-size:12px;color:var(--navy);font-weight:600">'+(a.time||'—')+'</div>'
-        +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+a.brideName+'</div><div style="font-size:11px;color:var(--muted)">'+a.reason+'</div></div>'
+        +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+escHtml(a.brideName)+'</div><div style="font-size:11px;color:var(--muted)">'+escHtml(a.reason)+'</div></div>'
         +'</div>';
     });
     html += '</div>';
@@ -5237,7 +5237,7 @@ function rDailyBrief(){
     html += '<div style="background:var(--surf);border:1.5px solid var(--border);border-radius:10px;padding:12px 14px">';
     if(g.newLeads.length > 0){
       var sources = g.newLeads.map(function(l){return l.source||'?';}).join(', ');
-      html += '<div style="font-size:13px;color:var(--text);margin-bottom:6px"><strong style="color:var(--navy)">'+g.newLeads.length+' new lead'+(g.newLeads.length!==1?'s':'')+'</strong> <span style="color:var(--muted);font-size:11px">('+sources+')</span></div>';
+      html += '<div style="font-size:13px;color:var(--text);margin-bottom:6px"><strong style="color:var(--navy)">'+g.newLeads.length+' new lead'+(g.newLeads.length!==1?'s':'')+'</strong> <span style="color:var(--muted);font-size:11px">('+escHtml(sources)+')</span></div>';
     }
     if(g.consultations.length > 0){
       html += '<div style="font-size:13px;color:var(--text);margin-bottom:6px"><strong style="color:var(--navy)">'+g.consultations.length+' consultation'+(g.consultations.length!==1?'s':'')+' completed</strong></div>';
@@ -5265,7 +5265,7 @@ function rDailyBrief(){
     html += '<div style="background:#FEF7E5;border:1.5px solid #F0D285;border-radius:10px;overflow:hidden">';
     warnings.forEach(function(w, i){
       html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;'+(i<warnings.length-1?'border-bottom:1px solid rgba(240,210,133,0.4);':'')+'cursor:pointer" onclick="openDetail(\''+w.id+'\')">'
-        +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+w.name+'</div><div style="font-size:11px;color:var(--warn);margin-top:2px">'+w.text+'</div></div>'
+        +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+escHtml(w.name)+'</div><div style="font-size:11px;color:var(--warn);margin-top:2px">'+escHtml(w.text)+'</div></div>'
         +'<div style="color:var(--muted);font-size:14px">›</div>'
         +'</div>';
     });
@@ -5433,7 +5433,7 @@ function renderApprovalRequests(reqs){
     var when=r.requestedAt?timeAgo(r.requestedAt):'';
     var who=r.requestedBy||'(unknown)';
     h+='<div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px">';
-    h+='<div style="font-size:13.5px;font-weight:600;color:var(--navy);margin-bottom:4px">'+describeRequest(r)+'</div>';
+    h+='<div style="font-size:13.5px;font-weight:600;color:var(--navy);margin-bottom:4px">'+escHtml(describeRequest(r))+'</div>';
     if(r.reason){
       h+='<div style="font-size:12px;color:var(--text2);font-style:italic;margin-bottom:6px;padding:6px 9px;background:var(--bg);border-radius:6px;border-left:2px solid var(--gold)">\u201C'+escHtml(r.reason)+'\u201D</div>';
     }
@@ -5449,8 +5449,19 @@ function renderApprovalRequests(reqs){
 }
 // Helper: HTML-escape user-provided strings to prevent injection
 function escHtml(s){
-  if(!s)return '';
+  if(s===undefined||s===null)return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+// Helper: JS-string escape for values embedded inside onclick="fn('...')" attributes.
+// HTML escaping alone is NOT enough in JS context - a single quote breaks the handler.
+function escAttr(s){
+  if(s===undefined||s===null)return '';
+  return String(s).replace(/\\/g,'\\\\').replace(/'/g,'\\u0027').replace(/"/g,'\\u0022').replace(/</g,'\\u003C').replace(/>/g,'\\u003E').replace(/\r?\n/g,' ');
+}
+// Helper: escape user-provided multi-line notes for HTML display, preserving line breaks.
+function escHtmlMultiline(s){
+  if(s===undefined||s===null)return '';
+  return escHtml(s).replace(/\r?\n/g,'<br/>');
 }
 // Helper: relative time. Best-effort, falls back to date.
 function timeAgo(iso){
@@ -5517,7 +5528,7 @@ function renderTodaysActions(actions){
         var callBtn = ph ? '<button class="lcard-icon-btn" onclick="event.stopPropagation();window.open(\'tel:+'+ph+'\')">📞</button>' : '';
         var logBtn = '<button class="lcard-cta-btn" onclick="event.stopPropagation();openDisp(\''+f.id+'\')">Log Attempt</button>';
         var status = f.overdue ? '<span style="color:var(--danger);font-weight:600">Overdue</span>' : '<span style="color:var(--warn)">Due today</span>';
-        return '<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+f.name+'</div><div style="font-size:11px;margin-top:2px">'+status+'</div></div><div style="display:flex;gap:4px;align-items:center">'+waBtn+callBtn+logBtn+'</div></div>';
+        return '<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+escHtml(f.name)+'</div><div style="font-size:11px;margin-top:2px">'+status+'</div></div><div style="display:flex;gap:4px;align-items:center">'+waBtn+callBtn+logBtn+'</div></div>';
       }
     });
   }
@@ -5538,7 +5549,7 @@ function renderTodaysActions(actions){
         var waBtn = ph ? '<button class="lcard-icon-btn" onclick="event.stopPropagation();window.open(\'https://wa.me/'+ph+'\',\'_blank\')">💬</button>' : '';
         var openBtn = '<button class="lcard-icon-btn" onclick="event.stopPropagation();openDetail(\''+a.brideId+'\')">→</button>';
         var when = (a.isToday ? 'Today' : 'Tomorrow') + (a.time ? ' at '+a.time : '');
-        return '<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+a.brideName+'</div><div style="font-size:11px;color:var(--text2);margin-top:2px">'+a.reason+' · '+when+'</div></div><div style="display:flex;gap:4px">'+waBtn+openBtn+'</div></div>';
+        return '<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+escHtml(a.brideName)+'</div><div style="font-size:11px;color:var(--text2);margin-top:2px">'+escHtml(a.reason)+' · '+when+'</div></div><div style="display:flex;gap:4px">'+waBtn+openBtn+'</div></div>';
       }
     });
   }
@@ -5554,7 +5565,7 @@ function renderTodaysActions(actions){
       items: actions.quotesDue,
       renderItem: function(q){
         var quoteBtn = '<button class="lcard-cta-btn" onclick="event.stopPropagation();openOverviewForm(\''+q.id+'\',{intent:\'quote\'})">Create Quote</button>';
-        return '<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+q.name+'</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Consultation '+q.daysSince+'d ago</div></div>'+quoteBtn+'</div>';
+        return '<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+escHtml(q.name)+'</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Consultation '+q.daysSince+'d ago</div></div>'+quoteBtn+'</div>';
       }
     });
   }
@@ -5586,7 +5597,7 @@ function renderTodaysActions(actions){
         }
         var subColor = u.overdue ? 'var(--danger)' : 'var(--danger)';
         var weight = u.overdue ? '700' : '600';
-        return '<div style="background:var(--bg);border:1px solid '+(u.overdue?'var(--danger)':'var(--border)')+';border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+u.name+(u.overdue?' <span style="background:var(--danger);color:#fff;font-size:8px;font-weight:700;padding:2px 5px;border-radius:3px;letter-spacing:.5px;margin-left:4px">OVERDUE</span>':'')+'</div><div style="font-size:11px;color:'+subColor+';margin-top:2px;font-weight:'+weight+'">Balance '+fR(u.balance)+' · '+wedTxt+'</div></div>'+openBtn+'</div>';
+        return '<div style="background:var(--bg);border:1px solid '+(u.overdue?'var(--danger)':'var(--border)')+';border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+escHtml(u.name)+(u.overdue?' <span style="background:var(--danger);color:#fff;font-size:8px;font-weight:700;padding:2px 5px;border-radius:3px;letter-spacing:.5px;margin-left:4px">OVERDUE</span>':'')+'</div><div style="font-size:11px;color:'+subColor+';margin-top:2px;font-weight:'+weight+'">Balance '+fR(u.balance)+' · '+wedTxt+'</div></div>'+openBtn+'</div>';
       }
     });
   }
@@ -5689,7 +5700,7 @@ function renderDisp(){
     if(attCount>0){
       var lastAtt = atts.slice().sort(function(a,b){return new Date(b.at)-new Date(a.at);})[0];
       var lastLabel = {no_answer:'No answer',callback_later:'Reached - call back later',consult_booked:'Booked consultation',not_interested:'Not interested'}[lastAtt.outcome] || lastAtt.outcome;
-      historyDetail = '<div style="font-size:11px;color:var(--muted);margin-bottom:14px">Last: '+lastLabel+' on '+fmt(lastAtt.at)+(lastAtt.note?' — "'+lastAtt.note+'"':'')+'</div>';
+      historyDetail = '<div style="font-size:11px;color:var(--muted);margin-bottom:14px">Last: '+escHtml(lastLabel)+' on '+fmt(lastAtt.at)+(lastAtt.note?' — "'+escHtml(lastAtt.note)+'"':'')+'</div>';
     }
     document.getElementById('disp-body').innerHTML =
       '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:6px">'+historyTxt+'</div>'
@@ -6244,7 +6255,7 @@ function openMyRequests(){
       var stLabel=st.toUpperCase();
       h+='<div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px">';
       h+='<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px">';
-      h+='<div style="flex:1;font-size:13px;font-weight:600;color:var(--navy)">'+describeRequest(r)+'</div>';
+      h+='<div style="flex:1;font-size:13px;font-weight:600;color:var(--navy)">'+escHtml(describeRequest(r))+'</div>';
       h+='<div style="font-size:9px;font-weight:700;color:#fff;background:'+stColor+';padding:2px 7px;border-radius:8px;letter-spacing:.5px">'+stLabel+'</div>';
       h+='</div>';
       if(r.reason){
