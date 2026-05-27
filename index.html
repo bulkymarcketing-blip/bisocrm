@@ -88,7 +88,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
 .tag{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500}
 .tw{background:#DCFCE7;color:#15803D}.ti{background:#FCE7F3;color:#BE185D}
 .tf{background:var(--gold-dim);color:#92400E}.tr{background:#EDE9FE;color:#6D28D9}.twi{background:#E0F2FE;color:#0369A1}
-.td{background:var(--bg);color:var(--muted);border:1px solid var(--border)}.tu{background:#FEE2E2;color:#DC2626}.tq{background:var(--gold-dim);color:#92400E;font-weight:700}
+.td{background:var(--bg);color:var(--muted);border:1px solid var(--border)}.tu{background:#FEE2E2;color:#DC2626}.tq{background:var(--gold-dim);color:#92400E;font-weight:700}.twg{background:#FDE68A;color:#92400E}
 .card{background:var(--surf);border:1.5px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--sh)}
 .card-hdr{padding:16px 20px;border-bottom:1.5px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .card-title{font-family:'Cinzel',serif;font-size:13px;color:var(--navy);letter-spacing:.5px}
@@ -105,7 +105,7 @@ tbody tr:active td{background:var(--navy-dim)}
 .bu{background:#FEE2E2;color:#DC2626}.bo{background:#EFF6FF;color:#1D4ED8}
 .bs{background:#DCFCE7;color:#15803D}.bi{background:#F5F3FF;color:#6D28D9}
 .db{font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;margin-left:5px}
-.ds{background:#FEE2E2;color:#DC2626}.dn{background:#FEF3C7;color:#D97706}.dok{background:#D1FAE5;color:#059669}
+.ds{background:#FDE68A;color:#92400E}.dn{background:#FEF3C7;color:#B45309}.dok{background:#D1FAE5;color:#059669}
 .overlay{position:fixed;inset:0;background:rgba(27,43,75,0.5);z-index:1000;display:flex;align-items:flex-start;justify-content:center;padding:0;opacity:0;pointer-events:none;transition:opacity .2s}
 .overlay.open{opacity:1;pointer-events:all}
 .modal{background:var(--surf);border-radius:0;width:100%;max-width:100%;height:100vh;height:100dvh;max-height:100vh;max-height:100dvh;display:flex;flex-direction:column;box-shadow:none;overscroll-behavior:contain;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
@@ -288,6 +288,7 @@ textarea{resize:vertical;min-height:80px}
 <div class="sov" id="cst-ov" onclick="CS('cst')"></div><div class="sheet" id="cst-sheet"><div class="shdl"></div><div class="shd"><div class="sht">Select Customer</div><button class="shc" onclick="CS('cst')">×</button></div><div class="ssw"><span class="ssi">⌕</span><input class="shs" type="text" id="cst-q" placeholder="Search…" oninput="filterCusts(this.value)"/></div><div class="shl" id="cst-list"></div></div>
 <div class="overlay" id="cf-modal" style="z-index:3000"><div class="modal msm"><div class="mhd"><div><div class="mt" id="cf-title">Confirm</div><div class="msb" id="cf-sub" style="display:none"></div></div></div><div class="mbdy"><div id="cf-msg" style="font-size:14px;color:var(--text2);line-height:1.6"></div><div id="cf-input-wrap" style="margin-top:14px;display:none"><label id="cf-input-label" style="display:block;margin-bottom:6px">Amount</label><input type="number" id="cf-input" style="width:100%"/><input type="date" id="cf-input-date" style="width:100%;display:none"/><input type="time" id="cf-input-time" style="width:100%;display:none;margin-top:8px"/></div><div id="cf-note-wrap" style="margin-top:10px;display:none"><label style="display:block;margin-bottom:6px">Note (optional)</label><input type="text" id="cf-note" placeholder="Reason or comment"/></div></div><div class="mft"><button class="btn btn-ghost" onclick="cfNo()" id="cf-no">Cancel</button><button class="btn btn-primary" onclick="cfYes()" id="cf-yes">Confirm</button></div></div></div>
 <div class="overlay" id="disp-modal" style="z-index:2500"><div class="modal msm"><div class="mhd"><div style="flex:1"><div class="mt">Log Contact Attempt</div><div class="msb" id="disp-sub"></div></div><button class="mc" onclick="closeDisp()">×</button></div><div class="mbdy" id="disp-body"></div><div class="mft" id="disp-footer"></div></div></div>
+<div class="overlay" id="resched-modal" style="z-index:2500"><div class="modal msm"><div class="mhd"><div style="flex:1"><div class="mt">Reschedule Appointment</div><div class="msb" id="resched-sub"></div></div><button class="mc" onclick="closeResched()">×</button></div><div class="mbdy" id="resched-body"></div><div class="mft" id="resched-footer"></div></div></div>
 <div class="notif" id="NF"></div>
 <script>
 const FB='https://biso-crm-default-rtdb.asia-southeast1.firebasedatabase.app';
@@ -707,6 +708,11 @@ document.addEventListener('click',function(e){
     showConfirm({title:'Discard attempt?',msg:'You have not saved this contact attempt. Discard?',yesText:'Discard',dangerous:true}).then(function(r){if(r.ok)closeDisp();});
     return;
   }
+  // Reschedule modal: if open, treat as dirty (user opened it intending to do something)
+  if(id==='resched-modal'&&typeof RESCH!=='undefined'&&RESCH.brideId){
+    showConfirm({title:'Discard reschedule?',msg:'Close without rescheduling?',yesText:'Discard',dangerous:true}).then(function(r){if(r.ok)closeResched();});
+    return;
+  }
   // Quotation builder: warn if there are unsaved line items
   if(id==='quot-modal'&&typeof QB!=='undefined'&&QB.items&&QB.items.length>0){
     showConfirm({title:'Discard quotation?',msg:'You have unsaved line items. Discard them?',yesText:'Discard',dangerous:true}).then(function(r){if(r.ok)CM('quot-modal');});
@@ -993,7 +999,7 @@ function lCard(l){
   var dt=overdue?'<span class="tag tu">Overdue</span>':age>7?'<span class="tag tu">'+age+'d old</span>':'<span class="tag td">'+age+'d</span>';
   var qt=Object.keys(l.quotations||{}).length>0?'<span class="tag tq">Quoted</span>':'';
   var dw=dU(l.weddingDate);
-  var dwTag=dw!==null&&dw<60?'<span class="tag tu">Wedding in '+dw+'d</span>':'';
+  var dwTag=dw!==null&&dw<60?'<span class="tag twg">Wedding in '+dw+'d</span>':'';
   // Attempt count + next reminder badges (new)
   var atts=Object.values(l.contactAttempts||{});
   var attTag='';
@@ -1190,15 +1196,20 @@ function rSchedule(){
       }
       // Appointments
       Object.values(b.appointments||{}).forEach(function(a){
-        if(a.cancelled || a.done || !a.date)return;
+        if(a.cancelled || a.done || a.rescheduled || !a.date)return;
         var d = new Date(a.date); d.setHours(0,0,0,0);
-        if(d>=now){
+        // Show future appointments AND no-show appointments (even if past) - manager needs to action no-shows
+        var isFutureOrToday = d >= now;
+        var isNoShow = !!a.noShow;
+        if(isFutureOrToday || isNoShow){
           var t = a.reason || 'Other';
           if(!typeMeta[t])t='Other';
           allEvents.push({
             brideId: b.id, brideName: b.name||'(no name)',
             type: t, date: a.date, time: a.time||'',
-            venue: '', note: a.note||''
+            venue: '', note: a.note||'',
+            noShow: isNoShow,
+            apptKey: a.key
           });
         }
       });
@@ -1259,10 +1270,12 @@ function rSchedule(){
     else if(daysAway > 1 && daysAway < 7) dayBadge = 'in '+daysAway+'d';
     else if(daysAway < 0) dayBadge = Math.abs(daysAway)+'d overdue';
     else dayBadge = '';
-    var dayBadgeColor = (e.isFollowUp && e.overdue) ? 'var(--danger)' : 'var(--gold)';
+    var dayBadgeColor = (e.isFollowUp && e.overdue) ? 'var(--danger)' : e.noShow ? 'var(--warn)' : 'var(--gold)';
     var timeLabel = e.time ? ' · '+e.time : '';
     var venueLabel = e.venue ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">📍 '+e.venue+'</div>' : '';
     var themeLabel = e.theme ? '<span style="display:inline-block;background:rgba(0,0,0,0.06);padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;color:var(--text2);margin-left:6px">'+e.theme+'</span>' : '';
+    // No-show badge takes precedence visually
+    var noShowBadge = e.noShow ? '<span style="display:inline-block;background:var(--warn);color:#fff;padding:2px 7px;border-radius:10px;font-size:9px;font-weight:700;letter-spacing:.5px;margin-right:4px">NO-SHOW</span>' : '';
     var extraLabel = '';
     if(e.extra){
       var extras = [];
@@ -1281,18 +1294,28 @@ function rSchedule(){
     if(e.isFollowUp){
       followUpCta = '<button onclick="event.stopPropagation();openDisp(\''+e.brideId+'\')" style="background:var(--navy);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;margin-top:6px">📞 Log Attempt</button>';
     }
-    // Dashed border for follow-ups to visually distinguish from appointments
-    var cardBorder = e.isFollowUp ? '1.5px dashed '+meta.color : '1.5px solid var(--border)';
-    return '<div onclick="openDetail(\'' + e.brideId + '\')" style="background:#fff;border:'+cardBorder+';border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer;display:flex;align-items:flex-start;gap:12px;transition:transform .1s">'
-      +'<div style="width:8px;align-self:stretch;background:'+meta.color+';border-radius:4px;flex-shrink:0"></div>'
+    // No-show cards get reschedule + done quick actions
+    var noShowCta = '';
+    if(e.noShow && e.apptKey){
+      noShowCta = '<div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">'
+        +'<button onclick="event.stopPropagation();openResched(\''+e.brideId+'\',\''+e.apptKey+'\')" style="background:var(--navy);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer">↻ Reschedule</button>'
+        +'<button onclick="event.stopPropagation();markApptDone(\''+e.brideId+'\',\''+e.apptKey+'\')" style="background:transparent;color:var(--success);border:1.5px solid var(--success);border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer">✓ Did come</button>'
+        +'</div>';
+    }
+    // Dashed border for follow-ups; warn border for no-shows
+    var cardBorder = e.isFollowUp ? '1.5px dashed '+meta.color : e.noShow ? '1.5px solid var(--warn)' : '1.5px solid var(--border)';
+    var cardBg = e.noShow ? '#FEF7E5' : '#fff';
+    return '<div onclick="openDetail(\'' + e.brideId + '\')" style="background:'+cardBg+';border:'+cardBorder+';border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer;display:flex;align-items:flex-start;gap:12px;transition:transform .1s">'
+      +'<div style="width:8px;align-self:stretch;background:'+(e.noShow?'var(--warn)':meta.color)+';border-radius:4px;flex-shrink:0"></div>'
       +'<div style="flex:1;min-width:0">'
-      +'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px"><span style="display:inline-block;background:'+meta.bg+';color:'+meta.color+';padding:3px 9px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase">'+meta.label+'</span>'+(dayBadge?'<span style="font-size:10px;color:'+dayBadgeColor+';font-weight:700">'+dayBadge+'</span>':'')+themeLabel+'</div>'
+      +'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">'+noShowBadge+'<span style="display:inline-block;background:'+meta.bg+';color:'+meta.color+';padding:3px 9px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase">'+meta.label+'</span>'+(dayBadge?'<span style="font-size:10px;color:'+dayBadgeColor+';font-weight:700">'+dayBadge+'</span>':'')+themeLabel+'</div>'
       +'<div style="font-weight:700;color:var(--navy);font-size:15px;margin-bottom:2px">'+e.brideName+'</div>'
       +'<div style="font-size:12px;color:var(--text2)">'+dateLabel+timeLabel+'</div>'
       +venueLabel
       +extraLabel
       +(e.note && !e.isFollowUp?'<div style="font-size:11px;color:var(--muted);margin-top:4px;font-style:italic">'+e.note+'</div>':'')
       +followUpCta
+      +noShowCta
       +'</div>'
       +'</div>';
   }
@@ -2108,10 +2131,15 @@ function buildPaymentTab(id,l,cancelled,quots,invs){
 }
 
 function buildApptTab(id,l,cancelled,appts){
-  // Sort: scheduled first by date asc, then cancelled by cancelledAt desc
-  var scheduled=appts.filter(function(a){return !a.cancelled && !a.done;}).sort(function(a,b){return new Date(a.date+'T'+(a.time||'00:00'))-new Date(b.date+'T'+(b.time||'00:00'));});
-  var cancelledA=appts.filter(function(a){return a.cancelled;}).sort(function(a,b){return new Date(b.cancelledAt||0)-new Date(a.cancelledAt||0);});
+  // Sort: scheduled first by date asc, then no-show by date desc, then cancelled by cancelledAt desc, then rescheduled-source separately
+  // States: scheduled (live), noShow (date passed without action), done, cancelled, rescheduled (moved to new appt)
+  var scheduled=appts.filter(function(a){return !a.cancelled && !a.done && !a.noShow && !a.rescheduled;}).sort(function(a,b){return new Date(a.date+'T'+(a.time||'00:00'))-new Date(b.date+'T'+(b.time||'00:00'));});
+  var noShowA=appts.filter(function(a){return a.noShow && !a.cancelled && !a.done && !a.rescheduled;}).sort(function(a,b){return new Date(b.date)-new Date(a.date);});
   var doneA=appts.filter(function(a){return a.done && !a.cancelled;}).sort(function(a,b){return new Date(b.doneAt||0)-new Date(a.doneAt||0);});
+  var cancelledA=appts.filter(function(a){return a.cancelled;}).sort(function(a,b){return new Date(b.cancelledAt||0)-new Date(a.cancelledAt||0);});
+  var rescheduledA=appts.filter(function(a){return a.rescheduled && !a.cancelled;}).sort(function(a,b){return new Date(b.rescheduledAt||0)-new Date(a.rescheduledAt||0);});
+  
+  // Upcoming scheduled appointments
   var schHtml='';
   scheduled.forEach(function(a){
     var dToA=dU(a.date);var dCol=dToA!==null&&dToA<=3?'var(--danger)':dToA!==null&&dToA<=7?'var(--warn)':'var(--text2)';
@@ -2121,10 +2149,27 @@ function buildApptTab(id,l,cancelled,appts){
       +'<div style="font-size:12px;color:'+dCol+';margin-top:2px">'+fmt(a.date)+(a.time?' at '+a.time:'')+(dToA!==null?' · in '+dToA+'d':'')+'</div>'
       +(a.note?'<div style="font-size:11px;color:var(--muted);margin-top:3px;font-style:italic">'+a.note+'</div>':'')
       +'</div>'
-      +(cancelled?'':'<div style="display:flex;flex-direction:column;gap:4px"><button class="btn btn-outline btn-xs" onclick="markApptDone(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px;color:var(--success);border-color:var(--success)">✓ Complete</button><button class="btn btn-ghost btn-xs" onclick="cancelAppt(\''+id+'\',\''+a.key+'\')">Cancel</button></div>')
+      +(cancelled?'':'<div style="display:flex;flex-direction:column;gap:4px"><button class="btn btn-outline btn-xs" onclick="markApptDone(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px;color:var(--success);border-color:var(--success)">✓ Complete</button><button class="btn btn-ghost btn-xs" onclick="openResched(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px;color:var(--navy)">↻ Reschedule</button><button class="btn btn-ghost btn-xs" onclick="markApptNoShow(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px;color:var(--warn)">⚠ No-show</button><button class="btn btn-ghost btn-xs" onclick="cancelAppt(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px">Cancel</button></div>')
       +'</div></div>';
   });
   if(!schHtml)schHtml='<div style="font-size:12px;color:var(--muted);font-style:italic;padding:8px">No upcoming appointments</div>';
+  
+  // No-show appointments (need attention)
+  var noShowHtml='';
+  noShowA.forEach(function(a){
+    var daysAgo=dU(a.date);
+    var daysAgoTxt=daysAgo!==null?(daysAgo<0?Math.abs(daysAgo)+'d ago':daysAgo===0?'today':daysAgo+'d away'):'';
+    noShowHtml+='<div style="background:#FEF7E5;border:1.5px solid var(--warn);border-radius:8px;padding:10px 12px;margin-bottom:8px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
+      +'<div style="flex:1"><div style="display:flex;align-items:center;gap:6px;margin-bottom:2px"><span style="background:var(--warn);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;letter-spacing:.5px">NO-SHOW</span><div style="font-size:13px;font-weight:700;color:var(--navy)">'+(a.reason||'Appointment')+'</div></div>'
+      +'<div style="font-size:12px;color:var(--warn);margin-top:2px">'+fmt(a.date)+(a.time?' at '+a.time:'')+' · '+daysAgoTxt+'</div>'
+      +(a.note?'<div style="font-size:11px;color:var(--muted);margin-top:3px;font-style:italic">'+a.note+'</div>':'')
+      +'</div>'
+      +(cancelled?'':'<div style="display:flex;flex-direction:column;gap:4px"><button class="btn btn-outline btn-xs" onclick="openResched(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px;color:var(--navy)">↻ Reschedule</button><button class="btn btn-outline btn-xs" onclick="markApptDone(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px;color:var(--success);border-color:var(--success)">✓ Did come</button><button class="btn btn-ghost btn-xs" onclick="cancelAppt(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px;color:var(--danger)">Close</button></div>')
+      +'</div></div>';
+  });
+  
+  // Completed appointments
   var doneHtml='';
   doneA.forEach(function(a){
     doneHtml+='<div style="background:#F0FDF4;border:1.5px solid #BBF7D0;border-radius:8px;padding:10px 12px;margin-bottom:8px">'
@@ -2135,6 +2180,20 @@ function buildApptTab(id,l,cancelled,appts){
       +'</div></div>'
       +'</div>';
   });
+  
+  // Rescheduled (source) appointments — show with arrow to new date
+  var reschHtml='';
+  rescheduledA.forEach(function(a){
+    var newKey=a.rescheduledTo;
+    var newAppt=newKey && leads[id].appointments ? leads[id].appointments[newKey] : null;
+    var newTxt = newAppt ? 'Moved to '+fmt(newAppt.date)+(newAppt.time?' at '+newAppt.time:'') : 'Moved';
+    reschHtml+='<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;opacity:.75">'
+      +'<div style="font-size:13px;font-weight:600;color:var(--muted);text-decoration:line-through">'+(a.reason||'Appointment')+' · '+fmt(a.date)+(a.time?' at '+a.time:'')+'</div>'
+      +'<div style="font-size:11px;color:var(--navy);margin-top:2px">↻ '+newTxt+(a.rescheduleReason?' · '+a.rescheduleReason:'')+'</div>'
+      +'</div>';
+  });
+  
+  // Cancelled
   var canHtml='';
   cancelledA.forEach(function(a){
     canHtml+='<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;opacity:.7">'
@@ -2157,8 +2216,10 @@ function buildApptTab(id,l,cancelled,appts){
       +'</div>';
   }
   return '<div id="tb-appt" style="display:none">'+addForm
-    +'<div class="stitle">Upcoming</div>'+schHtml
+    +(noShowHtml?'<div class="stitle" style="color:var(--warn)">Needs Attention</div>'+noShowHtml:'')
+    +'<div class="stitle"'+(noShowHtml?' style="margin-top:14px"':'')+'>Upcoming</div>'+schHtml
     +(doneHtml?'<div class="stitle" style="margin-top:14px">Completed</div>'+doneHtml:'')
+    +(reschHtml?'<div class="stitle" style="margin-top:14px">Rescheduled</div>'+reschHtml:'')
     +(canHtml?'<div class="stitle" style="margin-top:14px">Cancelled (record kept)</div>'+canHtml:'')
     +'</div>';
 }
@@ -2354,7 +2415,177 @@ async function cancelAppt(id,key){
   }catch(e){notif('Error: '+e.message);}
 }
 
-// ---------- Notes ----------
+// ============================================================
+// RESCHEDULE — move an appointment to a new date/time
+// Creates new appt, links bidirectionally to original via rescheduledTo/rescheduledFrom
+// ============================================================
+var RESCH = {brideId:null, apptKey:null};
+
+function openResched(brideId, apptKey){
+  var l = leads[brideId]; if(!l) return;
+  var appt = (l.appointments||{})[apptKey]; if(!appt) return;
+  RESCH = {brideId:brideId, apptKey:apptKey};
+  document.getElementById('resched-sub').textContent = (appt.reason||'Appointment')+' · '+(l.name||'');
+  // Default: same time, 7 days later
+  var d = new Date(appt.date); d.setDate(d.getDate()+7);
+  var defDate = d.toISOString().slice(0,10);
+  var body = ''
+    +'<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:14px">'
+    +'<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:3px">Original</div>'
+    +'<div style="font-size:13px;font-weight:600;color:var(--navy)">'+(appt.reason||'Appointment')+'</div>'
+    +'<div style="font-size:12px;color:var(--text2);margin-top:2px">'+fmt(appt.date)+(appt.time?' at '+appt.time:'')+'</div>'
+    +'</div>'
+    +'<div class="fg" style="margin-bottom:14px">'
+    +'<div class="fi"><label>New Date *</label><input type="date" id="resched-date" value="'+defDate+'"/></div>'
+    +'<div class="fi"><label>New Time</label><input type="time" id="resched-time" value="'+(appt.time||'')+'"/></div>'
+    +'</div>'
+    +'<div class="fi"><label>Reason (optional)</label><input type="text" id="resched-reason" placeholder="Why is it being moved?"/></div>';
+  document.getElementById('resched-body').innerHTML = body;
+  document.getElementById('resched-footer').innerHTML = 
+    '<button class="btn btn-ghost" onclick="closeResched()">Cancel</button>'
+    +'<button class="btn btn-primary" onclick="saveResched()">Reschedule</button>';
+  OM('resched-modal');
+}
+
+function closeResched(){
+  RESCH = {brideId:null, apptKey:null};
+  CM('resched-modal');
+}
+
+async function saveResched(){
+  var brideId = RESCH.brideId, apptKey = RESCH.apptKey;
+  var l = leads[brideId]; if(!l) return;
+  var oldAppt = (l.appointments||{})[apptKey]; if(!oldAppt) return;
+  var newDate = (document.getElementById('resched-date')||{}).value;
+  var newTime = (document.getElementById('resched-time')||{}).value || '';
+  var reason = (document.getElementById('resched-reason')||{}).value || '';
+  if(!newDate){notif('Please pick a new date.');return;}
+  // Sanity: new date should be different from old
+  if(newDate === oldAppt.date && newTime === (oldAppt.time||'')){
+    notif('New date/time same as original.');return;
+  }
+  var nowIso = new Date().toISOString();
+  var newKey = 'a-'+uid();
+  var newAppt = {
+    key: newKey,
+    date: newDate,
+    time: newTime,
+    reason: oldAppt.reason,
+    note: oldAppt.note || '',
+    cancelled: false,
+    done: false,
+    createdAt: nowIso,
+    rescheduledFrom: apptKey
+  };
+  // Patch: create new appointment + update old with rescheduled flag
+  // CRITICAL: No overlapping Firebase paths (audit rule from sim9)
+  var patch = {};
+  patch['appointments/'+newKey] = newAppt;
+  patch['appointments/'+apptKey+'/rescheduled'] = true;
+  patch['appointments/'+apptKey+'/rescheduledAt'] = nowIso;
+  patch['appointments/'+apptKey+'/rescheduledTo'] = newKey;
+  patch['appointments/'+apptKey+'/rescheduleReason'] = reason;
+  // Note: patch['appointments/X'] would overlap with patch['appointments/X/rescheduled'] — DO NOT add a top-level appointments/X key
+  window._saving = true;
+  try {
+    await fbP('/brides/'+brideId, patch);
+    // Update local
+    if(!brides[brideId]) brides[brideId] = {};
+    brides[brideId].appointments = brides[brideId].appointments || {};
+    brides[brideId].appointments[newKey] = newAppt;
+    var oldRef = brides[brideId].appointments[apptKey] || {};
+    brides[brideId].appointments[apptKey] = Object.assign({}, oldRef, {rescheduled:true, rescheduledAt:nowIso, rescheduledTo:newKey, rescheduleReason:reason});
+    projectViews();
+    try { await logHistory(brideId, 'appt-reschedule', {from:oldAppt.date, to:newDate, reason:oldAppt.reason}); } catch(e){}
+    notif('Rescheduled to '+fmt(newDate)+(newTime?' at '+newTime:''));
+    closeResched();
+    if(view==='schedule') rSchedule();
+    else openDetail(brideId);
+  } catch(e) {
+    notif('Error: '+e.message);
+  } finally {
+    window._saving = false;
+  }
+}
+
+// ============================================================
+// NO-SHOW — explicit + auto-detection
+// ============================================================
+async function markApptNoShow(id, key){
+  var appt = (leads[id]&&leads[id].appointments)?leads[id].appointments[key]:null;
+  if(!appt)return;
+  var r = await showConfirm({
+    title:'Mark as no-show',
+    msg:'Bride didn\u2019t show up for "'+(appt.reason||'Appointment')+'" on '+fmt(appt.date)+'? You can decide what to do next from the appointment card.',
+    yesText:'Mark No-show',
+    note:true
+  });
+  if(!r.ok) return;
+  var nowIso = new Date().toISOString();
+  var patch = {noShow:true, noShowAt:nowIso};
+  if(r.note) patch.noShowNote = r.note;
+  window._saving = true;
+  try {
+    await fbP('/brides/'+id+'/appointments/'+key, patch);
+    if(brides[id] && brides[id].appointments){
+      brides[id].appointments[key] = Object.assign({}, brides[id].appointments[key]||{}, patch);
+    }
+    if(leads[id] && leads[id].appointments){
+      leads[id].appointments[key] = Object.assign({}, leads[id].appointments[key]||{}, patch);
+    }
+    projectViews();
+    try { await logHistory(id, 'appt-noshow', {reason:appt.reason, date:appt.date, manual:true}); } catch(e){}
+    notif('Marked as no-show.');
+    if(view==='schedule') rSchedule();
+    else openDetail(id);
+  } catch(e) {
+    notif('Error: '+e.message);
+  } finally {
+    window._saving = false;
+  }
+}
+
+// Auto-detect: any appointment whose date is 3+ days past, still scheduled, gets flagged as no-show
+// Throttled to once per day via localStorage (same pattern as checkAutoLost)
+async function checkNoShows(){
+  var todayKey = new Date().toISOString().slice(0,10);
+  var lastRun = localStorage.getItem('biso_autoNoShowLastRun');
+  if(lastRun === todayKey) return;
+  var now = new Date(); now.setHours(0,0,0,0);
+  var threshold = new Date(now); threshold.setDate(threshold.getDate()-3); // 3+ days past
+  var flagged = 0;
+  var brideIds = Object.keys(brides);
+  for(var i = 0; i < brideIds.length; i++){
+    var b = brides[brideIds[i]];
+    if(!b || !b.appointments || b.cancelled || b.lost) continue;
+    var apptKeys = Object.keys(b.appointments);
+    for(var j = 0; j < apptKeys.length; j++){
+      var k = apptKeys[j];
+      var a = b.appointments[k];
+      if(!a || !a.date) continue;
+      if(a.done || a.cancelled || a.rescheduled || a.noShow) continue;
+      var aDate = new Date(a.date); aDate.setHours(0,0,0,0);
+      if(aDate <= threshold){
+        // Auto-flag
+        try {
+          var nowIso = new Date().toISOString();
+          await fbP('/brides/'+b.id+'/appointments/'+k, {noShow:true, noShowAt:nowIso, noShowAuto:true});
+          b.appointments[k] = Object.assign({}, a, {noShow:true, noShowAt:nowIso, noShowAuto:true});
+          try { await logHistory(b.id, 'appt-noshow', {reason:a.reason, date:a.date, manual:false}); } catch(le){}
+          flagged++;
+        } catch(e){ /* skip on error */ }
+      }
+    }
+  }
+  localStorage.setItem('biso_autoNoShowLastRun', todayKey);
+  if(flagged > 0){
+    projectViews();
+    notif('Auto-flagged '+flagged+' no-show appointment'+(flagged!==1?'s':'')+'.');
+    if(view === 'pipeline' || view === 'dailyBrief' || view === 'schedule') render();
+  }
+}
+
+
 async function addNote(id){
   var ta=document.getElementById('newNote-'+id);
   var body=(ta&&ta.value||'').trim();
@@ -4417,6 +4648,12 @@ function _briefNeedsAttention(){
         warnings.push({type:'quote_expiring', id:b.id, name:b.name||'(no name)', text:'Quote '+qt.id+' expires in '+dE+'d'});
       }
     });
+    // 4. No-show appointments — need next-step decision
+    Object.values(b.appointments||{}).forEach(function(a){
+      if(!a.noShow || a.cancelled || a.done || a.rescheduled) return;
+      var daysAgo = a.date ? Math.abs(dU(a.date) || 0) : 0;
+      warnings.push({type:'noshow', id:b.id, name:b.name||'(no name)', text:'Missed '+(a.reason||'appointment')+' '+daysAgo+'d ago — decide next step'});
+    });
   });
   return warnings;
 }
@@ -5232,6 +5469,7 @@ async function checkAutoLost(){
     loadData().then(function(){
       // Run auto-Lost check after data loads (once per calendar day)
       setTimeout(function(){ checkAutoLost().catch(function(e){console.error('autoLost:',e);}); }, 1500);
+      setTimeout(function(){ checkNoShows().catch(function(e){console.error('noShows:',e);}); }, 2500);
     }).catch(function(e){
       var lerr=document.getElementById('lerr'),lm=document.getElementById('lm');
       if(lerr&&lm){lerr.style.display='block';lm.textContent='Load failed: '+e.message;}
