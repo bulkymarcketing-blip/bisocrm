@@ -3377,94 +3377,224 @@ async function updC(id, data){
 
 function rFinance(){
   var allI=[];
-  // Iterate brides ONCE (canonical source). Previously this iterated lA()+cA() which both
-  // contain every bride via projectViews(), causing every invoice to be counted twice.
+  // Iterate brides once (canonical source)
   Object.values(brides).forEach(function(b){
     Object.values(b.invoices||{}).forEach(function(inv){
-      allI.push(Object.assign({},inv,{cn:b.name||''}));
+      allI.push(Object.assign({},inv,{cn:b.name||'',brideId:b.id}));
     });
   });
-  allI.sort(function(a,b){return new Date(a.date)-new Date(b.date);});
-  // Core totals — using invPaid for TRUE collected (bespeaking + all subsequent payments)
+  allI.sort(function(a,b){return new Date(b.date)-new Date(a.date);}); // newest first
   var tInvoiced=allI.reduce(function(s,i){return s+qTot(i.items);},0);
   var tCollected=allI.reduce(function(s,i){return s+invPaid(i);},0);
   var tBalance=Math.max(0,tInvoiced-tCollected);
   var collectionRate=tInvoiced>0?Math.round((tCollected/tInvoiced)*100):0;
   var cnt=allI.length;
-  // Monthly breakdown — also uses invPaid for collected
-  var mo={};
-  allI.forEach(function(i){
-    var m=i.date?i.date.slice(0,7):'?';
-    if(!mo[m])mo[m]={r:0,c:0,n:0};
-    mo[m].r+=qTot(i.items);
-    mo[m].c+=invPaid(i);
-    mo[m].n++;
+  
+  // Window for Monthly Revenue (3/6/12 months) - state persisted in window
+  var monthWin = window._finMonthWin || 3;
+  
+  // === Build sections ===
+  var html = '';
+  
+  // ── SECTION 1: Overview Card ──
+  // 2 stat cards side-by-side (Invoiced + Collected), then Outstanding progress bar below
+  if(cnt === 0){
+    html += '<div class="card" style="padding:40px 24px;text-align:center;margin-bottom:14px">'
+      +'<div style="font-family:Cinzel,serif;font-size:14px;color:var(--muted);letter-spacing:1px;margin-bottom:8px">FINANCIAL OVERVIEW</div>'
+      +'<div style="font-size:13px;color:var(--text2);font-style:italic">No invoices yet</div>'
+      +'</div>';
+  } else {
+    html += '<div class="card" style="padding:20px;margin-bottom:14px;background:linear-gradient(135deg,var(--surf) 0%,#FAF6EE 100%)">';
+    html += '<div style="font-family:Cinzel,serif;font-size:11px;color:var(--muted);letter-spacing:1.2px;font-weight:600;margin-bottom:4px;text-transform:uppercase">Financial Overview</div>';
+    html += '<div style="font-size:11px;color:var(--muted);margin-bottom:18px">'+cnt+' invoice'+(cnt!==1?'s':'')+'</div>';
+    
+    // Two stat cards side-by-side
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">';
+    // Invoiced
+    html += '<div style="background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:14px">'
+      +'<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:6px">Invoiced</div>'
+      +'<div style="font-family:Cinzel,serif;font-size:22px;color:var(--gold);font-weight:600;line-height:1.1">'+fRshort(tInvoiced)+'</div>'
+      +'</div>';
+    // Collected with dot strip
+    var collDots = '';
+    var dotsFilled = Math.round(collectionRate / 10); // 10 dots = 100%
+    for(var i = 0; i < 10; i++){
+      collDots += '<span style="width:6px;height:6px;border-radius:50%;background:'+(i<dotsFilled?'var(--success)':'var(--border)')+';display:inline-block"></span>';
+    }
+    html += '<div style="background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:14px">'
+      +'<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:6px">Collected</div>'
+      +'<div style="font-family:Cinzel,serif;font-size:22px;color:var(--success);font-weight:600;line-height:1.1;margin-bottom:8px">'+fRshort(tCollected)+'</div>'
+      +'<div style="display:flex;gap:3px;align-items:center;justify-content:flex-start">'+collDots+' <span style="font-size:10px;color:var(--success);margin-left:4px;font-weight:600">'+collectionRate+'%</span></div>'
+      +'</div>';
+    html += '</div>'; // end grid
+    
+    // Outstanding progress bar (full width)
+    var outstandingPct = tInvoiced > 0 ? Math.round((tBalance/tInvoiced)*100) : 0;
+    var oColor = tBalance > 0 ? 'var(--warn)' : 'var(--success)';
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+      +'<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-weight:600">Outstanding</div>'
+      +'<div style="font-family:Cinzel,serif;font-size:14px;color:'+oColor+';font-weight:600">'+fRshort(tBalance)+(tBalance>0?' · '+outstandingPct+'%':'')+'</div>'
+      +'</div>';
+    html += '<div style="height:6px;background:var(--bg);border-radius:3px;overflow:hidden;position:relative">'
+      +'<div style="height:100%;width:'+collectionRate+'%;background:var(--success);border-radius:3px"></div>'
+      +'</div>';
+    html += '</div>'; // end card
+  }
+  
+  // ── SECTION 2: Monthly Revenue (sparkline chart + summary stats) ──
+  // Build month buckets for the last N months
+  var now = new Date();
+  var monthKeys = [];
+  for(var i = monthWin - 1; i >= 0; i--){
+    var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    monthKeys.push(d.toISOString().slice(0,7));
+  }
+  var monthData = {};
+  monthKeys.forEach(function(m){ monthData[m] = {invoiced:0, collected:0, count:0}; });
+  allI.forEach(function(inv){
+    if(!inv.date) return;
+    var m = inv.date.slice(0,7);
+    if(monthData[m]){
+      monthData[m].invoiced += qTot(inv.items);
+      monthData[m].collected += invPaid(inv);
+      monthData[m].count++;
+    }
   });
-  var mos=Object.keys(mo).sort();
-  var mr='';
-  mos.forEach(function(m){
-    var x=mo[m];
-    var p=x.r>0?Math.round(x.c/x.r*100):0;
-    var lb=new Date(m+'-01').toLocaleDateString('en-GB',{month:'short',year:'numeric'});
-    mr+='<tr><td style="font-weight:600">'+lb+'</td><td style="text-align:center">'+x.n+'</td><td style="color:var(--gold);font-weight:600">'+fR(x.r)+'</td><td><div style="display:flex;align-items:center;gap:5px"><div style="flex:1;height:4px;background:var(--border);border-radius:2px"><div style="width:'+p+'%;height:100%;background:var(--success);border-radius:2px"></div></div><span style="font-size:11px;color:var(--success);font-weight:600;min-width:28px">'+p+'%</span></div></td></tr>';
+  var maxMonthVal = Math.max.apply(null, monthKeys.map(function(m){return monthData[m].invoiced;}).concat([1]));
+  var thisMonth = monthKeys[monthKeys.length-1];
+  var lastMonth = monthKeys[monthKeys.length-2];
+  var thisMonthRev = monthData[thisMonth] ? monthData[thisMonth].invoiced : 0;
+  var lastMonthRev = (lastMonth && monthData[lastMonth]) ? monthData[lastMonth].invoiced : 0;
+  var trendTxt = '', trendColor = 'var(--muted)';
+  if(lastMonthRev === 0 && thisMonthRev > 0){ trendTxt = '↗ New'; trendColor = 'var(--success)'; }
+  else if(thisMonthRev > lastMonthRev){ var pct = Math.round((thisMonthRev/lastMonthRev - 1)*100); trendTxt = '↗ +'+pct+'%'; trendColor = 'var(--success)'; }
+  else if(thisMonthRev < lastMonthRev){ var pct2 = Math.round((1 - thisMonthRev/lastMonthRev)*100); trendTxt = '↘ -'+pct2+'%'; trendColor = 'var(--danger)'; }
+  else { trendTxt = '— flat'; trendColor = 'var(--muted)'; }
+  
+  html += '<div class="card" style="padding:18px 20px;margin-bottom:14px">';
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+  html += '<div style="font-family:Cinzel,serif;font-size:13px;color:var(--navy);letter-spacing:1px;font-weight:600">Monthly Revenue</div>';
+  // Window selector
+  html += '<div style="display:flex;gap:4px;background:var(--bg);border-radius:6px;padding:3px">';
+  [3,6,12].forEach(function(w){
+    var active = monthWin === w;
+    html += '<button onclick="setFinMonthWin('+w+')" style="border:none;background:'+(active?'var(--surf)':'transparent')+';color:'+(active?'var(--navy)':'var(--muted)')+';font-size:10px;font-weight:600;padding:4px 8px;border-radius:4px;cursor:pointer;box-shadow:'+(active?'0 1px 2px rgba(27,43,75,0.08)':'none')+'">'+w+'M</button>';
   });
-  // Outstanding list — filter by TRUE balance
-  var out=allI.map(function(i){return {inv:i, bal:qTot(i.items)-invPaid(i)};})
-              .filter(function(x){return x.bal>0.01;})
-              .sort(function(a,b){return b.bal-a.bal;})
-              .slice(0,8);
-  var or='';
-  out.forEach(function(x){
-    or+='<tr><td><div style="font-weight:600;font-size:13px">'+x.inv.cn+'</div></td><td style="font-size:11px;color:var(--muted)">'+x.inv.id+'</td><td style="font-weight:700;color:var(--warn)">'+fR(x.bal)+'</td></tr>';
-  });
-  // Invoice ledger — show advance (bespeaking), TRUE paid, TRUE balance, correct status
-  var lr='';
-  allI.slice().reverse().forEach(function(i){
-    var t=qTot(i.items);
-    var adv=parseFloat(i.advance||0)||0;
-    var paid=invPaid(i);
-    var bal=Math.max(0,t-paid);
-    var p=t>0?Math.round(paid/t*100):0;
-    var sc=p>=100?'var(--success)':p>0?'var(--warn)':'var(--danger)';
-    var sl=p>=100?'Paid':p>0?'Partial':'Unpaid';
-    lr+='<tr>'
-      +'<td style="font-size:12px">'+fmt(i.date)+'</td>'
-      +'<td class="cn">'+i.cn+'</td>'
-      +'<td style="font-size:11px;color:var(--muted)">'+i.id+'</td>'
-      +'<td style="font-weight:700;color:var(--gold)">'+fR(t)+'</td>'
-      +'<td style="color:var(--text2);font-weight:500">'+fR(adv)+'</td>'
-      +'<td style="color:var(--success);font-weight:600">'+fR(paid)+'</td>'
-      +'<td style="font-weight:600">'+fR(bal)+'</td>'
-      +'<td><span class="badge" style="background:'+sc+'22;color:'+sc+'">'+sl+'</span></td>'
-      +'</tr>';
-  });
-  // === Build UI ===
-  // Top overview card: 3-number summary that tells the story
-  var overview = '<div class="card" style="margin-bottom:14px;padding:18px 20px;background:linear-gradient(135deg,var(--surf) 0%,#FAF6EE 100%)">'
-    +'<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:14px">Financial Overview · '+cnt+' invoice'+(cnt!==1?'s':'')+'</div>'
-    +'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">'
-    +'<div style="flex:1;min-width:100px"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:4px">Invoiced</div><div style="font-family:Cinzel,serif;font-size:20px;color:var(--gold);font-weight:600">'+fRshort(tInvoiced)+'</div></div>'
-    +'<div style="color:var(--muted);font-size:18px">→</div>'
-    +'<div style="flex:1;min-width:100px"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:4px">Collected</div><div style="font-family:Cinzel,serif;font-size:20px;color:var(--success);font-weight:600">'+fRshort(tCollected)+'</div><div style="font-size:10px;color:var(--success);margin-top:2px">'+collectionRate+'% of invoiced</div></div>'
-    +'<div style="color:var(--muted);font-size:18px">→</div>'
-    +'<div style="flex:1;min-width:100px"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:4px">Outstanding</div><div style="font-family:Cinzel,serif;font-size:20px;color:'+(tBalance>0?'var(--warn)':'var(--muted)')+';font-weight:600">'+fRshort(tBalance)+'</div></div>'
-    +'</div>'
-    +'</div>';
-  // Secondary stats - context numbers
-  var avgInv = cnt>0 ? Math.round(tInvoiced/cnt) : 0;
-  var avgCollected = cnt>0 ? Math.round(tCollected/cnt) : 0;
-  var secondary = '<div class="sg" style="margin-bottom:14px">'
-    +sCard('Avg Invoice',fR(avgInv),'Per client','ib')
-    +sCard('Avg Collected',fR(avgCollected),'Per client','iv')
-    +'</div>';
-  document.getElementById('MC').innerHTML=
-    overview
-    +secondary
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px">'
-    +'<div class="card"><div class="card-hdr"><div class="card-title">Monthly Revenue</div></div>'+(mos.length?'<table><thead><tr><th>Month</th><th>Count</th><th>Invoiced</th><th>Collected</th></tr></thead><tbody>'+mr+'</tbody></table>':'<div class="empty" style="padding:40px"><div class="et">No data</div></div>')+'</div>'
-    +'<div class="card"><div class="card-hdr"><div class="card-title">Outstanding</div></div>'+(out.length?'<table><thead><tr><th>Client</th><th>Invoice</th><th>Balance</th></tr></thead><tbody>'+or+'</tbody></table>':'<div class="empty" style="padding:40px"><div class="et">All paid up</div></div>')+'</div>'
-    +'</div>'
-    +'<div class="card"><div class="card-hdr"><div class="card-title">Invoice Ledger</div><div style="font-size:12px;color:var(--muted)">'+cnt+' total</div></div>'+(cnt?'<div style="overflow-x:auto"><table><thead><tr><th>Date</th><th>Client</th><th>Invoice</th><th>Total</th><th>Bespeaking</th><th>Paid</th><th>Balance</th><th>Status</th></tr></thead><tbody>'+lr+'</tbody></table></div>':'<div class="empty" style="padding:60px"><div class="et">No invoices yet</div></div>')+'</div>';
+  html += '</div>';
+  html += '</div>';
+  
+  // Bar chart
+  if(allI.length === 0){
+    html += '<div style="padding:30px 0;text-align:center;color:var(--muted);font-size:12px;font-style:italic">No data yet</div>';
+  } else {
+    html += '<div style="display:flex;align-items:flex-end;gap:6px;height:80px;margin-bottom:14px;padding:0 4px">';
+    monthKeys.forEach(function(m){
+      var d = monthData[m];
+      var hPct = maxMonthVal > 0 ? Math.max(2, Math.round((d.invoiced/maxMonthVal)*100)) : 2;
+      var isCurrent = m === thisMonth;
+      var barColor = isCurrent ? 'var(--gold)' : 'var(--gold-lt)';
+      var lbl = new Date(m+'-01').toLocaleDateString('en-GB',{month:'short'});
+      html += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;height:100%;gap:6px">';
+      html += '<div style="flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center"><div style="width:70%;height:'+hPct+'%;background:'+barColor+';border-radius:3px 3px 0 0;min-height:2px;transition:height .3s"></div></div>';
+      html += '<div style="font-size:9px;color:'+(isCurrent?'var(--navy)':'var(--muted)')+';font-weight:'+(isCurrent?'700':'500')+';text-transform:uppercase;letter-spacing:.3px">'+lbl+'</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+    
+    // Bottom summary row: this month, last month, trend
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;padding-top:14px;border-top:1px solid var(--border)">';
+    html += '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:3px">This month</div><div style="font-family:Cinzel,serif;font-size:14px;color:var(--navy);font-weight:600">'+fRshort(thisMonthRev)+'</div></div>';
+    html += '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:3px">Last month</div><div style="font-family:Cinzel,serif;font-size:14px;color:var(--text2);font-weight:600">'+fRshort(lastMonthRev)+'</div></div>';
+    html += '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:3px">Trend</div><div style="font-size:13px;color:'+trendColor+';font-weight:700">'+trendTxt+'</div></div>';
+    html += '</div>';
+  }
+  html += '</div>'; // end Monthly card
+  
+  // ── SECTION 3: Outstanding (per-invoice cards) ──
+  var out = allI.map(function(i){return {inv:i, bal:qTot(i.items)-invPaid(i), tot:qTot(i.items), paid:invPaid(i)};})
+                .filter(function(x){return x.bal > 0.01;})
+                .sort(function(a,b){return b.bal-a.bal;});
+  
+  html += '<div class="card" style="padding:18px 20px;margin-bottom:14px">';
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+  html += '<div style="font-family:Cinzel,serif;font-size:13px;color:var(--navy);letter-spacing:1px;font-weight:600">Outstanding</div>';
+  html += '<div style="font-size:11px;color:var(--muted);font-weight:600">'+(out.length>0?fRshort(tBalance)+' total':'')+'</div>';
+  html += '</div>';
+  if(out.length === 0){
+    html += '<div style="padding:24px 16px;text-align:center;background:rgba(56,161,105,0.06);border-radius:10px;border:1px solid rgba(56,161,105,0.2)">';
+    html += '<div style="font-size:24px;margin-bottom:6px">✓</div>';
+    html += '<div style="font-size:13px;color:var(--success);font-weight:600">All clear</div>';
+    html += '<div style="font-size:11px;color:var(--muted);margin-top:4px">No outstanding balances</div>';
+    html += '</div>';
+  } else {
+    out.forEach(function(x, i){
+      var pctPaid = x.tot > 0 ? Math.round((x.paid/x.tot)*100) : 0;
+      var brideId = x.inv.brideId || '';
+      var mb = i < out.length-1 ? 'margin-bottom:10px' : '';
+      html += '<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;'+mb+'" onclick="openDetail(\''+brideId+'\')">';
+      html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px">';
+      html += '<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:2px">'+x.inv.cn+'</div><div style="font-size:10px;color:var(--muted);font-weight:500">'+x.inv.id+' · '+pctPaid+'% paid</div></div>';
+      html += '<div style="text-align:right;flex-shrink:0"><div style="font-family:Cinzel,serif;font-size:15px;color:var(--warn);font-weight:600">'+fRshort(x.bal)+'</div></div>';
+      html += '</div>';
+      // Mini progress bar
+      html += '<div style="height:4px;background:var(--surf);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+pctPaid+'%;background:var(--success);border-radius:2px"></div></div>';
+      html += '</div>';
+    });
+  }
+  html += '</div>'; // end Outstanding card
+  
+  // ── SECTION 4: Invoice Ledger (per-invoice cards) ──
+  html += '<div class="card" style="padding:18px 20px;margin-bottom:14px">';
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+  html += '<div style="font-family:Cinzel,serif;font-size:13px;color:var(--navy);letter-spacing:1px;font-weight:600">Invoice Ledger</div>';
+  html += '<div style="font-size:11px;color:var(--muted);font-weight:600">'+cnt+' invoice'+(cnt!==1?'s':'')+'</div>';
+  html += '</div>';
+  if(cnt === 0){
+    html += '<div style="padding:30px 0;text-align:center;color:var(--muted);font-size:12px;font-style:italic">No invoices yet</div>';
+  } else {
+    allI.forEach(function(inv, idx){
+      var t = qTot(inv.items);
+      var adv = parseFloat(inv.advance||0)||0;
+      var paid = invPaid(inv);
+      var bal = Math.max(0, t-paid);
+      var pct = t > 0 ? Math.round((paid/t)*100) : 0;
+      var statusColor, statusLabel;
+      if(pct >= 100){ statusColor = 'var(--success)'; statusLabel = 'PAID'; }
+      else if(pct > 0){ statusColor = 'var(--warn)'; statusLabel = 'PARTIAL'; }
+      else { statusColor = 'var(--danger)'; statusLabel = 'UNPAID'; }
+      var mb = idx < allI.length-1 ? 'margin-bottom:10px' : '';
+      
+      html += '<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;'+mb+'" onclick="openDetail(\''+inv.brideId+'\')">';
+      // Header: name + total
+      html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:4px">';
+      html += '<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;color:var(--navy)">'+inv.cn+'</div></div>';
+      html += '<div style="text-align:right;flex-shrink:0"><div style="font-family:Cinzel,serif;font-size:16px;color:var(--gold);font-weight:600">'+fRshort(t)+'</div></div>';
+      html += '</div>';
+      // Subheader: date + ID
+      html += '<div style="font-size:10px;color:var(--muted);margin-bottom:12px">'+fmt(inv.date)+' · '+inv.id+'</div>';
+      // 3-column breakdown
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:10px;background:var(--surf);border-radius:8px;margin-bottom:10px">';
+      html += '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:3px">Bespeaking</div><div style="font-size:12px;font-weight:600;color:var(--text2)">'+fRshort(adv)+'</div></div>';
+      html += '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:3px">Paid</div><div style="font-size:12px;font-weight:600;color:var(--success)">'+fRshort(paid)+'</div></div>';
+      html += '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:3px">Outstanding</div><div style="font-size:12px;font-weight:600;color:'+(bal>0?'var(--warn)':'var(--muted)')+'">'+fRshort(bal)+'</div></div>';
+      html += '</div>';
+      // Progress bar + status
+      html += '<div style="display:flex;align-items:center;gap:10px">';
+      html += '<div style="flex:1;height:5px;background:var(--surf);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+statusColor+';border-radius:3px;transition:width .3s"></div></div>';
+      html += '<div style="font-size:9px;font-weight:700;letter-spacing:.5px;color:'+statusColor+';white-space:nowrap">'+statusLabel+' · '+pct+'%</div>';
+      html += '</div>';
+      html += '</div>';
+    });
+  }
+  html += '</div>'; // end Ledger card
+  
+  document.getElementById('MC').innerHTML = html;
+}
+
+// Helper for month window selector
+function setFinMonthWin(w){
+  window._finMonthWin = w;
+  rFinance();
 }
 
 // ============================================================
