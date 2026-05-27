@@ -7,6 +7,9 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/css/intlTelInput.min.css">
 <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/intlTelInput.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/utils.js"></script>
+<!-- Firebase Auth SDK (compat) - loaded but only used when ?auth=1 in URL -->
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{--navy:#1B2B4B;--navy-lt:#243556;--navy-dim:rgba(27,43,75,0.06);--gold:#C9A84C;--gold-lt:#DDB96A;--gold-dim:rgba(201,168,76,0.12);--bg:#F5F6FA;--surf:#FFF;--border:#E4E8F0;--text:#1B2B4B;--text2:#4A5568;--muted:#8896B0;--danger:#E53E3E;--success:#38A169;--warn:#D69E2E;--sh:0 1px 3px rgba(27,43,75,0.08),0 4px 16px rgba(27,43,75,0.06);--sh2:0 4px 24px rgba(27,43,75,0.14)}
@@ -228,6 +231,37 @@ textarea{resize:vertical;min-height:80px}
 .ltl{font-family:'Cinzel',serif;color:var(--navy);font-size:12px;letter-spacing:2px}
 #lerr{display:none;text-align:center;padding:0 24px;margin-top:6px}
 .lm{font-size:13px;color:var(--danger);margin-bottom:10px}
+/* ===== Login screen (Phase 1A) ===== */
+#AUTH{position:fixed;inset:0;background:linear-gradient(135deg,var(--navy) 0%,var(--navy-lt) 100%);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:10000;padding:20px;padding-top:calc(20px + env(safe-area-inset-top));padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+#AUTH.show{display:flex}
+.auth-box{background:var(--surf);border-radius:16px;padding:32px 26px;width:100%;max-width:380px;box-shadow:0 10px 40px rgba(0,0,0,0.25)}
+.auth-brand{text-align:center;margin-bottom:24px}
+.auth-brand .crown{font-family:'Cinzel',serif;font-size:38px;color:var(--gold);line-height:1;margin-bottom:10px}
+.auth-brand .nm{font-family:'Cinzel',serif;font-size:22px;color:var(--navy);letter-spacing:3px;font-weight:600}
+.auth-brand .tg{font-family:'Cinzel',serif;font-size:9px;color:var(--gold);letter-spacing:2.5px;font-style:italic;margin-top:4px;text-transform:uppercase}
+.auth-title{font-family:'Cinzel',serif;font-size:13px;letter-spacing:2px;color:var(--navy);font-weight:600;text-align:center;margin-bottom:20px;text-transform:uppercase}
+.auth-field{margin-bottom:14px}
+.auth-field label{display:block;font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:.5px;font-weight:600;text-transform:uppercase}
+.auth-field input{width:100%;padding:12px 14px;font-size:15px;font-family:'Inter',sans-serif;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);outline:none;transition:border-color .2s}
+.auth-field input:focus{border-color:var(--gold);background:var(--surf)}
+.auth-err{display:none;background:#FEE2E2;border:1px solid #FCA5A5;color:#991B1B;border-radius:8px;padding:10px 12px;font-size:12.5px;margin-bottom:14px;line-height:1.4}
+.auth-err.show{display:block}
+.auth-btn{width:100%;background:var(--navy);color:#fff;border:none;border-radius:8px;padding:14px;font-size:14px;font-family:'Inter',sans-serif;font-weight:600;cursor:pointer;letter-spacing:.5px;margin-top:6px;transition:background .15s}
+.auth-btn:active{background:var(--navy-lt)}
+.auth-btn:disabled{opacity:.6;cursor:not-allowed}
+.auth-btn.loading{position:relative;color:transparent}
+.auth-btn.loading::after{content:"";position:absolute;left:50%;top:50%;width:18px;height:18px;margin-left:-9px;margin-top:-9px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+.auth-forgot{display:block;text-align:center;font-size:12px;color:var(--navy);margin-top:14px;cursor:pointer;font-weight:500;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--gold)}
+.auth-forgot:hover{color:var(--gold)}
+.auth-foot{text-align:center;font-size:10px;color:rgba(255,255,255,0.5);margin-top:20px;letter-spacing:1px}
+/* Logout button in sidebar foot */
+.logout-btn{display:none;margin-top:8px;background:transparent;border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.7);border-radius:6px;padding:7px 10px;font-size:11px;font-family:'Inter',sans-serif;cursor:pointer;letter-spacing:.5px;width:100%;font-weight:500;transition:all .2s}
+.logout-btn:hover{background:rgba(255,255,255,0.05);color:#fff}
+.logout-btn.show{display:block}
+.user-chip{display:none;margin-bottom:8px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:6px;font-size:10.5px;color:rgba(255,255,255,0.6);letter-spacing:.3px;line-height:1.3}
+.user-chip.show{display:block}
+.user-chip .em{color:rgba(255,255,255,0.9);font-weight:500;display:block;font-size:11px;word-break:break-all}
+.user-chip .rl{color:var(--gold-lt);font-size:9px;letter-spacing:1px;text-transform:uppercase;margin-top:2px}
 .notif{position:fixed;bottom:20px;right:20px;background:var(--navy);border-radius:10px;padding:12px 16px;font-size:13px;color:#fff;z-index:9999;transform:translateY(16px);opacity:0;transition:all .3s;pointer-events:none;max-width:280px;box-shadow:var(--sh2)}
 .notif.show{transform:translateY(0);opacity:1}
 .mnav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surf);border-top:1.5px solid var(--border);z-index:200;padding:5px 0 env(safe-area-inset-bottom,5px)}
@@ -265,9 +299,31 @@ textarea{resize:vertical;min-height:80px}
 }
 @media(max-width:480px){.sg{grid-template-columns:1fr 1fr;gap:8px}.dg{grid-template-columns:1fr}.ss{display:none}}
 </style></head><body>
+<div id="AUTH">
+  <div class="auth-box">
+    <div class="auth-brand">
+      <div class="crown">♛</div>
+      <div class="nm">BISO</div>
+      <div class="tg">Bridal CRM</div>
+    </div>
+    <div class="auth-title">Sign In</div>
+    <div class="auth-err" id="auth-err"></div>
+    <div class="auth-field">
+      <label for="auth-email">Email</label>
+      <input type="email" id="auth-email" autocomplete="username" inputmode="email" spellcheck="false" autocapitalize="off"/>
+    </div>
+    <div class="auth-field">
+      <label for="auth-pw">Password</label>
+      <input type="password" id="auth-pw" autocomplete="current-password"/>
+    </div>
+    <button class="auth-btn" id="auth-btn" onclick="doLogin()">Sign In</button>
+    <a class="auth-forgot" onclick="doForgot()">Forgot password?</a>
+    <div class="auth-foot">BISO · Bridal Styling · Negombo</div>
+  </div>
+</div>
 <div id="LS"><img src="logo.png" style="width:64px" alt="" onerror="this.style.display='none'"/><div class="spin"></div><div class="ltl">BISO CRM</div><div id="lerr"><div class="lm" id="lm"></div><button style="background:var(--navy);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-family:Inter,sans-serif;cursor:pointer" onclick="loadData()">Retry</button></div></div>
 <div id="APP" style="display:none"><div class="app">
-<aside class="sidebar" id="SB"><div class="brand"><img class="brand-logo" src="logo.png" alt="" onerror="this.style.display='none'"/><div><div class="brand-name">BISO</div><div class="brand-sub">Bridal CRM</div></div></div><nav class="nav" id="SN"></nav><div class="sidebar-foot"><div class="sync-badge"><div class="sync-dot"></div><div class="sync-txt" id="ST">Connecting…</div></div></div></aside>
+<aside class="sidebar" id="SB"><div class="brand"><img class="brand-logo" src="logo.png" alt="" onerror="this.style.display='none'"/><div><div class="brand-name">BISO</div><div class="brand-sub">Bridal CRM</div></div></div><nav class="nav" id="SN"></nav><div class="sidebar-foot"><div class="user-chip" id="UC"><span class="em" id="UC-em"></span><span class="rl" id="UC-rl"></span></div><div class="sync-badge"><div class="sync-dot"></div><div class="sync-txt" id="ST">Connecting…</div></div><button class="logout-btn" id="LO" onclick="doLogout()">Sign Out</button></div></aside>
 <div class="mov" id="MOV" onclick="closeSB()"></div>
 <div class="main"><div class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="hamburger" onclick="openSB()"><svg width="20" height="16" viewBox="0 0 20 16" fill="none"><rect width="20" height="2" rx="1" fill="currentColor"/><rect y="7" width="20" height="2" rx="1" fill="currentColor"/><rect y="14" width="20" height="2" rx="1" fill="currentColor"/></svg></button><div class="page-title" id="PT">Lead Pipeline</div></div><div class="topbar-right"><div class="swrap"><span class="sicon">⌕</span><input type="text" class="sbox" id="SI" placeholder="Search…" oninput="doSearch()"/></div><button id="MSB" style="display:none;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:8px;cursor:pointer" onclick="toggleMSB()">⌕</button><button class="btn btn-primary" id="AB" onclick="handleAdd()">+ Add</button></div></div><div id="MSBar" style="display:none;padding:10px 14px;background:var(--surf);border-bottom:1.5px solid var(--border)"><div class="swrap" style="width:100%"><span class="sicon">⌕</span><input type="text" class="sbox" id="MSI" placeholder="Search…" oninput="document.getElementById('SI').value=this.value;doSearch()" style="width:100%"/></div></div><div class="content" id="MC"></div></div>
 <nav class="mnav"><div class="mni" id="MN"></div></nav>
@@ -292,6 +348,20 @@ textarea{resize:vertical;min-height:80px}
 <div class="notif" id="NF"></div>
 <script>
 const FB='https://biso-crm-default-rtdb.asia-southeast1.firebasedatabase.app';
+
+// ===== Phase 1A: Firebase Auth (opt-in via ?auth=1) =====
+// When ?auth=1 in URL, login is required and DB calls include the user's ID token.
+// When absent, behaviour is identical to pre-auth CRM. DB rules stay open in Phase 1A.
+var _FBCFG={apiKey:"AIzaSyD67tAE_gTUqOsJWCJ07VH2e4drIvYGhvA",authDomain:"biso-crm.firebaseapp.com",databaseURL:"https://biso-crm-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"biso-crm",storageBucket:"biso-crm.firebasestorage.app",messagingSenderId:"719449210972",appId:"1:719449210972:web:065afbef711c056f94a699"};
+window._auth={enabled:false,ready:false,user:null,role:'owner'};
+function authIsOn(){return !!window._auth.enabled;}
+async function authToken(){
+  // Returns ID token string when auth is on and user is logged in, else null.
+  // SDK auto-refreshes if token is near expiry.
+  if(!window._auth.enabled||!window._auth.user)return null;
+  try{return await window._auth.user.getIdToken(false);}catch(e){return null;}
+}
+function authUrlSuffix(token){return token?'?auth='+encodeURIComponent(token):'';}
 
 // Country codes for phone picker - common ones listed first, then alphabetical
 var COUNTRIES=[
@@ -366,12 +436,27 @@ const TITLES={dailyBrief:'Daily Brief',pipeline:'Lead Pipeline',analytics:'Analy
 let leads={},custs={},view='dailyBrief',q='';
 let QB={lid:null,cid:null,items:[],notes:'',psvc:null,editId:null};
 let _cb=null;
-async function fbG(p){const r=await fetch(FB+p+'.json');if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}
+async function fbG(p){
+  var tok=await authToken();
+  var r=await fetch(FB+p+'.json'+authUrlSuffix(tok));
+  if(r.status===401&&window._auth.user){
+    // Token might have just expired - force refresh and retry once
+    try{tok=await window._auth.user.getIdToken(true);}catch(e){throw new Error('Auth expired');}
+    r=await fetch(FB+p+'.json'+authUrlSuffix(tok));
+  }
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  return r.json();
+}
 async function fbS(p,d){
   // Redirect /leads/X and /customers/X to /brides/X
   if(p&&p.indexOf('/leads/')===0&&p!=='/leads')p='/brides/'+p.slice(7);
   else if(p&&p.indexOf('/customers/')===0&&p!=='/customers')p='/brides/'+p.slice(11);
-  const r=await fetch(FB+p+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+  var tok=await authToken();
+  var r=await fetch(FB+p+'.json'+authUrlSuffix(tok),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+  if(r.status===401&&window._auth.user){
+    try{tok=await window._auth.user.getIdToken(true);}catch(e){throw new Error('Auth expired');}
+    r=await fetch(FB+p+'.json'+authUrlSuffix(tok),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+  }
   if(!r.ok)throw new Error('HTTP '+r.status);
   return r.json();
 }
@@ -380,14 +465,24 @@ async function fbP(p,d){
   if(p&&p.indexOf('/leads/')===0)p='/brides/'+p.slice(7);
   // Redirect /customers/X to /brides/X as well - we keep things in sync
   else if(p&&p.indexOf('/customers/')===0)p='/brides/'+p.slice(11);
-  const r=await fetch(FB+p+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+  var tok=await authToken();
+  var r=await fetch(FB+p+'.json'+authUrlSuffix(tok),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+  if(r.status===401&&window._auth.user){
+    try{tok=await window._auth.user.getIdToken(true);}catch(e){throw new Error('Auth expired');}
+    r=await fetch(FB+p+'.json'+authUrlSuffix(tok),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+  }
   if(!r.ok)throw new Error('HTTP '+r.status);
   return r.json();
 }
 async function fbD(p){
   if(p&&p.indexOf('/leads/')===0&&p!=='/leads')p='/brides/'+p.slice(7);
   else if(p&&p.indexOf('/customers/')===0&&p!=='/customers')p='/brides/'+p.slice(11);
-  await fetch(FB+p+'.json',{method:'DELETE'});
+  var tok=await authToken();
+  var r=await fetch(FB+p+'.json'+authUrlSuffix(tok),{method:'DELETE'});
+  if(r.status===401&&window._auth.user){
+    try{tok=await window._auth.user.getIdToken(true);}catch(e){throw new Error('Auth expired');}
+    r=await fetch(FB+p+'.json'+authUrlSuffix(tok),{method:'DELETE'});
+  }
 }
 // Phone normalization: takes any input, returns WhatsApp format (digits only, with country code).
 // Default country code is +94 (Sri Lanka) if no country code detected.
@@ -588,15 +683,16 @@ async function loadData(){
   try{
     const ctrl=new AbortController();
     const t=setTimeout(()=>ctrl.abort(),10000);
-    var r=await fetch(FB+'/brides.json',{signal:ctrl.signal});
+    var _ldTok=await authToken();
+    var r=await fetch(FB+'/brides.json'+authUrlSuffix(_ldTok),{signal:ctrl.signal});
     clearTimeout(t);
     if(!r.ok)throw new Error('HTTP '+r.status);
     brides=(await r.json())||{};
     // If brides empty but legacy data exists, run one-time migration
     if(Object.keys(brides).length===0){
       var [legacyL,legacyC]=await Promise.all([
-        fetch(FB+'/leads.json').then(function(r){return r.json();}),
-        fetch(FB+'/customers.json').then(function(r){return r.json();})
+        fetch(FB+'/leads.json'+authUrlSuffix(_ldTok)).then(function(r){return r.json();}),
+        fetch(FB+'/customers.json'+authUrlSuffix(_ldTok)).then(function(r){return r.json();})
       ]);
       legacyL=legacyL||{};legacyC=legacyC||{};
       if(Object.keys(legacyL).length>0||Object.keys(legacyC).length>0){
@@ -4452,9 +4548,10 @@ async function clearData(){
   var _r2 = await showConfirm({title:'Final confirmation',msg:'Are you absolutely sure? This cannot be undone.',yesText:'Yes, delete everything',dangerous:true});
   if(!_r2.ok)return;
   try{
-    await fetch(FB+'/brides.json',{method:'DELETE'});
-    await fetch(FB+'/leads.json',{method:'DELETE'});
-    await fetch(FB+'/customers.json',{method:'DELETE'});
+    var _cdTok=await authToken();
+    await fetch(FB+'/brides.json'+authUrlSuffix(_cdTok),{method:'DELETE'});
+    await fetch(FB+'/leads.json'+authUrlSuffix(_cdTok),{method:'DELETE'});
+    await fetch(FB+'/customers.json'+authUrlSuffix(_cdTok),{method:'DELETE'});
     brides={};leads={};custs={};
     notif('All data cleared.');
     render();
@@ -5461,6 +5558,151 @@ async function checkAutoLost(){
   }
 }
 
+// ===== Phase 1A: Auth lifecycle =====
+// authInit() runs at startup. If ?auth=1, initialises Firebase Auth and shows login if needed.
+// If no ?auth=1, returns immediately - CRM behaves as today.
+function authInit(){
+  return new Promise(function(resolve){
+    try{
+      var qs=(typeof location!=='undefined'&&location.search)?location.search:'';
+      var on=qs.indexOf('auth=1')!==-1;
+      window._auth.enabled=on;
+      if(!on){resolve({needLogin:false});return;}
+      if(typeof firebase==='undefined'||!firebase.initializeApp){
+        // SDK didn't load - fail safe by disabling auth (CRM will work without it)
+        window._auth.enabled=false;
+        resolve({needLogin:false,sdkFailed:true});
+        return;
+      }
+      try{firebase.initializeApp(_FBCFG);}catch(e){/* already initialised */}
+      // Persistence: LOCAL so the session survives reload/close
+      try{firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);}catch(e){}
+      // Wait for first auth-state event so we know if user is already logged in.
+      var settled=false;
+      var unsub=firebase.auth().onAuthStateChanged(function(u){
+        if(settled)return;
+        settled=true;
+        unsub();
+        window._auth.user=u||null;
+        window._auth.ready=true;
+        resolve({needLogin:!u});
+      });
+      // Safety: if onAuthStateChanged never fires (network issue), don't hang forever
+      setTimeout(function(){
+        if(settled)return;
+        settled=true;
+        window._auth.ready=true;
+        resolve({needLogin:true});
+      },8000);
+    }catch(e){
+      window._auth.enabled=false;
+      resolve({needLogin:false,err:e.message});
+    }
+  });
+}
+function authMapErr(code){
+  // Friendly error messages - Firebase codes are technical
+  if(!code)return 'Sign-in failed. Please try again.';
+  var m={
+    'auth/wrong-password':'Wrong password.',
+    'auth/invalid-credential':'Email or password is incorrect.',
+    'auth/invalid-login-credentials':'Email or password is incorrect.',
+    'auth/user-not-found':'No account found for that email.',
+    'auth/invalid-email':'That doesn\'t look like a valid email.',
+    'auth/too-many-requests':'Too many tries. Wait a minute and try again.',
+    'auth/network-request-failed':'Network error. Check your connection.',
+    'auth/user-disabled':'This account has been disabled.'
+  };
+  return m[code]||'Sign-in failed. Please try again.';
+}
+function showAuthScreen(){
+  document.getElementById('LS').style.display='none';
+  document.getElementById('AUTH').classList.add('show');
+  // Focus email field after a tick (iOS Safari needs this)
+  setTimeout(function(){var e=document.getElementById('auth-email');if(e)e.focus();},120);
+  // Enter key submits
+  var em=document.getElementById('auth-email');
+  var pw=document.getElementById('auth-pw');
+  var onKey=function(ev){if(ev.key==='Enter'){ev.preventDefault();doLogin();}};
+  if(em)em.onkeydown=onKey;
+  if(pw)pw.onkeydown=onKey;
+}
+function hideAuthScreen(){document.getElementById('AUTH').classList.remove('show');}
+async function doLogin(){
+  var emailEl=document.getElementById('auth-email');
+  var pwEl=document.getElementById('auth-pw');
+  var errEl=document.getElementById('auth-err');
+  var btn=document.getElementById('auth-btn');
+  errEl.classList.remove('show');
+  var email=(emailEl.value||'').trim();
+  var pw=pwEl.value||'';
+  if(!email||!pw){errEl.textContent='Enter email and password.';errEl.classList.add('show');return;}
+  btn.disabled=true;btn.classList.add('loading');
+  try{
+    var res=await firebase.auth().signInWithEmailAndPassword(email,pw);
+    window._auth.user=res.user;
+    pwEl.value='';
+    hideAuthScreen();
+    // Show loading screen while we fetch data
+    document.getElementById('LS').style.display='flex';
+    await startAfterAuth();
+  }catch(e){
+    errEl.textContent=authMapErr(e&&e.code);
+    errEl.classList.add('show');
+    btn.disabled=false;btn.classList.remove('loading');
+  }
+}
+async function doForgot(){
+  var emailEl=document.getElementById('auth-email');
+  var errEl=document.getElementById('auth-err');
+  var email=(emailEl.value||'').trim();
+  if(!email){
+    errEl.textContent='Enter your email above first, then tap "Forgot password".';
+    errEl.classList.add('show');
+    return;
+  }
+  try{
+    await firebase.auth().sendPasswordResetEmail(email);
+    errEl.style.background='#DCFCE7';errEl.style.borderColor='#86EFAC';errEl.style.color='#14532D';
+    errEl.textContent='If an account exists for '+email+', a reset email has been sent.';
+    errEl.classList.add('show');
+  }catch(e){
+    errEl.textContent=authMapErr(e&&e.code);
+    errEl.classList.add('show');
+  }
+}
+async function doLogout(){
+  if(!window._auth.enabled||!window._auth.user)return;
+  var r=await showConfirm({title:'Sign out',msg:'You\'ll need to sign in again to use the CRM.',yesText:'Sign out'});
+  if(!r.ok)return;
+  try{await firebase.auth().signOut();}catch(e){}
+  // Hard reload keeps things simple - clears all in-memory state
+  location.reload();
+}
+function updateAuthUI(){
+  // Show/hide user chip and logout button based on auth state
+  var uc=document.getElementById('UC');
+  var lo=document.getElementById('LO');
+  if(!uc||!lo)return;
+  if(window._auth.enabled&&window._auth.user){
+    document.getElementById('UC-em').textContent=window._auth.user.email||'';
+    document.getElementById('UC-rl').textContent=(window._auth.role||'owner');
+    uc.classList.add('show');
+    lo.classList.add('show');
+  }else{
+    uc.classList.remove('show');
+    lo.classList.remove('show');
+  }
+}
+async function startAfterAuth(){
+  // Called after successful login (or if already logged in at boot in auth mode).
+  // Loads CRM data, then runs the periodic checks.
+  updateAuthUI();
+  await loadData();
+  setTimeout(function(){ checkAutoLost().catch(function(e){console.error('autoLost:',e);}); }, 1500);
+  setTimeout(function(){ checkNoShows().catch(function(e){console.error('noShows:',e);}); }, 2500);
+}
+
 (function(){
   try {
     function chk(){var b=document.getElementById('MSB');if(b)b.style.display=window.innerWidth<=900?'flex':'none';}
@@ -5470,10 +5712,21 @@ async function checkAutoLost(){
       console.error('Error:', msg, 'at line', line);
       return false;
     };
-    loadData().then(function(){
-      // Run auto-Lost check after data loads (once per calendar day)
-      setTimeout(function(){ checkAutoLost().catch(function(e){console.error('autoLost:',e);}); }, 1500);
-      setTimeout(function(){ checkNoShows().catch(function(e){console.error('noShows:',e);}); }, 2500);
+    authInit().then(function(authRes){
+      if(window._auth.enabled){
+        if(authRes.needLogin){
+          // Not logged in - show login screen, wait for user to sign in
+          showAuthScreen();
+          return;
+        }
+        // Already logged in from a previous session
+        return startAfterAuth();
+      }
+      // Auth not enabled (no ?auth=1) - original behaviour
+      return loadData().then(function(){
+        setTimeout(function(){ checkAutoLost().catch(function(e){console.error('autoLost:',e);}); }, 1500);
+        setTimeout(function(){ checkNoShows().catch(function(e){console.error('noShows:',e);}); }, 2500);
+      });
     }).catch(function(e){
       var lerr=document.getElementById('lerr'),lm=document.getElementById('lm');
       if(lerr&&lm){lerr.style.display='block';lm.textContent='Load failed: '+e.message;}
