@@ -3667,10 +3667,8 @@ function aLeadSourcePerf(from, to){
     sources[src].leads += 1;
     if(b.confirmed){
       sources[src].booked += 1;
-      // Sum invoice totals for this bride
       Object.values(b.invoices||{}).forEach(function(inv){
-        var tot = qTot(inv.items||{});
-        sources[src].revenue += tot;
+        sources[src].revenue += qTot(inv.items||{});
       });
     }
   });
@@ -3684,29 +3682,44 @@ function aLeadSourcePerf(from, to){
   rows.sort(function(a,b){return b.revenue - a.revenue;});
   
   if(rows.length === 0){
-    return '<div class="empty" style="padding:30px;text-align:center;color:var(--muted)">No leads in this period</div>';
+    return '<div style="padding:30px;text-align:center;color:var(--muted);font-size:12px;font-style:italic">No leads in this period</div>';
   }
   
-  var html = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">';
-  html += '<thead><tr style="background:var(--bg);text-align:left">';
-  html += '<th style="padding:8px;border-bottom:1.5px solid var(--border);font-weight:700;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Source</th>';
-  html += '<th style="padding:8px;border-bottom:1.5px solid var(--border);font-weight:700;text-transform:uppercase;font-size:10px;letter-spacing:.5px;text-align:right">Leads</th>';
-  html += '<th style="padding:8px;border-bottom:1.5px solid var(--border);font-weight:700;text-transform:uppercase;font-size:10px;letter-spacing:.5px;text-align:right">Booked</th>';
-  html += '<th style="padding:8px;border-bottom:1.5px solid var(--border);font-weight:700;text-transform:uppercase;font-size:10px;letter-spacing:.5px;text-align:right">Conv %</th>';
-  html += '<th style="padding:8px;border-bottom:1.5px solid var(--border);font-weight:700;text-transform:uppercase;font-size:10px;letter-spacing:.5px;text-align:right">Avg Value</th>';
-  html += '<th style="padding:8px;border-bottom:1.5px solid var(--border);font-weight:700;text-transform:uppercase;font-size:10px;letter-spacing:.5px;text-align:right">Revenue</th>';
-  html += '</tr></thead><tbody>';
-  rows.forEach(function(r){
-    html += '<tr style="border-bottom:1px solid var(--border)">';
-    html += '<td style="padding:10px 8px;font-weight:600;color:var(--navy)">'+r.label+'</td>';
-    html += '<td style="padding:10px 8px;text-align:right">'+r.leads+'</td>';
-    html += '<td style="padding:10px 8px;text-align:right">'+r.booked+'</td>';
-    html += '<td style="padding:10px 8px;text-align:right;color:'+(r.conv>=30?'var(--success)':r.conv>=15?'var(--gold)':'var(--muted)')+';font-weight:600">'+r.conv+'%</td>';
-    html += '<td style="padding:10px 8px;text-align:right">'+fRshort(r.avgVal)+'</td>';
-    html += '<td style="padding:10px 8px;text-align:right;font-weight:700;color:var(--gold)">'+fRshort(r.revenue)+'</td>';
-    html += '</tr>';
+  var maxRevenue = Math.max.apply(null, rows.map(function(r){return r.revenue;}).concat([1]));
+  var totalLeads = rows.reduce(function(s,r){return s+r.leads;},0);
+  
+  var html = '';
+  rows.forEach(function(r, idx){
+    var convColor = r.conv >= 30 ? 'var(--success)' : r.conv >= 15 ? 'var(--gold)' : r.conv > 0 ? 'var(--warn)' : 'var(--muted)';
+    var revBarPct = maxRevenue > 0 ? Math.round((r.revenue/maxRevenue)*100) : 0;
+    var leadShare = totalLeads > 0 ? Math.round((r.leads/totalLeads)*100) : 0;
+    var mb = idx < rows.length-1 ? 'margin-bottom:10px' : '';
+    
+    html += '<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;'+mb+'">';
+    // Header: source name + revenue
+    html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px">';
+    html += '<div style="flex:1;min-width:0">';
+    html += '<div style="font-size:14px;font-weight:700;color:var(--navy)">'+r.label+'</div>';
+    html += '<div style="font-size:10px;color:var(--muted);margin-top:2px">'+leadShare+'% of all leads</div>';
+    html += '</div>';
+    html += '<div style="text-align:right;flex-shrink:0">';
+    html += '<div style="font-family:Cinzel,serif;font-size:15px;color:var(--gold);font-weight:600">'+fRshort(r.revenue)+'</div>';
+    if(r.avgVal > 0){
+      html += '<div style="font-size:9px;color:var(--muted);margin-top:1px">avg '+fRshort(r.avgVal)+'</div>';
+    }
+    html += '</div>';
+    html += '</div>';
+    
+    // 3-column stats: Leads, Booked, Conv %
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:10px;background:var(--surf);border-radius:8px">';
+    html += '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:3px">Leads</div><div style="font-size:14px;font-weight:700;color:var(--navy)">'+r.leads+'</div></div>';
+    html += '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:3px">Booked</div><div style="font-size:14px;font-weight:700;color:var(--text2)">'+r.booked+'</div></div>';
+    html += '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:3px">Conv</div><div style="font-size:14px;font-weight:700;color:'+convColor+'">'+r.conv+'%</div></div>';
+    html += '</div>';
+    
+    html += '</div>'; // end card
   });
-  html += '</tbody></table></div>';
+  
   return html;
 }
 
@@ -3728,22 +3741,22 @@ function aConversionFunnel(from, to){
     return '<div class="empty" style="padding:30px;text-align:center;color:var(--muted)">No leads in this period</div>';
   }
   
-  var html = '<div style="padding:8px 0">';
+  var html = '<div style="padding:4px 0">';
   stages.forEach(function(label, i){
     var ct = counts[i];
     var pct = Math.round((ct/max)*100);
     var dropFromPrev = i > 0 && counts[i-1] > 0 ? Math.round((1 - ct/counts[i-1]) * 100) : null;
     var color = i === 5 ? 'var(--success)' : i >= 4 ? 'var(--gold)' : 'var(--navy)';
-    html += '<div style="margin-bottom:10px">';
-    html += '<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:var(--navy);margin-bottom:4px">';
-    html += '<span>'+label+'</span>';
-    html += '<span><strong>'+ct+'</strong> <span style="color:var(--muted);font-weight:400;font-size:11px">('+pct+'%)</span>';
+    html += '<div style="margin-bottom:12px">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:baseline;font-size:12px;margin-bottom:5px">';
+    html += '<span style="font-weight:600;color:var(--navy)">'+label+'</span>';
+    html += '<span style="display:flex;align-items:baseline;gap:6px"><strong style="font-family:Cinzel,serif;font-size:14px;color:var(--navy)">'+ct+'</strong> <span style="color:var(--muted);font-weight:500;font-size:10px">'+pct+'%</span>';
     if(dropFromPrev !== null && dropFromPrev > 0){
-      html += ' <span style="color:var(--danger);font-size:10px;margin-left:4px">↓'+dropFromPrev+'%</span>';
+      html += ' <span style="color:var(--danger);font-size:10px;font-weight:600">↓'+dropFromPrev+'%</span>';
     }
     html += '</span></div>';
-    html += '<div style="background:var(--bg);height:24px;border-radius:6px;overflow:hidden;border:1px solid var(--border)">';
-    html += '<div style="background:'+color+';height:100%;width:'+pct+'%;transition:width .3s"></div>';
+    html += '<div style="background:var(--bg);height:18px;border-radius:5px;overflow:hidden;border:1px solid var(--border)">';
+    html += '<div style="background:'+color+';height:100%;width:'+pct+'%;transition:width .3s;border-radius:5px"></div>';
     html += '</div>';
     html += '</div>';
   });
@@ -3784,24 +3797,23 @@ function aRevenueTrends(from, to){
   // By month chart
   var months = Object.keys(byMonth).sort();
   var maxMonthRev = Math.max.apply(null, Object.values(byMonth)) || 1;
-  var html = '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.5px;margin-bottom:10px">By Month</div>';
-  html += '<div style="display:flex;align-items:flex-end;gap:6px;height:140px;padding:8px;background:var(--bg);border-radius:8px;margin-bottom:18px;overflow-x:auto">';
+  var html = '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:600;letter-spacing:.8px;margin-bottom:10px">By Month</div>';
+  html += '<div style="display:flex;align-items:flex-end;gap:6px;height:110px;padding:8px 4px;margin-bottom:18px;overflow-x:auto">';
   months.forEach(function(ym){
     var rev = byMonth[ym];
-    var hPct = Math.round((rev/maxMonthRev) * 100);
-    var ymLabel = new Date(ym+'-01').toLocaleDateString('en-GB',{month:'short',year:'2-digit'});
-    html += '<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:40px;height:100%">';
-    html += '<div style="flex:1;display:flex;align-items:flex-end;width:100%;justify-content:center"><div style="background:var(--gold);width:80%;height:'+hPct+'%;border-radius:4px 4px 0 0;min-height:2px;position:relative">';
-    html += '<div style="position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:700;color:var(--navy);white-space:nowrap">'+fRshort(rev)+'</div>';
-    html += '</div></div>';
-    html += '<div style="font-size:9px;color:var(--muted);margin-top:4px;font-weight:600">'+ymLabel+'</div>';
+    var hPct = Math.max(2, Math.round((rev/maxMonthRev) * 100));
+    var ymLabel = new Date(ym+'-01').toLocaleDateString('en-GB',{month:'short'});
+    html += '<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:32px;height:100%;gap:4px">';
+    html += '<div style="font-size:9px;font-weight:700;color:var(--navy);white-space:nowrap">'+fRshort(rev)+'</div>';
+    html += '<div style="flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center"><div style="background:var(--gold);width:70%;height:'+hPct+'%;border-radius:3px 3px 0 0;min-height:3px;transition:height .3s"></div></div>';
+    html += '<div style="font-size:9px;color:var(--muted);font-weight:600;text-transform:uppercase">'+ymLabel+'</div>';
     html += '</div>';
   });
   html += '</div>';
   
   // By event type
-  html += '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.5px;margin-bottom:10px">By Event Type</div>';
-  var typeLabels = {wedding:'Wedding (+BM/FG/LM)',homecoming:'Homecoming (incl. discount)',goingAway:'Going Away',other:'Custom/Other'};
+  html += '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:600;letter-spacing:.8px;margin-bottom:10px">By Event Type</div>';
+  var typeLabels = {wedding:'Wedding',homecoming:'Homecoming',goingAway:'Going Away',other:'Other'};
   var typeColors = {wedding:'#C9A961',homecoming:'#0A1F44',goingAway:'#6B46C1',other:'#6B7280'};
   var typeMax = Math.max.apply(null, Object.values(byEventType)) || 1;
   Object.keys(byEventType).forEach(function(t){
@@ -3810,14 +3822,14 @@ function aRevenueTrends(from, to){
     var pct = Math.round((v/typeMax)*100);
     html += '<div style="margin-bottom:10px">';
     html += '<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:4px"><span style="color:var(--navy)">'+typeLabels[t]+'</span><span style="color:var(--gold);font-weight:700">'+fRshort(v)+'</span></div>';
-    html += '<div style="background:var(--bg);height:14px;border-radius:4px;overflow:hidden;border:1px solid var(--border)"><div style="background:'+typeColors[t]+';height:100%;width:'+pct+'%"></div></div>';
+    html += '<div style="background:var(--bg);height:10px;border-radius:5px;overflow:hidden"><div style="background:'+typeColors[t]+';height:100%;width:'+pct+'%;border-radius:5px;transition:width .3s"></div></div>';
     html += '</div>';
   });
   
-  // Total
-  html += '<div style="background:var(--navy);color:#fff;border-radius:10px;padding:12px 16px;margin-top:18px;display:flex;align-items:center;justify-content:space-between">';
-  html += '<div style="font-size:11px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;opacity:.85">Total Revenue</div>';
-  html += '<div style="font-size:20px;font-weight:700">'+fR(totalRev)+'</div>';
+  // Total — compact gradient card
+  html += '<div style="background:linear-gradient(135deg,var(--navy) 0%,var(--navy-lt) 100%);color:#fff;border-radius:10px;padding:14px 16px;margin-top:18px;display:flex;align-items:center;justify-content:space-between;gap:10px">';
+  html += '<div style="font-family:Cinzel,serif;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;opacity:.9">Total Revenue</div>';
+  html += '<div style="font-family:Cinzel,serif;font-size:18px;font-weight:600">'+fRshort(totalRev)+'</div>';
   html += '</div>';
   return html;
 }
@@ -3865,28 +3877,37 @@ function aTimeInStage(from, to){
     return '<div class="empty" style="padding:30px;text-align:center;color:var(--muted)">Not enough stage transition history yet. This module will populate as leads progress through stages.</div>';
   }
   
-  var html = '<div style="padding:8px 0">';
+  var html = '<div style="padding:4px 0">';
   stages.forEach(function(label, i){
     var times = stageTimes[i];
     var avg = times.length > 0 ? times.reduce(function(a,b){return a+b;},0) / times.length : 0;
     var stuck = stagedCount[i] || 0;
     var color = avg < 3 ? 'var(--success)' : avg < 7 ? 'var(--gold)' : 'var(--danger)';
-    html += '<div style="margin-bottom:10px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;display:flex;justify-content:space-between;align-items:center">';
-    html += '<div><div style="font-size:13px;font-weight:600;color:var(--navy)">'+label+'</div>';
-    if(times.length > 0){
-      html += '<div style="font-size:10px;color:var(--muted);margin-top:2px">Based on '+times.length+' transition'+(times.length===1?'':'s')+'</div>';
-    } else {
-      html += '<div style="font-size:10px;color:var(--muted);margin-top:2px">No data yet</div>';
+    var mb = i < stages.length-1 ? 'margin-bottom:8px' : '';
+    
+    html += '<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;'+mb+'">';
+    
+    // Left: label + meta
+    html += '<div style="flex:1;min-width:0">';
+    html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+label+'</div>';
+    if(stuck > 0){
+      html += '<span style="background:rgba(229,62,62,0.1);color:var(--danger);font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:.3px">'+stuck+' STUCK</span>';
     }
     html += '</div>';
-    html += '<div style="text-align:right">';
     if(times.length > 0){
-      html += '<div style="font-size:18px;font-weight:700;color:'+color+'">'+avg.toFixed(1)+'<span style="font-size:11px;font-weight:500;color:var(--muted);margin-left:2px">days avg</span></div>';
+      html += '<div style="font-size:10px;color:var(--muted)">Based on '+times.length+' transition'+(times.length===1?'':'s')+'</div>';
     } else {
-      html += '<div style="font-size:13px;color:var(--muted)">—</div>';
+      html += '<div style="font-size:10px;color:var(--muted)">No data yet</div>';
     }
-    if(stuck > 0){
-      html += '<div style="font-size:10px;color:var(--danger);margin-top:2px">'+stuck+' currently in this stage</div>';
+    html += '</div>';
+    
+    // Right: big avg number
+    html += '<div style="text-align:right;flex-shrink:0">';
+    if(times.length > 0){
+      html += '<div style="font-family:Cinzel,serif;font-size:20px;font-weight:600;color:'+color+';line-height:1">'+avg.toFixed(1)+'</div>';
+      html += '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-top:2px">days avg</div>';
+    } else {
+      html += '<div style="font-size:14px;color:var(--muted)">—</div>';
     }
     html += '</div>';
     html += '</div>';
@@ -3898,48 +3919,60 @@ function aTimeInStage(from, to){
 function rAnalytics(){
   var r = aGetRange();
   var presets = [
-    {id:'7d',lbl:'7 Days'},
-    {id:'30d',lbl:'30 Days'},
-    {id:'90d',lbl:'90 Days'},
-    {id:'6m',lbl:'6 Months'},
-    {id:'12m',lbl:'12 Months'},
-    {id:'all',lbl:'All Time'}
+    {id:'7d',lbl:'7D'},
+    {id:'30d',lbl:'30D'},
+    {id:'90d',lbl:'90D'},
+    {id:'6m',lbl:'6M'},
+    {id:'12m',lbl:'12M'},
+    {id:'all',lbl:'All'}
   ];
   var presetBtns = presets.map(function(p){
     var active = r.preset === p.id;
-    return '<button onclick="aSetPreset(\''+p.id+'\')" style="background:'+(active?'var(--navy)':'#fff')+';color:'+(active?'#fff':'var(--navy)')+';border:1.5px solid '+(active?'var(--navy)':'var(--border)')+';border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer">'+p.lbl+'</button>';
+    return '<button onclick="aSetPreset(\''+p.id+'\')" style="background:'+(active?'var(--navy)':'transparent')+';color:'+(active?'#fff':'var(--text2)')+';border:none;border-radius:6px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;letter-spacing:.3px">'+p.lbl+'</button>';
   }).join('');
   
-  var html = '<div class="card" style="margin-bottom:14px">';
-  html += '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.5px;margin-bottom:8px">Date Range</div>';
-  html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">'+presetBtns+'</div>';
+  var html = '';
+  
+  // Date range card — compact
+  html += '<div class="card" style="padding:14px 16px;margin-bottom:14px">';
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
+  html += '<div style="font-family:Cinzel,serif;font-size:11px;color:var(--navy);letter-spacing:1px;font-weight:600;text-transform:uppercase">Date Range</div>';
+  html += '<div style="font-size:10px;color:var(--muted)">'+r.from+' → '+r.to+'</div>';
+  html += '</div>';
+  html += '<div style="display:flex;flex-wrap:wrap;gap:3px;background:var(--bg);border-radius:8px;padding:3px;margin-bottom:10px">'+presetBtns+'</div>';
   html += '<div style="display:flex;gap:8px;align-items:center">';
-  html += '<div style="flex:1"><label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:2px">From</label><input type="date" value="'+r.from+'" onchange="aSetCustomDate(\'from\',this.value)" style="width:100%;padding:7px 10px;font-size:13px;border:1.5px solid var(--border);border-radius:6px"/></div>';
-  html += '<div style="flex:1"><label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:2px">To</label><input type="date" value="'+r.to+'" onchange="aSetCustomDate(\'to\',this.value)" style="width:100%;padding:7px 10px;font-size:13px;border:1.5px solid var(--border);border-radius:6px"/></div>';
+  html += '<input type="date" value="'+r.from+'" onchange="aSetCustomDate(\'from\',this.value)" style="flex:1;padding:6px 10px;font-size:12px;border:1.5px solid var(--border);border-radius:6px;background:var(--bg)"/>';
+  html += '<div style="color:var(--muted);font-size:11px">→</div>';
+  html += '<input type="date" value="'+r.to+'" onchange="aSetCustomDate(\'to\',this.value)" style="flex:1;padding:6px 10px;font-size:12px;border:1.5px solid var(--border);border-radius:6px;background:var(--bg)"/>';
   html += '</div>';
   html += '</div>';
   
-  // Module 1
-  html += '<div class="card" style="margin-bottom:14px">';
-  html += '<div class="card-hdr"><div class="card-title">Lead Source Performance</div></div>';
+  // Module headers in matching style to Finance
+  function moduleHdr(title){
+    return '<div style="font-family:Cinzel,serif;font-size:13px;color:var(--navy);letter-spacing:1px;font-weight:600;margin-bottom:14px">'+title+'</div>';
+  }
+  
+  // Module 1: Lead Source Performance
+  html += '<div class="card" style="padding:18px 20px;margin-bottom:14px">';
+  html += moduleHdr('Lead Source Performance');
   html += aLeadSourcePerf(r.from, r.to);
   html += '</div>';
   
-  // Module 2
-  html += '<div class="card" style="margin-bottom:14px">';
-  html += '<div class="card-hdr"><div class="card-title">Conversion Funnel</div></div>';
+  // Module 2: Conversion Funnel
+  html += '<div class="card" style="padding:18px 20px;margin-bottom:14px">';
+  html += moduleHdr('Conversion Funnel');
   html += aConversionFunnel(r.from, r.to);
   html += '</div>';
   
-  // Module 3
-  html += '<div class="card" style="margin-bottom:14px">';
-  html += '<div class="card-hdr"><div class="card-title">Revenue Trends</div></div>';
+  // Module 3: Revenue Trends
+  html += '<div class="card" style="padding:18px 20px;margin-bottom:14px">';
+  html += moduleHdr('Revenue Trends');
   html += aRevenueTrends(r.from, r.to);
   html += '</div>';
   
-  // Module 4
-  html += '<div class="card" style="margin-bottom:14px">';
-  html += '<div class="card-hdr"><div class="card-title">Time in Stage</div></div>';
+  // Module 4: Time in Stage
+  html += '<div class="card" style="padding:18px 20px;margin-bottom:14px">';
+  html += moduleHdr('Time in Stage');
   html += aTimeInStage(r.from, r.to);
   html += '</div>';
   
