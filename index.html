@@ -678,6 +678,14 @@ function dU(s){if(!s)return null;var t=new Date(s);t.setHours(0,0,0,0);var n=new
 function dS(s){if(!s)return 0;var t=new Date(s);t.setHours(0,0,0,0);var n=new Date();n.setHours(0,0,0,0);return Math.round((n-t)/86400000);}
 function qTot(items){return Object.values(items||{}).reduce(function(s,it){return s+cLine(it);},0);}
 function cLine(it){return(it.qty||1)*(it.unit||0)*(1-(it.disc||0)/100);}
+// invPaid: TRUE amount paid on an invoice = bespeaking advance + sum of all payments
+// Use this everywhere Finance/Analytics/dashboards report "Collected" or compute "Balance Due".
+function invPaid(inv){
+  if(!inv)return 0;
+  var adv=parseFloat(inv.advance||0)||0;
+  var pays=Object.values(inv.payments||{}).reduce(function(s,p){return s+(parseFloat(p.amount)||0);},0);
+  return adv+pays;
+}
 function inits(n){return(n||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();}
 function expD(){var d=new Date();d.setMonth(11);d.setDate(31);return d.toISOString().slice(0,10);}
 function qNum(){var d=new Date();return 'BQ-'+String(d.getFullYear()).slice(-2)+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'-'+Math.floor(Math.random()*90+10);}
@@ -924,23 +932,24 @@ function pipelineMetrics(){
     }
   });
   var avgResp = respTimes.length===0 ? null : Math.round(respTimes.reduce(function(a,b){return a+b;},0)/respTimes.length);
-  // 4. Average booking value (from invoices on confirmed brides)
+  // 4. Average booking value (from invoices on confirmed brides) — uses qTot/cLine (qty/unit/disc)
   var confirmedTotals = [];
   all.filter(function(l){return l.confirmed && !l.cancelled;}).forEach(function(l){
     var inv = Object.values(l.invoices||{})[0];
     if(inv){
-      var t = 0;
-      Object.values(inv.items||{}).forEach(function(it){t += (it.q||1)*(it.p||0);});
+      var t = qTot(inv.items);
       if(t>0)confirmedTotals.push(t);
     }
   });
   var avgValue = confirmedTotals.length===0 ? 0 : Math.round(confirmedTotals.reduce(function(a,b){return a+b;},0)/confirmedTotals.length);
-  // 5. Pipeline value (sum of all open quotes not yet invoiced)
+  // 5. Pipeline value (sum of all open quotes not yet invoiced) — uses qTot, reads b.quotes directly
   var pipelineValue = 0;
   all.filter(function(l){return !l.confirmed && !l.cancelled;}).forEach(function(l){
-    Object.values(l.quotations||{}).forEach(function(qt){
+    // Read both quotes (canonical) and quotations (legacy projection alias) to be safe
+    var qts = l.quotes || l.quotations || {};
+    Object.values(qts).forEach(function(qt){
       if(qt.convertedToInvoice)return;
-      Object.values(qt.items||{}).forEach(function(it){pipelineValue += (it.q||1)*(it.p||0);});
+      pipelineValue += qTot(qt.items);
     });
   });
   // 6. Upcoming weddings in next 90 days
@@ -1307,8 +1316,10 @@ function rInvoices(){
   var filt=allI.filter(function(i){return q?i.sN.toLowerCase().includes(q):true;});
   var rows='';
   filt.forEach(function(inv){
-    var tot=qTot(inv.items);var bp=inv.advance||0;var bal=tot-bp;
-    var pct=tot>0?Math.round(bp/tot*100):0;
+    var tot=qTot(inv.items);
+    var paid=invPaid(inv);
+    var bal=Math.max(0,tot-paid);
+    var pct=tot>0?Math.round(paid/tot*100):0;
     var sc=pct>=100?'var(--success)':pct>0?'var(--warn)':'var(--danger)';
     var sl=pct>=100?'PAID':pct>0?'PARTIAL':'UNPAID';
     rows+='<div class="lr" onclick="openIDoc(\''+inv.src+'\',\''+inv.sId+'\',\''+inv.id+'\')">'
@@ -1365,8 +1376,7 @@ function openIDoc(src,sId,iId){
   var inv=(obj.invoices||{})[iId];if(!inv)return;
   var tot=qTot(inv.items);var bp=inv.advance||0;
   var pays=Object.values(inv.payments||{});
-  var paySum=pays.reduce(function(s,p){return s+(parseFloat(p.amount)||0);},0);
-  var paid=bp+paySum;
+  var paid=invPaid(inv);
   var bal=tot-paid;
   var items=Object.values(inv.items||{});
   var pct=tot>0?Math.round(paid/tot*100):0;
@@ -1406,12 +1416,14 @@ function openIDoc(src,sId,iId){
 function openAddPay(src,sId,iId){
   var obj=src==='lead'?leads[sId]:custs[sId];if(!obj)return;
   var inv=(obj.invoices||{})[iId];if(!inv)return;
-  var tot=qTot(inv.items);var bp=inv.advance||0;
-  var paySum=Object.values(inv.payments||{}).reduce(function(s,p){return s+(parseFloat(p.amount)||0);},0);
-  var bal=Math.max(0,tot-bp-paySum);
+  var tot=qTot(inv.items);
+  var bp=inv.advance||0;
+  var paid=invPaid(inv);
+  var paySum=paid-bp;
+  var bal=Math.max(0,tot-paid);
   document.getElementById('pay-s').textContent=obj.name+' · '+iId;
   document.getElementById('pay-b').innerHTML=
-    '<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;display:flex;justify-content:space-between"><div><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:3px">Balance Due</div><div style="font-size:22px;font-weight:700;color:var(--warn)">'+fR(bal)+'</div></div><div style="text-align:right;font-size:11px;color:var(--muted);align-self:flex-end">Total '+fR(tot)+'<br/>Paid '+fR(bp+paySum)+'</div></div>'
+    '<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;display:flex;justify-content:space-between"><div><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:3px">Balance Due</div><div style="font-size:22px;font-weight:700;color:var(--warn)">'+fR(bal)+'</div></div><div style="text-align:right;font-size:11px;color:var(--muted);align-self:flex-end">Total '+fR(tot)+'<br/>Paid '+fR(paid)+'</div></div>'
     +'<div class="fg"><div class="fi"><label>Amount (Rs) *</label><input type="number" id="pay-amt" min="1" value="'+bal+'"/></div><div class="fi"><label>Date</label><input type="date" id="pay-date" value="'+(new Date().toISOString().slice(0,10))+'"/></div><div class="fi s2"><label>Method</label><select id="pay-method"><option value="">— Select —</option><option>Cash</option><option>Bank Transfer</option><option>Card</option><option>Cheque</option><option>Other</option></select></div><div class="fi s2"><label>Note (optional)</label><input type="text" id="pay-note" placeholder="Reference, comments…"/></div></div>';
   document.getElementById('pay-f').innerHTML='<button class="btn btn-ghost" onclick="CM(\'pay-modal\')">Cancel</button><button class="btn btn-primary" onclick="addPay(\''+src+'\',\''+sId+'\',\''+iId+'\')" >Record Payment</button>';
   CM('doc-modal');OM('pay-modal');
@@ -3365,33 +3377,94 @@ async function updC(id, data){
 
 function rFinance(){
   var allI=[];
-  lA().forEach(function(l){Object.values(l.invoices||{}).forEach(function(inv){allI.push(Object.assign({},inv,{cn:l.name}));});});
-  cA().forEach(function(c){Object.values(c.invoices||{}).forEach(function(inv){allI.push(Object.assign({},inv,{cn:c.name}));});});
+  // Iterate brides ONCE (canonical source). Previously this iterated lA()+cA() which both
+  // contain every bride via projectViews(), causing every invoice to be counted twice.
+  Object.values(brides).forEach(function(b){
+    Object.values(b.invoices||{}).forEach(function(inv){
+      allI.push(Object.assign({},inv,{cn:b.name||''}));
+    });
+  });
   allI.sort(function(a,b){return new Date(a.date)-new Date(b.date);});
-  var tR=allI.reduce(function(s,i){return s+qTot(i.items);},0);
-  var tC=allI.reduce(function(s,i){return s+(i.advance||0);},0);
+  // Core totals — using invPaid for TRUE collected (bespeaking + all subsequent payments)
+  var tInvoiced=allI.reduce(function(s,i){return s+qTot(i.items);},0);
+  var tCollected=allI.reduce(function(s,i){return s+invPaid(i);},0);
+  var tBalance=Math.max(0,tInvoiced-tCollected);
+  var collectionRate=tInvoiced>0?Math.round((tCollected/tInvoiced)*100):0;
   var cnt=allI.length;
+  // Monthly breakdown — also uses invPaid for collected
   var mo={};
-  allI.forEach(function(i){var m=i.date?i.date.slice(0,7):'?';if(!mo[m])mo[m]={r:0,c:0,n:0};mo[m].r+=qTot(i.items);mo[m].c+=(i.advance||0);mo[m].n++;});
+  allI.forEach(function(i){
+    var m=i.date?i.date.slice(0,7):'?';
+    if(!mo[m])mo[m]={r:0,c:0,n:0};
+    mo[m].r+=qTot(i.items);
+    mo[m].c+=invPaid(i);
+    mo[m].n++;
+  });
   var mos=Object.keys(mo).sort();
   var mr='';
-  mos.forEach(function(m){var x=mo[m];var p=x.r>0?Math.round(x.c/x.r*100):0;var lb=new Date(m+'-01').toLocaleDateString('en-GB',{month:'short',year:'numeric'});mr+='<tr><td style="font-weight:600">'+lb+'</td><td style="text-align:center">'+x.n+'</td><td style="color:var(--gold);font-weight:600">'+fR(x.r)+'</td><td><div style="display:flex;align-items:center;gap:5px"><div style="flex:1;height:4px;background:var(--border);border-radius:2px"><div style="width:'+p+'%;height:100%;background:var(--success);border-radius:2px"></div></div><span style="font-size:11px;color:var(--success);font-weight:600;min-width:28px">'+p+'%</span></div></td></tr>';});
-  var out=allI.filter(function(i){return qTot(i.items)-(i.advance||0)>0;}).sort(function(a,b){return(qTot(b.items)-(b.advance||0))-(qTot(a.items)-(a.advance||0));}).slice(0,8);
-  var or='';out.forEach(function(i){var b=qTot(i.items)-(i.advance||0);or+='<tr><td><div style="font-weight:600;font-size:13px">'+i.cn+'</div></td><td style="font-size:11px;color:var(--muted)">'+i.id+'</td><td style="font-weight:700;color:var(--warn)">'+fR(b)+'</td></tr>';});
+  mos.forEach(function(m){
+    var x=mo[m];
+    var p=x.r>0?Math.round(x.c/x.r*100):0;
+    var lb=new Date(m+'-01').toLocaleDateString('en-GB',{month:'short',year:'numeric'});
+    mr+='<tr><td style="font-weight:600">'+lb+'</td><td style="text-align:center">'+x.n+'</td><td style="color:var(--gold);font-weight:600">'+fR(x.r)+'</td><td><div style="display:flex;align-items:center;gap:5px"><div style="flex:1;height:4px;background:var(--border);border-radius:2px"><div style="width:'+p+'%;height:100%;background:var(--success);border-radius:2px"></div></div><span style="font-size:11px;color:var(--success);font-weight:600;min-width:28px">'+p+'%</span></div></td></tr>';
+  });
+  // Outstanding list — filter by TRUE balance
+  var out=allI.map(function(i){return {inv:i, bal:qTot(i.items)-invPaid(i)};})
+              .filter(function(x){return x.bal>0.01;})
+              .sort(function(a,b){return b.bal-a.bal;})
+              .slice(0,8);
+  var or='';
+  out.forEach(function(x){
+    or+='<tr><td><div style="font-weight:600;font-size:13px">'+x.inv.cn+'</div></td><td style="font-size:11px;color:var(--muted)">'+x.inv.id+'</td><td style="font-weight:700;color:var(--warn)">'+fR(x.bal)+'</td></tr>';
+  });
+  // Invoice ledger — show advance (bespeaking), TRUE paid, TRUE balance, correct status
   var lr='';
-  allI.slice().reverse().forEach(function(i){var t=qTot(i.items);var b=i.advance||0;var bal=t-b;var p=t>0?Math.round(b/t*100):0;var sc=p>=100?'var(--success)':p>0?'var(--warn)':'var(--danger)';var sl=p>=100?'Paid':p>0?'Partial':'Unpaid';lr+='<tr><td style="font-size:12px">'+fmt(i.date)+'</td><td class="cn">'+i.cn+'</td><td style="font-size:11px;color:var(--muted)">'+i.id+'</td><td style="font-weight:700;color:var(--gold)">'+fR(t)+'</td><td style="color:var(--success);font-weight:600">'+fR(b)+'</td><td style="font-weight:600">'+fR(Math.max(0,bal))+'</td><td><span class="badge" style="background:'+sc+'22;color:'+sc+'">'+sl+'</span></td></tr>';});
-  document.getElementById('MC').innerHTML=
-    '<div class="sg">'
-    +sCard('Total Revenue',fR(tR),cnt+' invoices','ig')
-    +sCard('Collected',fR(tC),(tR>0?Math.round(tC/tR*100):0)+'% of total','iv')
-    +sCard('Balance Due',fR(tR-tC),'Outstanding','io')
-    +sCard('Avg Invoice',cnt>0?fR(Math.round(tR/cnt)):'Rs 0','Per client','ib')
+  allI.slice().reverse().forEach(function(i){
+    var t=qTot(i.items);
+    var adv=parseFloat(i.advance||0)||0;
+    var paid=invPaid(i);
+    var bal=Math.max(0,t-paid);
+    var p=t>0?Math.round(paid/t*100):0;
+    var sc=p>=100?'var(--success)':p>0?'var(--warn)':'var(--danger)';
+    var sl=p>=100?'Paid':p>0?'Partial':'Unpaid';
+    lr+='<tr>'
+      +'<td style="font-size:12px">'+fmt(i.date)+'</td>'
+      +'<td class="cn">'+i.cn+'</td>'
+      +'<td style="font-size:11px;color:var(--muted)">'+i.id+'</td>'
+      +'<td style="font-weight:700;color:var(--gold)">'+fR(t)+'</td>'
+      +'<td style="color:var(--text2);font-weight:500">'+fR(adv)+'</td>'
+      +'<td style="color:var(--success);font-weight:600">'+fR(paid)+'</td>'
+      +'<td style="font-weight:600">'+fR(bal)+'</td>'
+      +'<td><span class="badge" style="background:'+sc+'22;color:'+sc+'">'+sl+'</span></td>'
+      +'</tr>';
+  });
+  // === Build UI ===
+  // Top overview card: 3-number summary that tells the story
+  var overview = '<div class="card" style="margin-bottom:14px;padding:18px 20px;background:linear-gradient(135deg,var(--surf) 0%,#FAF6EE 100%)">'
+    +'<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:14px">Financial Overview · '+cnt+' invoice'+(cnt!==1?'s':'')+'</div>'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">'
+    +'<div style="flex:1;min-width:100px"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:4px">Invoiced</div><div style="font-family:Cinzel,serif;font-size:20px;color:var(--gold);font-weight:600">'+fRshort(tInvoiced)+'</div></div>'
+    +'<div style="color:var(--muted);font-size:18px">→</div>'
+    +'<div style="flex:1;min-width:100px"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:4px">Collected</div><div style="font-family:Cinzel,serif;font-size:20px;color:var(--success);font-weight:600">'+fRshort(tCollected)+'</div><div style="font-size:10px;color:var(--success);margin-top:2px">'+collectionRate+'% of invoiced</div></div>'
+    +'<div style="color:var(--muted);font-size:18px">→</div>'
+    +'<div style="flex:1;min-width:100px"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:4px">Outstanding</div><div style="font-family:Cinzel,serif;font-size:20px;color:'+(tBalance>0?'var(--warn)':'var(--muted)')+';font-weight:600">'+fRshort(tBalance)+'</div></div>'
     +'</div>'
+    +'</div>';
+  // Secondary stats - context numbers
+  var avgInv = cnt>0 ? Math.round(tInvoiced/cnt) : 0;
+  var avgCollected = cnt>0 ? Math.round(tCollected/cnt) : 0;
+  var secondary = '<div class="sg" style="margin-bottom:14px">'
+    +sCard('Avg Invoice',fR(avgInv),'Per client','ib')
+    +sCard('Avg Collected',fR(avgCollected),'Per client','iv')
+    +'</div>';
+  document.getElementById('MC').innerHTML=
+    overview
+    +secondary
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px">'
-    +'<div class="card"><div class="card-hdr"><div class="card-title">Monthly Revenue</div></div>'+(mos.length?'<table><thead><tr><th>Month</th><th>Count</th><th>Revenue</th><th>Collected</th></tr></thead><tbody>'+mr+'</tbody></table>':'<div class="empty" style="padding:40px"><div class="et">No data</div></div>')+'</div>'
+    +'<div class="card"><div class="card-hdr"><div class="card-title">Monthly Revenue</div></div>'+(mos.length?'<table><thead><tr><th>Month</th><th>Count</th><th>Invoiced</th><th>Collected</th></tr></thead><tbody>'+mr+'</tbody></table>':'<div class="empty" style="padding:40px"><div class="et">No data</div></div>')+'</div>'
     +'<div class="card"><div class="card-hdr"><div class="card-title">Outstanding</div></div>'+(out.length?'<table><thead><tr><th>Client</th><th>Invoice</th><th>Balance</th></tr></thead><tbody>'+or+'</tbody></table>':'<div class="empty" style="padding:40px"><div class="et">All paid up</div></div>')+'</div>'
     +'</div>'
-    +'<div class="card"><div class="card-hdr"><div class="card-title">Invoice Ledger</div><div style="font-size:12px;color:var(--muted)">'+cnt+' total</div></div>'+(cnt?'<div style="overflow-x:auto"><table><thead><tr><th>Date</th><th>Client</th><th>Invoice</th><th>Total</th><th>Bespeaking</th><th>Balance</th><th>Status</th></tr></thead><tbody>'+lr+'</tbody></table></div>':'<div class="empty" style="padding:60px"><div class="et">No invoices yet</div></div>')+'</div>';
+    +'<div class="card"><div class="card-hdr"><div class="card-title">Invoice Ledger</div><div style="font-size:12px;color:var(--muted)">'+cnt+' total</div></div>'+(cnt?'<div style="overflow-x:auto"><table><thead><tr><th>Date</th><th>Client</th><th>Invoice</th><th>Total</th><th>Bespeaking</th><th>Paid</th><th>Balance</th><th>Status</th></tr></thead><tbody>'+lr+'</tbody></table></div>':'<div class="empty" style="padding:60px"><div class="et">No invoices yet</div></div>')+'</div>';
 }
 
 // ============================================================
@@ -3920,11 +3993,11 @@ function _briefWeddings(){
     if(!b.weddingDate) return;
     var d = dU(b.weddingDate);
     if(d === null || d < 0 || d > 7) return;
-    // Compute balance
+    // Compute balance using shared invPaid helper
     var totalDue = 0, totalPaid = 0;
     Object.values(b.invoices||{}).forEach(function(inv){
       totalDue += qTot(inv.items);
-      totalPaid += (inv.advance||0) + Object.values(inv.payments||{}).reduce(function(s,p){return s+(parseFloat(p.amount)||0);},0);
+      totalPaid += invPaid(inv);
     });
     var balance = totalDue - totalPaid;
     // Find final trial
@@ -4312,13 +4385,11 @@ function computeTodaysActions(){
     if(!b.weddingDate) return;
     var dToWed = dU(b.weddingDate);
     if(dToWed === null || dToWed > 14 || dToWed < 0) return;
-    // Compute balance from invoices
+    // Compute balance from invoices using shared helper
     var totalDue = 0, totalPaid = 0;
     Object.values(b.invoices||{}).forEach(function(inv){
-      var tot = qTot(inv.items);
-      var paid = (inv.advance||0) + Object.values(inv.payments||{}).reduce(function(s,p){return s+(parseFloat(p.amount)||0);},0);
-      totalDue += tot;
-      totalPaid += paid;
+      totalDue += qTot(inv.items);
+      totalPaid += invPaid(inv);
     });
     var balance = totalDue - totalPaid;
     if(balance > 0){
