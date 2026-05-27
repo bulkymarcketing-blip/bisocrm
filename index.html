@@ -262,6 +262,22 @@ textarea{resize:vertical;min-height:80px}
 .user-chip.show{display:block}
 .user-chip .em{color:rgba(255,255,255,0.9);font-weight:500;display:block;font-size:11px;word-break:break-all}
 .user-chip .rl{color:var(--gold-lt);font-size:9px;letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+/* ===== Topbar avatar menu (Phase 1B-1.1) ===== */
+.av-btn{display:none;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:var(--navy);color:#fff;border:2px solid var(--gold);font-family:'Cinzel',serif;font-size:12px;font-weight:600;letter-spacing:.5px;cursor:pointer;flex-shrink:0;padding:0;transition:transform .15s}
+.av-btn.show{display:flex}
+.av-btn:active{transform:scale(0.94)}
+.av-menu{position:absolute;top:54px;right:14px;background:var(--surf);border:1px solid var(--border);border-radius:10px;box-shadow:var(--sh2);min-width:220px;max-width:280px;z-index:300;display:none;overflow:hidden}
+.av-menu.show{display:block;animation:avFade .18s ease-out}
+@keyframes avFade{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.av-menu .av-info{padding:14px 16px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,var(--navy) 0%,var(--navy-lt) 100%);color:#fff}
+.av-menu .av-info .em{font-size:12.5px;font-weight:600;word-break:break-all;line-height:1.35}
+.av-menu .av-info .rl{font-family:'Cinzel',serif;font-size:9.5px;letter-spacing:1.5px;color:var(--gold-lt);margin-top:5px;text-transform:uppercase}
+.av-menu .av-item{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;font-size:13.5px;color:var(--text);transition:background .12s;border:none;background:none;width:100%;text-align:left;font-family:'Inter',sans-serif;font-weight:500}
+.av-menu .av-item:hover,.av-menu .av-item:active{background:var(--bg)}
+.av-menu .av-item.dgr{color:var(--danger)}
+.av-menu .av-item .ic{font-size:14px;width:18px;text-align:center;opacity:.7}
+.av-bkdrp{position:fixed;inset:0;background:transparent;z-index:299;display:none}
+.av-bkdrp.show{display:block}
 .notif{position:fixed;bottom:20px;right:20px;background:var(--navy);border-radius:10px;padding:12px 16px;font-size:13px;color:#fff;z-index:9999;transform:translateY(16px);opacity:0;transition:all .3s;pointer-events:none;max-width:280px;box-shadow:var(--sh2)}
 .notif.show{transform:translateY(0);opacity:1}
 .mnav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surf);border-top:1.5px solid var(--border);z-index:200;padding:5px 0 env(safe-area-inset-bottom,5px)}
@@ -325,7 +341,13 @@ textarea{resize:vertical;min-height:80px}
 <div id="APP" style="display:none"><div class="app">
 <aside class="sidebar" id="SB"><div class="brand"><img class="brand-logo" src="logo.png" alt="" onerror="this.style.display='none'"/><div><div class="brand-name">BISO</div><div class="brand-sub">Bridal CRM</div></div></div><nav class="nav" id="SN"></nav><div class="sidebar-foot"><div class="user-chip" id="UC"><span class="em" id="UC-em"></span><span class="rl" id="UC-rl"></span></div><div class="sync-badge"><div class="sync-dot"></div><div class="sync-txt" id="ST">Connecting…</div></div><button class="logout-btn" id="LO" onclick="doLogout()">Sign Out</button></div></aside>
 <div class="mov" id="MOV" onclick="closeSB()"></div>
-<div class="main"><div class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="hamburger" onclick="openSB()"><svg width="20" height="16" viewBox="0 0 20 16" fill="none"><rect width="20" height="2" rx="1" fill="currentColor"/><rect y="7" width="20" height="2" rx="1" fill="currentColor"/><rect y="14" width="20" height="2" rx="1" fill="currentColor"/></svg></button><div class="page-title" id="PT">Lead Pipeline</div></div><div class="topbar-right"><div class="swrap"><span class="sicon">⌕</span><input type="text" class="sbox" id="SI" placeholder="Search…" oninput="doSearch()"/></div><button id="MSB" style="display:none;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:8px;cursor:pointer" onclick="toggleMSB()">⌕</button><button class="btn btn-primary" id="AB" onclick="handleAdd()">+ Add</button></div></div><div id="MSBar" style="display:none;padding:10px 14px;background:var(--surf);border-bottom:1.5px solid var(--border)"><div class="swrap" style="width:100%"><span class="sicon">⌕</span><input type="text" class="sbox" id="MSI" placeholder="Search…" oninput="document.getElementById('SI').value=this.value;doSearch()" style="width:100%"/></div></div><div class="content" id="MC"></div></div>
+<div class="main"><div class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="hamburger" onclick="openSB()"><svg width="20" height="16" viewBox="0 0 20 16" fill="none"><rect width="20" height="2" rx="1" fill="currentColor"/><rect y="7" width="20" height="2" rx="1" fill="currentColor"/><rect y="14" width="20" height="2" rx="1" fill="currentColor"/></svg></button><div class="page-title" id="PT">Lead Pipeline</div></div><div class="topbar-right"><div class="swrap"><span class="sicon">⌕</span><input type="text" class="sbox" id="SI" placeholder="Search…" oninput="doSearch()"/></div><button id="MSB" style="display:none;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:8px;cursor:pointer" onclick="toggleMSB()">⌕</button><button class="av-btn" id="AV" onclick="toggleAvMenu(event)" aria-label="Account"><span id="AV-in">··</span></button><button class="btn btn-primary" id="AB" onclick="handleAdd()">+ Add</button></div></div>
+<div class="av-bkdrp" id="AV-bk" onclick="closeAvMenu()"></div>
+<div class="av-menu" id="AV-m" onclick="event.stopPropagation()">
+  <div class="av-info"><div class="em" id="AV-em"></div><div class="rl" id="AV-rl"></div></div>
+  <button class="av-item dgr" onclick="closeAvMenu();doLogout()"><span class="ic">⏻</span>Sign Out</button>
+</div>
+<div id="MSBar" style="display:none;padding:10px 14px;background:var(--surf);border-bottom:1.5px solid var(--border)"><div class="swrap" style="width:100%"><span class="sicon">⌕</span><input type="text" class="sbox" id="MSI" placeholder="Search…" oninput="document.getElementById('SI').value=this.value;doSearch()" style="width:100%"/></div></div><div class="content" id="MC"></div></div>
 <nav class="mnav"><div class="mni" id="MN"></div></nav>
 </div></div>
 <div class="overlay" id="lead-modal"><div class="modal"><div class="mhd"><div style="display:flex;align-items:center;gap:10px;flex:1"><button class="btn btn-ghost btn-xs" onclick="closeOverview()" style="padding:6px 10px;border:none;background:var(--bg)">‹ Back</button><div style="flex:1"><div class="mt" id="of-title">New Bride</div><div class="msb" id="of-sub" style="display:none"></div></div></div><button class="mc" onclick="closeOverview()">×</button></div><div class="mbdy" id="of-body"></div><div class="mft" id="of-footer"></div></div></div>
@@ -793,14 +815,18 @@ async function loadRole(){
     return;
   }
   var uid=window._auth.user.uid;
+  console.log('[role] loadRole start for uid:',uid);
   try{
     var existing=await fbG('/roles/'+uid);
+    console.log('[role] existing role record:',existing);
     if(existing&&typeof existing==='string'){
       window._auth.role=existing==='owner'?'owner':'manager';
+      console.log('[role] resolved to:',window._auth.role,'(legacy string)');
       return;
     }
     if(existing&&existing.role){
       window._auth.role=existing.role==='owner'?'owner':'manager';
+      console.log('[role] resolved to:',window._auth.role);
       return;
     }
     // No role recorded yet. Check if ANY roles exist - if not, bootstrap this user as owner.
@@ -819,6 +845,7 @@ async function loadRole(){
     // On error, default to manager (safe). User can still log in but with limited access.
     console.error('[role] loadRole failed, defaulting to manager:',e.message);
     window._auth.role='manager';
+    throw e; // propagate so startAfterAuth knows it failed
   }
 }
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
@@ -5735,21 +5762,80 @@ function updateAuthUI(){
   // Show/hide user chip and logout button based on auth state
   var uc=document.getElementById('UC');
   var lo=document.getElementById('LO');
-  if(!uc||!lo)return;
+  var av=document.getElementById('AV');
   if(window._auth.enabled&&window._auth.user){
-    document.getElementById('UC-em').textContent=window._auth.user.email||'';
-    document.getElementById('UC-rl').textContent=(window._auth.role||'owner');
-    uc.classList.add('show');
-    lo.classList.add('show');
+    var email=window._auth.user.email||'';
+    var role=window._auth.role||'owner';
+    // Sidebar chip (desktop visibility)
+    if(uc){
+      var ucEm=document.getElementById('UC-em');
+      var ucRl=document.getElementById('UC-rl');
+      if(ucEm)ucEm.textContent=email;
+      if(ucRl)ucRl.textContent=role;
+      uc.classList.add('show');
+    }
+    if(lo)lo.classList.add('show');
+    // Topbar avatar button (works on mobile + desktop)
+    if(av){
+      var avIn=document.getElementById('AV-in');
+      if(avIn)avIn.textContent=initials(email);
+      av.classList.add('show');
+      // Tint by role: gold border for owner, navy-dim for manager
+      av.style.borderColor=role==='owner'?'var(--gold)':'rgba(255,255,255,0.4)';
+    }
+    // Dropdown content
+    var avEm=document.getElementById('AV-em');
+    var avRl=document.getElementById('AV-rl');
+    if(avEm)avEm.textContent=email;
+    if(avRl)avRl.textContent=role;
   }else{
-    uc.classList.remove('show');
-    lo.classList.remove('show');
+    if(uc)uc.classList.remove('show');
+    if(lo)lo.classList.remove('show');
+    if(av)av.classList.remove('show');
+    closeAvMenu();
   }
+}
+function initials(email){
+  if(!email)return '··';
+  var name=email.split('@')[0]||'';
+  // Strip non-letter chars, take first two letters
+  var letters=name.replace(/[^a-zA-Z]/g,'');
+  if(!letters)return (email.charAt(0)||'·').toUpperCase()+'·';
+  if(letters.length===1)return letters.toUpperCase()+'·';
+  return (letters.charAt(0)+letters.charAt(1)).toUpperCase();
+}
+function toggleAvMenu(ev){
+  if(ev)ev.stopPropagation();
+  var m=document.getElementById('AV-m');
+  var bk=document.getElementById('AV-bk');
+  if(!m||!bk)return;
+  if(m.classList.contains('show')){closeAvMenu();}
+  else{m.classList.add('show');bk.classList.add('show');}
+}
+function closeAvMenu(){
+  var m=document.getElementById('AV-m');
+  var bk=document.getElementById('AV-bk');
+  if(m)m.classList.remove('show');
+  if(bk)bk.classList.remove('show');
 }
 async function startAfterAuth(){
   // Called after successful login (or if already logged in at boot in auth mode).
   // Order matters: resolve role BEFORE loading data so the right nav is built.
-  await loadRole();
+  // But: never let role-loading block the UI showing user info. Show UI defensively first.
+  if(window._auth.user)console.log('[auth] startAfterAuth for',window._auth.user.email);
+  // Show user chip immediately (with default role) so it's never missing even if loadRole hangs
+  updateAuthUI();
+  try{
+    // Cap loadRole at 5s — if it hangs we proceed with safe default
+    await Promise.race([
+      loadRole(),
+      new Promise(function(_,rej){setTimeout(function(){rej(new Error('loadRole timeout'));},5000);})
+    ]);
+  }catch(e){
+    console.error('[auth] loadRole failed or timed out:',e.message,'\u2014 defaulting to manager');
+    if(window._auth)window._auth.role='manager';
+  }
+  // Re-update UI now that we know the role (may change the avatar border color)
   updateAuthUI();
   await loadData();
   setTimeout(function(){ checkAutoLost().catch(function(e){console.error('autoLost:',e);}); }, 1500);
