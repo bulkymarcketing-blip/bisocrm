@@ -1046,6 +1046,22 @@ function netHeld(l){
   if(!l)return 0;
   return Object.values(l.invoices||{}).reduce(function(s,inv){return s+invPaid(inv);},0);
 }
+// CANCELLED-AWARE financial figures for one invoice belonging to a given bride.
+// Rule (agreed): a cancelled booking counts as exactly what was retained (netHeld) for BOTH
+// invoiced and collected, and ZERO outstanding. Covers full-refund (=0) and partial/none (=kept).
+// A live (non-cancelled) booking behaves normally.
+function invInvoiced(b,inv){
+  if(b&&b.cancelled)return Math.max(0,invPaid(inv)); // retained amount only
+  return qTot(inv.items);
+}
+function invCollected(b,inv){
+  if(b&&b.cancelled)return Math.max(0,invPaid(inv));
+  return invPaid(inv);
+}
+function invOutstanding(b,inv){
+  if(b&&b.cancelled)return 0; // cancelled bookings owe nothing
+  return Math.max(0,qTot(inv.items)-invPaid(inv));
+}
 function inits(n){return(n||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();}
 function expD(){var d=new Date();d.setMonth(11);d.setDate(31);return d.toISOString().slice(0,10);}
 function qNum(){var d=new Date();return 'BQ-'+String(d.getFullYear()).slice(-2)+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'-'+Math.floor(Math.random()*90+10);}
@@ -1928,6 +1944,8 @@ function openAddPay(src,sId,iId){
   CM('doc-modal');OM('pay-modal');
 }
 async function addPay(src,sId,iId){
+  if(window._busy)return; window._busy=true;
+  try{
   var amt=parseFloat((document.getElementById('pay-amt')||{}).value)||0;
   if(amt<=0){notif('Enter a valid amount.');return;}
   // C3: warn if payment exceeds remaining balance
@@ -1965,6 +1983,7 @@ async function addPay(src,sId,iId){
     }
     CM('pay-modal');notif('Payment recorded!');openIDoc(src,sId,iId);render();
   }catch(e){notif('Error: '+e.message);}
+  }finally{window._busy=false;}
 }
 async function delPay(src,sId,iId,pid){
   var obj=src==='lead'?leads[sId]:custs[sId];if(!obj||!obj.invoices||!obj.invoices[iId])return;
@@ -3174,6 +3193,7 @@ async function openCancelBooking(id){
     return;
   }
   var now=new Date().toISOString();
+  if(window._busy)return; window._busy=true;
   try{
     var patch={cancelled:true,cancelledAt:now,cancelReason:reason,refundAmount:refund};
     // If refund > 0, log as negative payment on first invoice
@@ -3195,6 +3215,7 @@ async function openCancelBooking(id){
     openDetail(id);
     render();
   }catch(e){notif('Error: '+e.message);}
+  finally{window._busy=false;}
 }
 
 // Issue a refund on an ALREADY-cancelled booking (when none was given at cancel time,
@@ -3248,6 +3269,7 @@ async function issueRefund(id){
   if(refund>maxRefund){notif('Refund of '+fR(refund)+' exceeds amount held ('+fR(maxRefund)+').');return;}
   var reason=r.note||'';
   var now=new Date().toISOString();
+  if(window._busy)return; window._busy=true;
   try{
     var firstInv=Object.values(l.invoices||{})[0];
     if(!firstInv){notif('No invoice to attach the refund to.');return;}
@@ -3265,6 +3287,7 @@ async function issueRefund(id){
     openDetail(id);
     render();
   }catch(e){notif('Error: '+e.message);}
+  finally{window._busy=false;}
 }
 async function advStage(id,newStage){
   // Special handling: moving to "Consultation Booked" (stage 2) requires a date+time
@@ -4307,9 +4330,9 @@ function rFinance(){
     });
   });
   allI.sort(function(a,b){return new Date(b.date)-new Date(a.date);}); // newest first
-  var tInvoiced=allI.reduce(function(s,i){return s+qTot(i.items);},0);
-  var tCollected=allI.reduce(function(s,i){return s+invPaid(i);},0);
-  var tBalance=Math.max(0,tInvoiced-tCollected);
+  var tInvoiced=allI.reduce(function(s,i){return s+invInvoiced(brides[i.brideId],i);},0);
+  var tCollected=allI.reduce(function(s,i){return s+invCollected(brides[i.brideId],i);},0);
+  var tBalance=allI.reduce(function(s,i){return s+invOutstanding(brides[i.brideId],i);},0);
   var collectionRate=tInvoiced>0?Math.round((tCollected/tInvoiced)*100):0;
   var cnt=allI.length;
   
@@ -4378,8 +4401,8 @@ function rFinance(){
     if(!inv.date) return;
     var m = inv.date.slice(0,7);
     if(monthData[m]){
-      monthData[m].invoiced += qTot(inv.items);
-      monthData[m].collected += invPaid(inv);
+      monthData[m].invoiced += invInvoiced(brides[inv.brideId],inv);
+      monthData[m].collected += invCollected(brides[inv.brideId],inv);
       monthData[m].count++;
     }
   });
@@ -4434,7 +4457,7 @@ function rFinance(){
   html += '</div>'; // end Monthly card
   
   // ── SECTION 3: Outstanding (per-invoice cards) ──
-  var out = allI.map(function(i){return {inv:i, bal:qTot(i.items)-invPaid(i), tot:qTot(i.items), paid:invPaid(i)};})
+  var out = allI.map(function(i){return {inv:i, bal:invOutstanding(brides[i.brideId],i), tot:invInvoiced(brides[i.brideId],i), paid:invCollected(brides[i.brideId],i)};})
                 .filter(function(x){return x.bal > 0.01;})
                 .sort(function(a,b){return b.bal-a.bal;});
   
