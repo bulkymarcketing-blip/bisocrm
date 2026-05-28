@@ -138,7 +138,13 @@ body{
 .done-wrap h2{font-family:'Cinzel',serif;font-size:20px;color:#fff;font-weight:500;letter-spacing:.5px;margin-bottom:12px}
 .done-wrap p{font-size:15px;line-height:1.6;color:rgba(255,255,255,0.78);max-width:300px}
 .done-wrap .when{margin-top:18px;background:rgba(201,168,76,0.15);border:1px solid var(--av-grad-a);border-radius:10px;padding:10px 18px;font-size:13.5px;color:var(--av-grad-b);font-weight:600}
-.done-wrap .quote{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:18px;color:var(--av-grad-a);margin-top:26px;letter-spacing:.3px}
+.done-cta{display:flex;flex-direction:column;gap:10px;width:100%;max-width:300px;margin-top:24px}
+.dbtn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:14px 18px;border-radius:14px;font-family:'Inter',sans-serif;font-size:15px;font-weight:600;text-decoration:none;cursor:pointer;transition:transform .14s,opacity .14s}
+.dbtn:active{transform:scale(.97);opacity:.92}
+.dbtn-wa{background:#25D366;color:#fff;box-shadow:0 4px 14px rgba(37,211,102,0.35)}
+.dbtn-call{background:transparent;border:1.5px solid var(--av-grad-a);color:var(--av-grad-b)}
+.close-hint{margin-top:16px;font-size:12px;color:rgba(255,255,255,0.45);font-family:'Inter',sans-serif}
+.done-wrap .quote{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:18px;color:var(--av-grad-a);margin-top:22px;letter-spacing:.3px}
 </style>
 </head>
 <body>
@@ -209,7 +215,10 @@ var L = {
     sending:'Saving your details\u2026',
     doneH:'Thank you so much, ', doneHx:'! \ud83d\udc8d\u2728',
     doneP:'We\u2019ve got your details. One of our team will call you during {t} for a little chat about your big day!',
-    doneWhen:'We\u2019ll call you: ', quote:'Every queen deserves to be seen \ud83d\udc51'
+    doneWhen:'We\u2019ll call you: ', quote:'Every queen deserves to be seen \ud83d\udc51',
+    waCta:'Can\u2019t wait? Chat with us now \ud83d\udcac', callCta:'Or call us \ud83d\udcde',
+    waMsg:'Hi Biso! I just enquired through your chat \u2014 I\u2019d love to talk sooner about my big day. \ud83d\udc8d',
+    closeHint:'You can close this window now.'
   },
   si:{
     name:'\u0DC3\u0DD2\u0D82\u0DC4\u0DBD',
@@ -228,7 +237,10 @@ var L = {
     sending:'\u0D94\u0DBA\u0DCF\u0D9C\u0DDA details save \u0D9A\u0DBBනවා\u2026',
     doneH:'\u0DB6\u0DDC\u0DC4\u0DDC\u0DB8 \u0DC3්\u0DAD\u0DD6\u0DAD\u0DD2\u0DBA ', doneHx:'! \ud83d\udc8d\u2728',
     doneP:'\u0D94\u0DBA\u0DCF\u0D9C\u0DDA details \u0D85\u0DB4\u0DD2\u0DA7 \u0DBD\u0DD0\u0DB6\u0DD4\u0DAB\u0DCF. \u0D85\u0DB4\u0DDA team \u0D91\u0D9A\u0DD9\u0DB1් \u0D9A\u0DD9\u0DB1\u0D9A් {t} \u0DC0\u0DDA\u0DBD\u0DCF\u0DC0\u0DA7 \u0D94\u0DBA\u0DCF\u0DA7 call \u0D9A\u0DBBලා \u0D94\u0DBA\u0DCF\u0D9C\u0DDA big day \u0D91\u0D9A \u0D9C\u0DD0\u0DB1 \u0D9A\u0DAD\u0DCF \u0D9A\u0DBBගනීවි!',
-    doneWhen:'\u0D85\u0DB4\u0DD2 call \u0D9A\u0DBBන්නේ: ', quote:'Every queen deserves to be seen \ud83d\udc51'
+    doneWhen:'\u0D85\u0DB4\u0DD2 call \u0D9A\u0DBBන්නේ: ', quote:'Every queen deserves to be seen \ud83d\udc51',
+    waCta:'\u0DB6\u0DBD\u0DCF\u0D9C\u0DD9\u0DB1 \u0D89\u0DB1්න \u0DB6\u0DD0\u0DBBිද? \u0D85\u0DB4\u0DD2 \u0D91\u0D9A්\u0D9A \u0D9A\u0DAE\u0DCF \u0D9A\u0DBB\u0DB8\u0DD4 \ud83d\udcac', callCta:'\u0DB1\u0DD0\u0DAD්\u0DB1\u0DB8් call \u0D9A\u0DBBන්න \ud83d\udcde',
+    waMsg:'Hi Biso! \u0DB8\u0DB8 \u0D94\u0DBA\u0DCF\u0D9C\u0DDA chat \u0D91\u0D9A\u0DD9\u0DB1් enquire \u0D9A\u0DC5\u0DCF. \u0DB8\u0DB8\u0D9C\u0DDA big day \u0D91\u0D9A \u0D9C\u0DD0\u0DB1 \u0D89\u0D9A්\u0DB8\u0DB1\u0DA7 \u0D9A\u0DAE\u0DCF \u0D9A\u0DBBන්න \u0D9A\u0DD0\u0DB8\u0DAD\u0DD2යි. \ud83d\udc8d',
+    closeHint:'\u0DB8\u0DDA window \u0D91\u0D9A \u0DC0\u0DC4\u0DB1්න \u0DB4\u0DD4\u0DC5\u0DD4\u0DC0\u0DB1්.'
   },
   sg:{
     name:'Singlish',
@@ -247,7 +259,10 @@ var L = {
     sending:'Oyage details save karanawa\u2026',
     doneH:'Bohoma stuthi ', doneHx:'! \ud83d\udc8d\u2728',
     doneP:'Oyage details apita læbuna. Ape team eken kenek {t} welawata oyata call karala oyage big day eka gana katha karaganawi!',
-    doneWhen:'Api call karanne: ', quote:'Every queen deserves to be seen \ud83d\udc51'
+    doneWhen:'Api call karanne: ', quote:'Every queen deserves to be seen \ud83d\udc51',
+    waCta:'Balagena inna baerida? Api ekka chat karamu \ud83d\udcac', callCta:'Naetnam call karanna \ud83d\udcde',
+    waMsg:'Hi Biso! Mama oyage chat eken enquire kala. Mage big day eka gana ikmanata katha karanna kæmathiyi. \ud83d\udc8d',
+    closeHint:'Me window eka wahanna puluwan.'
   }
 };
 
@@ -504,6 +519,23 @@ function showDone(whenLabel){
   dw.appendChild(el('h2',null,t.doneH+S.data.name+t.doneHx));
   dw.appendChild(el('p',null,t.doneP.replace('{t}',whenLabel)));
   dw.appendChild(el('div','when',t.doneWhen+whenLabel));
+  /* Urgency CTAs: WhatsApp deep link (pre-filled) + call (opens dialer).
+     Built as real anchors so iOS handles wa.me and tel: natively. */
+  var BISO_WA='94707550221'; var BISO_TEL='+94707550221';
+  var ctaWrap=el('div','done-cta');
+  var wa=document.createElement('a');
+  wa.className='dbtn dbtn-wa';
+  wa.href='https://wa.me/'+BISO_WA+'?text='+encodeURIComponent(t.waMsg||'');
+  wa.target='_blank'; wa.rel='noopener';
+  wa.innerHTML=t.waCta||'Chat with us';
+  ctaWrap.appendChild(wa);
+  var call=document.createElement('a');
+  call.className='dbtn dbtn-call';
+  call.href='tel:'+BISO_TEL;
+  call.innerHTML=t.callCta||'Call us';
+  ctaWrap.appendChild(call);
+  dw.appendChild(ctaWrap);
+  if(t.closeHint)dw.appendChild(el('div','close-hint',t.closeHint));
   dw.appendChild(el('div','quote','\u201C'+t.quote+'\u201D'));
   shell.appendChild(dw);
 }
