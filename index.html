@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/css/intlTelInput.min.css">
 <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/intlTelInput.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/utils.js"></script>
-<!-- Firebase Auth SDK (compat) - loaded but only used when ?auth=1 in URL -->
+<!-- Firebase Auth SDK (compat) - REQUIRED: login is mandatory (Phase 1C) -->
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
 <style>
@@ -377,9 +377,9 @@ textarea{resize:vertical;min-height:80px}
 <script>
 const FB='https://biso-crm-default-rtdb.asia-southeast1.firebasedatabase.app';
 
-// ===== Phase 1A: Firebase Auth (opt-in via ?auth=1) =====
-// When ?auth=1 in URL, login is required and DB calls include the user's ID token.
-// When absent, behaviour is identical to pre-auth CRM. DB rules stay open in Phase 1A.
+// ===== Phase 1C: Firebase Auth (MANDATORY) =====
+// Login is always required. Every DB call includes the user's ID token, and the
+// Realtime Database security rules require auth != null (locked down in Phase 1C).
 var _FBCFG={apiKey:"AIzaSyD67tAE_gTUqOsJWCJ07VH2e4drIvYGhvA",authDomain:"biso-crm.firebaseapp.com",databaseURL:"https://biso-crm-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"biso-crm",storageBucket:"biso-crm.firebasestorage.app",messagingSenderId:"719449210972",appId:"1:719449210972:web:065afbef711c056f94a699"};
 window._auth={enabled:false,ready:false,user:null,role:'owner'};
 function authIsOn(){return !!window._auth.enabled;}
@@ -818,7 +818,8 @@ function isManager(){return currentRole()==='manager';}
 // Pages a manager is not allowed to view
 var RESTRICTED_PAGES={finance:true,settings:true};
 function canViewPage(v){return isOwner()||!RESTRICTED_PAGES[v];}
-// Load role from /roles/<uid> after auth succeeds. Bootstraps the very first user as owner.
+// Load role from /roles/<uid> after auth succeeds. Roles are seeded manually in
+// Firebase Console (Phase 1C). A user with no role record defaults to manager.
 async function loadRole(){
   if(!window._auth||!window._auth.enabled||!window._auth.user){
     window._auth&&(window._auth.role='owner');
@@ -831,30 +832,26 @@ async function loadRole(){
     console.log('[role] existing role record:',existing);
     if(existing&&typeof existing==='string'){
       window._auth.role=existing==='owner'?'owner':'manager';
+      window._auth.name='';
       console.log('[role] resolved to:',window._auth.role,'(legacy string)');
       return;
     }
     if(existing&&existing.role){
       window._auth.role=existing.role==='owner'?'owner':'manager';
+      window._auth.name=existing.name||'';
       console.log('[role] resolved to:',window._auth.role);
       return;
     }
-    // No role recorded yet. Check if ANY roles exist - if not, bootstrap this user as owner.
-    var all=await fbG('/roles');
-    if(!all||Object.keys(all).length===0){
-      // First user signing in - bootstrap as owner
-      await fbS('/roles/'+uid,{role:'owner',email:window._auth.user.email||'',createdAt:new Date().toISOString()});
-      window._auth.role='owner';
-      console.log('[role] Bootstrapped first user as owner:',window._auth.user.email);
-      return;
-    }
-    // Roles exist but this user has none - default to manager (safe default)
+    // Phase 1C: no auto-bootstrap. Roles are seeded manually in Firebase Console.
+    // A logged-in user with no role record defaults to manager (operational access only).
     window._auth.role='manager';
-    console.log('[role] No role for uid, defaulting to manager:',window._auth.user.email);
+    window._auth.name='';
+    console.log('[role] No role record for uid, defaulting to manager:',window._auth.user.email);
   }catch(e){
     // On error, default to manager (safe). User can still log in but with limited access.
     console.error('[role] loadRole failed, defaulting to manager:',e.message);
     window._auth.role='manager';
+    window._auth.name='';
     throw e; // propagate so startAfterAuth knows it failed
   }
 }
@@ -4806,7 +4803,7 @@ function rSettings(tab){
   });
   var it='<div class="fi" style="margin-bottom:18px"><label>Default Notes / Terms</label><textarea id="s-notes" style="min-height:130px">'+escHtml(s.defaultNotes||defNotes())+'</textarea></div><div class="fi" style="margin-bottom:18px"><label>Company Logo URL</label><input type="text" id="s-logo" value="'+escHtml(s.logoUrl||'')+'" placeholder="https://... image URL"/></div><button class="btn btn-primary" onclick="saveInvS()">Save Invoice Settings</button>';
   var pt='<div style="margin-bottom:12px;font-size:13px;color:var(--muted)">Override defaults. Leave blank to use default.</div><div style="display:flex;flex-direction:column;gap:8px">'+pi+'</div><button class="btn btn-primary" style="margin-top:14px" onclick="savePriceS()">Save Prices</button>';
-  var dt='<div style="background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:10px;padding:18px;margin-bottom:14px"><div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:7px">Backfill Missing Leads</div><div style="font-size:13px;color:var(--text2);margin-bottom:14px">Creates lead records for any customer who has quotes or invoices but no matching lead. Use this if customers have quotes but the pipeline shows empty.</div><button class="btn btn-primary" onclick="backfillLeads()">Backfill Leads from Customers</button></div><div style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:10px;padding:18px"><div style="font-size:14px;font-weight:600;color:var(--danger);margin-bottom:7px">Clear Test Data</div><div style="font-size:13px;color:var(--text2);margin-bottom:14px">Permanently deletes all leads, customers, quotations and invoices. Settings and prices are kept.</div><button class="btn btn-danger" onclick="clearData()">Delete All Test Data</button></div>';
+  var dt='<div style="background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:10px;padding:18px;margin-bottom:14px"><div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:7px">Backfill Missing Leads</div><div style="font-size:13px;color:var(--text2);margin-bottom:14px">Creates lead records for any customer who has quotes or invoices but no matching lead. Use this if customers have quotes but the pipeline shows empty.</div><button class="btn btn-primary" onclick="backfillLeads()">Backfill Leads from Customers</button></div>';
   // Sources tab
   var srcs=getSources();
   var srcRows='';
@@ -6025,20 +6022,18 @@ async function checkAutoLost(){
   }
 }
 
-// ===== Phase 1A: Auth lifecycle =====
-// authInit() runs at startup. If ?auth=1, initialises Firebase Auth and shows login if needed.
-// If no ?auth=1, returns immediately - CRM behaves as today.
+// ===== Phase 1A/1C: Auth lifecycle =====
+// authInit() runs at startup. Auth is MANDATORY (Phase 1C): it initialises Firebase
+// Auth and shows the login screen whenever no user is signed in. Fails closed.
 function authInit(){
   return new Promise(function(resolve){
     try{
-      var qs=(typeof location!=='undefined'&&location.search)?location.search:'';
-      var on=qs.indexOf('auth=1')!==-1;
-      window._auth.enabled=on;
-      if(!on){resolve({needLogin:false});return;}
+      // Phase 1C: auth is now ALWAYS required. The ?auth=1 opt-in flag has been removed.
+      window._auth.enabled=true;
       if(typeof firebase==='undefined'||!firebase.initializeApp){
-        // SDK didn't load - fail safe by disabling auth (CRM will work without it)
-        window._auth.enabled=false;
-        resolve({needLogin:false,sdkFailed:true});
+        // SDK didn't load - FAIL CLOSED. Without auth we must not open the CRM.
+        window._auth.enabled=true;
+        resolve({needLogin:true,sdkFailed:true});
         return;
       }
       try{firebase.initializeApp(_FBCFG);}catch(e){/* already initialised */}
@@ -6062,8 +6057,9 @@ function authInit(){
         resolve({needLogin:true});
       },8000);
     }catch(e){
-      window._auth.enabled=false;
-      resolve({needLogin:false,err:e.message});
+      // Fail CLOSED: on any error, require login rather than opening the CRM.
+      window._auth.enabled=true;
+      resolve({needLogin:true,err:e.message});
     }
   });
 }
@@ -6154,11 +6150,13 @@ function updateAuthUI(){
   if(window._auth.enabled&&window._auth.user){
     var email=window._auth.user.email||'';
     var role=window._auth.role||'owner';
+    var name=window._auth.name||'';
+    var displayName=name||email;
     // Sidebar chip (desktop visibility)
     if(uc){
       var ucEm=document.getElementById('UC-em');
       var ucRl=document.getElementById('UC-rl');
-      if(ucEm)ucEm.textContent=email;
+      if(ucEm)ucEm.textContent=displayName;
       if(ucRl)ucRl.textContent=role;
       uc.classList.add('show');
     }
@@ -6166,16 +6164,16 @@ function updateAuthUI(){
     // Topbar avatar button (works on mobile + desktop)
     if(av){
       var avIn=document.getElementById('AV-in');
-      if(avIn)avIn.textContent=initials(email);
+      if(avIn)avIn.textContent=initials(displayName);
       av.classList.add('show');
       // Tint by role: gold border for owner, navy-dim for manager
       av.style.borderColor=role==='owner'?'var(--gold)':'rgba(255,255,255,0.4)';
     }
-    // Dropdown content
+    // Dropdown content: name as primary line, email as secondary
     var avEm=document.getElementById('AV-em');
     var avRl=document.getElementById('AV-rl');
-    if(avEm)avEm.textContent=email;
-    if(avRl)avRl.textContent=role;
+    if(avEm)avEm.textContent=displayName;
+    if(avRl)avRl.textContent=name?(role+' · '+email):role;
   }else{
     if(uc)uc.classList.remove('show');
     if(lo)lo.classList.remove('show');
@@ -6185,12 +6183,20 @@ function updateAuthUI(){
   // Update red dot and My Requests visibility based on auth + role + requests
   updateAvatarDot();
 }
-function initials(email){
-  if(!email)return '··';
-  var name=email.split('@')[0]||'';
-  // Strip non-letter chars, take first two letters
-  var letters=name.replace(/[^a-zA-Z]/g,'');
-  if(!letters)return (email.charAt(0)||'·').toUpperCase()+'·';
+function initials(s){
+  if(!s)return '··';
+  // If it looks like an email, take the part before @; otherwise use as-is (a name).
+  var base=s.indexOf('@')!==-1?(s.split('@')[0]||''):s;
+  // Two-word name like "Dinushi Fernando" -> "DF"
+  var parts=base.trim().split(/\s+/).filter(Boolean);
+  if(parts.length>=2){
+    var a=parts[0].replace(/[^a-zA-Z]/g,'');
+    var b=parts[1].replace(/[^a-zA-Z]/g,'');
+    if(a&&b)return (a.charAt(0)+b.charAt(0)).toUpperCase();
+  }
+  // Single word: first two letters
+  var letters=base.replace(/[^a-zA-Z]/g,'');
+  if(!letters)return (s.charAt(0)||'·').toUpperCase()+'·';
   if(letters.length===1)return letters.toUpperCase()+'·';
   return (letters.charAt(0)+letters.charAt(1)).toUpperCase();
 }
@@ -6320,20 +6326,21 @@ async function startAfterAuth(){
       return false;
     };
     authInit().then(function(authRes){
-      if(window._auth.enabled){
-        if(authRes.needLogin){
-          // Not logged in - show login screen, wait for user to sign in
-          showAuthScreen();
-          return;
-        }
-        // Already logged in from a previous session
-        return startAfterAuth();
+      // Phase 1C: auth is always enabled. If the SDK failed to load, show the
+      // login screen with an error rather than opening the CRM unauthenticated.
+      if(authRes.sdkFailed){
+        showAuthScreen();
+        var ae=document.getElementById('auth-err');
+        if(ae){ae.textContent='Could not load sign-in. Check your connection and reload.';ae.classList.add('show');}
+        return;
       }
-      // Auth not enabled (no ?auth=1) - original behaviour
-      return loadData().then(function(){
-        setTimeout(function(){ checkAutoLost().catch(function(e){console.error('autoLost:',e);}); }, 1500);
-        setTimeout(function(){ checkNoShows().catch(function(e){console.error('noShows:',e);}); }, 2500);
-      });
+      if(authRes.needLogin){
+        // Not logged in - show login screen, wait for user to sign in
+        showAuthScreen();
+        return;
+      }
+      // Already logged in from a previous session
+      return startAfterAuth();
     }).catch(function(e){
       var lerr=document.getElementById('lerr'),lm=document.getElementById('lm');
       if(lerr&&lm){lerr.style.display='block';lm.textContent='Load failed: '+e.message;}
