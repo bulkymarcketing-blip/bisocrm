@@ -736,8 +736,8 @@ async function loadData(){
     document.getElementById('LS').style.display='none';
     document.getElementById('APP').style.display='block';
     document.getElementById('ST').textContent='Live sync active';
-    buildNav();render();
-    setInterval(async function(){
+    try{await loadIntake();}catch(ie){}
+    buildNav();render();    setInterval(async function(){
       // Skip polling if a save is in progress (avoid race with local writes)
       if(window._saving)return;
       try{
@@ -748,6 +748,8 @@ async function loadData(){
         projectViews();
         // Also refresh requests (lightweight). Errors here are non-fatal.
         try{await loadRequests();}catch(re){}
+        // Refresh chatbot intake queue too. Non-fatal.
+        try{await loadIntake();}catch(ie){}
         // Don't re-render if a modal is open (the user is interacting)
         var anyOpen = document.querySelector('.overlay.show, .overlay[style*="display: flex"], .overlay[style*="display:flex"]');
         if(!anyOpen)render();
@@ -880,6 +882,27 @@ async function loadRequests(){
     REQUESTS={};
   }
 }
+// ===== Lead-capture chatbot intake queue (/leadintake) =====
+// Chatbot writes self-service leads here (quarantined from /brides). Owner/manager
+// review each one via the Daily Brief "New Enquiries" section, then Accept (opens the
+// Overview Form pre-filled; saving promotes it to /brides) or Dismiss (delete).
+var INTAKE={};
+async function loadIntake(){
+  try{
+    var r=await fbG('/leadintake');
+    INTAKE=r||{};
+  }catch(e){
+    console.error('[intake] loadIntake failed:',e.message);
+    INTAKE={};
+  }
+}
+// Pending enquiries as an array, newest first.
+function listIntake(){
+  return Object.values(INTAKE||{}).sort(function(a,b){
+    return new Date(b.intakeAt||b.createdAt||0)-new Date(a.intakeAt||a.createdAt||0);
+  });
+}
+function intakeCount(){return Object.keys(INTAKE||{}).length;}
 function reqId(){return 'req-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 // Create a new request. Returns the request id.
 async function createRequest(opts){
@@ -3446,6 +3469,7 @@ function openOverviewForm(brideId, opts){
   var intent = opts.intent || null; // 'lead', 'quote', 'invoice', or null (edit)
   OF.intent = intent;
   OF.existingQuoteId = null;
+  OF.fromIntake = null; // set below if promoting a chatbot enquiry
   
   if(brideId && brides[brideId]){
     // EDITING EXISTING BRIDE
@@ -3522,6 +3546,31 @@ function openOverviewForm(brideId, opts){
       quoteItems: {}
     };
     OF.countryCode = '94';
+  }
+  
+  // If this form was opened to promote a chatbot enquiry, overlay its captured
+  // fields onto the fresh draft. We keep OF.isNew=true so saving writes /brides/{id};
+  // ofSave then deletes the matching /leadintake record on success.
+  if(OF.isNew && opts.intakeRecord){
+    var ir = opts.intakeRecord;
+    OF.fromIntake = ir.id || null;
+    if(ir.id)OF.draft.id = ir.id; // reuse the intake id so it's traceable
+    if(ir.name)OF.draft.name = ir.name;
+    if(ir.phone)OF.draft.phone = ir.phone;
+    if(ir.email)OF.draft.email = ir.email;
+    if(ir.source)OF.draft.source = ir.source;
+    if(ir.notes)OF.draft.notes = ir.notes;
+    if(ir.weddingDate)OF.draft.weddingDate = ir.weddingDate;
+    if(ir.events)OF.draft.events = JSON.parse(JSON.stringify(ir.events));
+    // Carry the callback reminder + contact attempt so it lands in Today's Actions as before
+    if(ir.nextReminderAt)OF.draft.nextReminderAt = ir.nextReminderAt;
+    if(ir.remindersStopped!==undefined)OF.draft.remindersStopped = ir.remindersStopped;
+    if(ir.contactAttempts)OF.draft.contactAttempts = JSON.parse(JSON.stringify(ir.contactAttempts));
+    if(ir.stage!==undefined)OF.draft.stage = ir.stage;
+    // Resolve country code from the carried phone
+    var pIn = String(OF.draft.phone||'').replace(/\D/g,'');
+    var m2 = COUNTRIES.find(function(x){return pIn.indexOf(x.c)===0;});
+    OF.countryCode = m2 ? m2.c : '94';
   }
   
   // Sync quote items from events (important for existing brides with old data)
@@ -3967,6 +4016,7 @@ async function ofSave(){
   // Set saving flag to pause background polling
   if(window._busy)return; window._busy=true;
   window._saving = true;
+  var _intakeIdToClear = OF.fromIntake || null;
   try {
     // 1. Save bride
     await saveBride(brideClone);
@@ -4047,6 +4097,15 @@ async function ofSave(){
     OF.dirty = false;
     OF.intent = null;
     OF.existingQuoteId = null;
+    OF.fromIntake = null;
+    
+    // If this bride was promoted from a chatbot enquiry, remove it from the intake queue.
+    if(_intakeIdToClear){
+      try{
+        await fbD('/leadintake/'+_intakeIdToClear);
+        if(INTAKE&&INTAKE[_intakeIdToClear])delete INTAKE[_intakeIdToClear];
+      }catch(ie){ console.error('[intake] clear failed:',ie.message); }
+    }
     
     // Status messages
     if(OF.intent === 'invoice'){
@@ -5267,6 +5326,12 @@ function rDailyBrief(){
       html += renderApprovalRequests(pendingReqs);
     }
   }
+
+  // Section 0b: New Enquiries (chatbot intake) — owner AND manager
+  var enquiries = listIntake();
+  if(enquiries.length > 0){
+    html += renderNewEnquiries(enquiries);
+  }
   
   // Section 1: Today's Actions (reuse existing widget)
   html += renderTodaysActions(actions);
@@ -5539,6 +5604,88 @@ function renderApprovalRequests(reqs){
   });
   h+='</div>';
   return h;
+}
+// ===== New Enquiries widget (chatbot intake queue, owner + manager) =====
+// Maps a stored band/time back to a human label for display.
+function _intakeWhenLabel(b){
+  if(b && b.nextReminderAt){
+    var d=new Date(b.nextReminderAt);
+    if(!isNaN(d))return d.toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  }
+  return '';
+}
+// Summarise the events the lead ticked (wedding/homecoming/goingAway/engagement).
+function _intakeEvents(b){
+  var ev=b&&b.events?b.events:{};
+  var out=[];
+  if(ev.wedding&&ev.wedding.enabled)out.push('Wedding');
+  if(ev.homecoming&&ev.homecoming.enabled)out.push('Homecoming');
+  if(ev.goingAway&&ev.goingAway.enabled)out.push('Going Away');
+  if(ev.engagement&&ev.engagement.enabled)out.push('Engagement');
+  return out.join(' \u00b7 ');
+}
+function renderNewEnquiries(items){
+  if(!items||items.length===0)return '';
+  var h='';
+  h+='<div style="background:#FFFBEB;border:1.5px solid var(--gold);border-radius:12px;padding:14px 16px;margin-bottom:18px">';
+  h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">';
+  h+='<div style="font-size:18px">\uD83D\uDC8C</div>';
+  h+='<div style="font-family:Cinzel,serif;font-size:13px;color:var(--navy);letter-spacing:1.2px;font-weight:600;text-transform:uppercase">New Enquiries</div>';
+  h+='<div style="margin-left:auto;background:var(--gold);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;letter-spacing:.5px">'+items.length+' NEW</div>';
+  h+='</div>';
+  items.forEach(function(b){
+    var id=b.id||'';
+    var name=b.name||'(no name)';
+    var when=b.intakeAt?timeAgo(b.intakeAt):'';
+    var evLine=_intakeEvents(b);
+    var wdate=b.weddingDate?(' \u00b7 '+fmt(b.weddingDate)):'';
+    var callWhen=_intakeWhenLabel(b);
+    h+='<div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px">';
+    h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">';
+    h+='<div style="font-size:14px;font-weight:700;color:var(--navy)">'+escHtml(name)+'</div>';
+    h+='<div style="font-size:11px;color:var(--muted)">'+when+'</div>';
+    h+='</div>';
+    if(b.phone)h+='<div style="font-size:12px;color:var(--text2);margin-bottom:2px">'+escHtml(fmtPhone(b.phone))+'</div>';
+    if(evLine)h+='<div style="font-size:12px;color:var(--text);margin-bottom:2px">'+escHtml(evLine)+escHtml(wdate)+'</div>';
+    if(callWhen)h+='<div style="font-size:11px;color:var(--muted);margin-bottom:10px">Prefers callback: '+escHtml(callWhen)+'</div>';
+    else h+='<div style="margin-bottom:10px"></div>';
+    h+='<div style="display:flex;gap:8px">';
+    h+='<button class="btn btn-ghost btn-xs" style="flex:1" onclick="dismissIntake(\u0027'+escAttr(id)+'\u0027)">Dismiss</button>';
+    h+='<button class="btn btn-primary btn-xs" style="flex:1" onclick="acceptIntake(\u0027'+escAttr(id)+'\u0027)">Review &amp; Accept</button>';
+    h+='</div>';
+    h+='</div>';
+  });
+  h+='</div>';
+  return h;
+}
+// Accept: open the Overview Form pre-filled from the intake record. Saving the form
+// promotes it to /brides and (via ofSave) deletes the intake record.
+function acceptIntake(id){
+  var rec=INTAKE&&INTAKE[id];
+  if(!rec){notif('That enquiry is no longer available.');return;}
+  openOverviewForm(null,{intent:'lead',intakeRecord:rec});
+}
+// Dismiss: confirm, then delete the intake record (no bride created).
+async function dismissIntake(id){
+  var rec=INTAKE&&INTAKE[id];
+  if(!rec){notif('That enquiry is no longer available.');return;}
+  var res=await showConfirm({
+    title:'Dismiss enquiry?',
+    msg:'This will permanently remove the enquiry from '+(rec.name||'this lead')+'. No bride record will be created.',
+    yesText:'Dismiss',
+    dangerous:true
+  });
+  if(!res.ok)return;
+  if(window._busy)return; window._busy=true;
+  try{
+    await fbD('/leadintake/'+id);
+    if(INTAKE&&INTAKE[id])delete INTAKE[id];
+    notif('Enquiry dismissed.');
+    updateAvatarDot();
+    render();
+  }catch(e){
+    notif('Error: '+e.message);
+  }finally{window._busy=false;}
 }
 // Helper: HTML-escape user-provided strings to prevent injection
 function escHtml(s){
@@ -6326,6 +6473,8 @@ function updateAvatarDot(){
       count=listMyRequests().filter(function(r){return r.status==='pending';}).length;
       show=count>0;
     }
+    // New chatbot enquiries surface the dot for both roles.
+    if(intakeCount()>0)show=true;
   }
   if(show)dot.classList.add('show');else dot.classList.remove('show');
   // Show/hide My Requests menu item (manager only)
