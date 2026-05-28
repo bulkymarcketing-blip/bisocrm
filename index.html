@@ -3579,6 +3579,7 @@ function renderOverviewForm(){
     +eventCard('wedding','Wedding',ev.wedding||{})
     +eventCard('homecoming','Homecoming',ev.homecoming||{})
     +eventCard('goingAway','Going Away',ev.goingAway||{})
+    +eventCard('engagement','Engagement',ev.engagement||{})
     +(shouldShowQuoteSection()
       ? '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:600;margin:18px 0 10px">Quotation</div>'
         +'<div style="font-size:12px;color:var(--muted);margin-bottom:10px">Line items auto-fill from events. Edit values, delete lines, or add custom services.</div>'
@@ -4058,6 +4059,12 @@ function syncQuoteItems(){
   if(hasG){
     upsertLinked('goingAway', 'Going Away', 1, 65000);
   } else removeLinked('goingAway');
+  // Engagement
+  var en = events.engagement || {};
+  var hasEn = !!en.enabled;
+  if(hasEn){
+    upsertLinked('engagement', 'Engagement', 1, 65000);
+  } else removeLinked('engagement');
   // Bridesmaids
   if(bmCount > 0)upsertLinked('bridesmaids', 'Bridesmaid', bmCount, 38000);
   else removeLinked('bridesmaids');
@@ -4072,7 +4079,7 @@ function syncQuoteItems(){
 function buildQuoteSection(){
   var items = OF.draft.quoteItems || {};
   var keys = Object.keys(items);
-  var order = ['wedding','homecoming','discount','goingAway','bridesmaids','flowerGirls','littleMaids'];
+  var order = ['engagement','wedding','homecoming','discount','goingAway','bridesmaids','flowerGirls','littleMaids'];
   keys.sort(function(a, b){
     var la = items[a].linkedTo, lb = items[b].linkedTo;
     var ia = la ? order.indexOf(la) : 999;
@@ -4116,7 +4123,7 @@ function shouldShowQuoteSection(){
   var allowedByStage = stage >= 3 || OF.intent === 'quote' || OF.intent === 'invoice';
   if(!allowedByStage)return false;
   var events = OF.draft.events || {};
-  return ['wedding','homecoming','goingAway'].some(function(k){
+  return ['wedding','homecoming','goingAway','engagement'].some(function(k){
     var e = events[k];
     return e && e.enabled && e.date;
   });
@@ -4138,6 +4145,7 @@ async function qiDelete(key){
     var labels = {
       wedding:'Wedding', homecoming:'Homecoming',
       discount:'Homecoming Package Discount', goingAway:'Going Away',
+      engagement:'Engagement',
       bridesmaids:'Bridesmaids', flowerGirls:'Flower Girls', littleMaids:'Little Maids'
     };
     var label = labels[it.linkedTo] || it.linkedTo;
@@ -4153,6 +4161,7 @@ async function qiDelete(key){
     if(lt==='wedding' && OF.draft.events.wedding)OF.draft.events.wedding.enabled = false;
     else if(lt==='homecoming' && OF.draft.events.homecoming)OF.draft.events.homecoming.enabled = false;
     else if(lt==='goingAway' && OF.draft.events.goingAway)OF.draft.events.goingAway.enabled = false;
+    else if(lt==='engagement' && OF.draft.events.engagement)OF.draft.events.engagement.enabled = false;
     else if(lt==='bridesmaids' && OF.draft.events.wedding)OF.draft.events.wedding.bridesmaids = 0;
     else if(lt==='flowerGirls' && OF.draft.events.wedding)OF.draft.events.wedding.flowerGirls = 0;
     else if(lt==='littleMaids' && OF.draft.events.wedding)OF.draft.events.wedding.littleMaids = 0;
