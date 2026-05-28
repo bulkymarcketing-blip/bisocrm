@@ -951,6 +951,8 @@ async function executeRequest(req){
     var p2=req.payload||{};
     var lid=p2.leadId;var refund=p2.refund||0;var reason=p2.reason||'';
     var l=leads[lid];if(!l)throw new Error('Bride not found');
+    var maxR=netHeld(l);
+    if(refund>maxR){throw new Error('Refund '+fR(refund)+' now exceeds amount held ('+fR(maxR)+'). Reject and re-request.');}
     var now=new Date().toISOString();
     var patch={cancelled:true,cancelledAt:now,cancelReason:reason,refundAmount:refund};
     var firstInv=Object.values(l.invoices||{})[0];
@@ -1037,6 +1039,12 @@ function invPaid(inv){
   var adv=parseFloat(inv.advance||0)||0;
   var pays=Object.values(inv.payments||{}).reduce(function(s,p){return s+(parseFloat(p.amount)||0);},0);
   return adv+pays;
+}
+// Net amount still held for a bride across all invoices = sum of invPaid (refunds already
+// netted out, since refunds are stored as negative payments). This is the max refundable.
+function netHeld(l){
+  if(!l)return 0;
+  return Object.values(l.invoices||{}).reduce(function(s,inv){return s+invPaid(inv);},0);
 }
 function inits(n){return(n||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();}
 function expD(){var d=new Date();d.setMonth(11);d.setDate(31);return d.toISOString().slice(0,10);}
@@ -2442,6 +2450,9 @@ function openDetail(id){
   if(!cancelled){
     if(l.confirmed)rightBtns+='<button class="btn btn-danger btn-sm" onclick="openCancelBooking(\''+id+'\')">Cancel Booking</button>';
     else rightBtns+='<button class="btn btn-danger btn-sm" onclick="delLead(\''+id+'\')">Delete</button>';
+  } else {
+    // Cancelled booking: allow issuing a refund if money is still held
+    if(netHeld(l) > 0)rightBtns+='<button class="btn btn-danger btn-sm" onclick="issueRefund(\''+id+'\')">Issue Refund</button>';
   }
   rightBtns+='<button class="btn btn-ghost" onclick="CM(\'detail-modal\')">Close</button>';
   if(stageCta)rightBtns+=stageCta;
@@ -2460,7 +2471,15 @@ function buildOverviewTab(id,l,cancelled){
   var d=dU(l.weddingDate);
   var ev=l.events||{};
   var dis=cancelled?' disabled':'';
-  var lockNote=cancelled?'<div style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;color:var(--danger)">Booking cancelled '+(l.cancelledAt?fmt(l.cancelledAt):'')+'. '+(l.cancelReason?'Reason: '+escHtml(l.cancelReason):'')+(l.refundAmount?'. Refund: '+fR(l.refundAmount):'')+'</div>':'';
+  var lockNote='';
+  if(cancelled){
+    var lnParts=['Booking cancelled'+(l.cancelledAt?' '+fmt(l.cancelledAt):'')];
+    if(l.cancelReason)lnParts.push('Reason: '+escHtml(l.cancelReason));
+    if(l.refundAmount)lnParts.push('Refund issued: '+fR(l.refundAmount));
+    var heldNow=netHeld(l);
+    if(heldNow>0)lnParts.push('Still held: '+fR(heldNow));
+    lockNote='<div style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;color:var(--danger)">'+lnParts.join(' \u00b7 ')+'</div>';
+  }
   // Source dropdown
   var SRCS=getSources();
   var srcOpts='';SRCS.forEach(function(s){srcOpts+='<option value="'+escHtml(s.value)+'"'+(l.source===s.value?' selected':'')+'>'+escHtml(s.label)+'</option>';});
@@ -3117,6 +3136,11 @@ async function openCancelBooking(id){
     });
     if(!rr.ok)return;
     var refundReq=parseFloat(rr.value)||0;
+    var maxRefundReq=netHeld(l);
+    if(refundReq>maxRefundReq){
+      notif('Refund of '+fR(refundReq)+' exceeds amount still held ('+fR(maxRefundReq)+'). Request again with '+fR(maxRefundReq)+' or less.');
+      return;
+    }
     try{
       await createRequest({
         type:'refund',
@@ -3143,6 +3167,12 @@ async function openCancelBooking(id){
   if(!r.ok)return;
   var refund=parseFloat(r.value)||0;
   var reason=r.note||'';
+  // Cap: refund cannot exceed net amount still held
+  var maxRefund=netHeld(l);
+  if(refund>maxRefund){
+    notif('Refund of '+fR(refund)+' exceeds amount still held ('+fR(maxRefund)+'). Cancel again with '+fR(maxRefund)+' or less.');
+    return;
+  }
   var now=new Date().toISOString();
   try{
     var patch={cancelled:true,cancelledAt:now,cancelReason:reason,refundAmount:refund};
@@ -3167,7 +3197,75 @@ async function openCancelBooking(id){
   }catch(e){notif('Error: '+e.message);}
 }
 
-// ---------- Stage helpers ----------
+// Issue a refund on an ALREADY-cancelled booking (when none was given at cancel time,
+// or a prior refund was deleted). Reuses the same cap as cancellation refunds.
+async function issueRefund(id){
+  var l=leads[id];if(!l)return;
+  if(!l.cancelled){notif('Refunds can only be issued on cancelled bookings.');return;}
+  var maxRefund=netHeld(l);
+  if(maxRefund<=0){notif('Nothing left to refund \u2014 amount held is '+fR(Math.max(0,maxRefund))+'.');return;}
+  // Manager: route through approval
+  if(needsApproval('refund')){
+    var rr=await showRequestApprovalConfirm({
+      title:'Request: Issue refund',
+      msg:'You are asking the owner to refund '+l.name+'. Amount held: '+fR(maxRefund)+'. Enter refund amount and a reason.',
+      reasonRequired:true,
+      input:true,
+      inputType:'number',
+      inputLabel:'Refund amount (Rs)',
+      inputDefault:'0'
+    });
+    if(!rr.ok)return;
+    var refundReq=parseFloat(rr.value)||0;
+    if(refundReq<=0){notif('Enter a refund amount greater than 0.');return;}
+    if(refundReq>maxRefund){notif('Refund of '+fR(refundReq)+' exceeds amount held ('+fR(maxRefund)+').');return;}
+    try{
+      await createRequest({
+        type:'refund',
+        targetPath:'/brides/'+id,
+        payload:{leadId:id,refund:refundReq,reason:rr.note},
+        snapshot:{name:l.name,advance:l.advance||0,balance:l.balance||0,cancelled:true},
+        reason:rr.note
+      });
+      notif('Refund request sent to owner for approval.');
+    }catch(e){notif('Could not submit request: '+e.message);}
+    return;
+  }
+  // Owner: direct
+  var r=await showConfirm({
+    title:'Issue refund',
+    msg:'Amount still held: '+fR(maxRefund)+'. Enter the refund amount.',
+    yesText:'Issue refund',
+    dangerous:true,
+    input:true,
+    inputLabel:'Refund amount (Rs)',
+    inputDefault:'0',
+    note:true
+  });
+  if(!r.ok)return;
+  var refund=parseFloat(r.value)||0;
+  if(refund<=0){notif('Enter a refund amount greater than 0.');return;}
+  if(refund>maxRefund){notif('Refund of '+fR(refund)+' exceeds amount held ('+fR(maxRefund)+').');return;}
+  var reason=r.note||'';
+  var now=new Date().toISOString();
+  try{
+    var firstInv=Object.values(l.invoices||{})[0];
+    if(!firstInv){notif('No invoice to attach the refund to.');return;}
+    var pid='p-'+uid();
+    var pay={id:pid,amount:-refund,date:now.slice(0,10),method:'Refund',note:'Refund: '+reason,createdAt:now};
+    var pp={};pp[pid]=pay;
+    await fbP('/leads/'+id+'/invoices/'+firstInv.id+'/payments',pp);
+    l.invoices[firstInv.id].payments=l.invoices[firstInv.id].payments||{};
+    l.invoices[firstInv.id].payments[pid]=pay;
+    var patch={refundAmount:(parseFloat(l.refundAmount||0)||0)+refund,advance:Math.max(0,(l.advance||0)-refund),balance:(l.balance||0)+refund};
+    await fbP('/leads/'+id,patch);
+    Object.assign(l,patch);
+    await logHistory(id,'issue-refund',{reason:reason,refund:refund});
+    notif('Refund issued.');
+    openDetail(id);
+    render();
+  }catch(e){notif('Error: '+e.message);}
+}
 async function advStage(id,newStage){
   // Special handling: moving to "Consultation Booked" (stage 2) requires a date+time
   if(newStage===2){
@@ -3822,12 +3920,13 @@ function ofValidate(){
   }
   // At least one event with a date
   var events = b.events || {};
-  var enabled = ['wedding','homecoming','goingAway'].filter(function(k){return events[k] && events[k].enabled;});
+  var enabled = ['wedding','homecoming','goingAway','engagement'].filter(function(k){return events[k] && events[k].enabled;});
   if(enabled.length === 0){
-    errs.push('Tick at least one event (Wedding, Homecoming, or Going Away).');
+    errs.push('Tick at least one event (Wedding, Homecoming, Going Away, or Engagement).');
   } else {
+    var evLabels = {wedding:'Wedding',homecoming:'Homecoming',goingAway:'Going Away',engagement:'Engagement'};
     enabled.forEach(function(k){
-      var lbl = k==='wedding' ? 'Wedding' : k==='homecoming' ? 'Homecoming' : 'Going Away';
+      var lbl = evLabels[k] || k;
       if(!events[k].date)errs.push(lbl+' is ticked but has no date. Set a date or untick.');
       if((k==='wedding' || k==='homecoming') && !events[k].theme){
         errs.push(lbl+' theme is required.');
