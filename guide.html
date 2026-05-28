@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1B2A4A">
+<title>Biso CRM — Manager Guide</title>
+<style>
+  :root{
+    --navy:#1B2A4A; --navy2:#24365C; --gold:#B08D57; --gold-soft:#C9A876;
+    --cream:#F7F3EC; --paper:#FFFFFF; --ink:#1F2530; --ink2:#4A5568;
+    --muted:#8A94A6; --line:#E7E2D8; --line2:#EFEBE2;
+    --green:#2F8F6B; --red:#C0492F; --blue:#3C5A9A; --amber:#B07A1E;
+    --shadow:0 1px 2px rgba(27,42,74,.04),0 8px 28px rgba(27,42,74,.06);
+    --shadow-lg:0 12px 48px rgba(27,42,74,.16);
+    --r:16px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+    background:
+      radial-gradient(1200px 500px at 100% -5%,rgba(176,141,87,.08),transparent 60%),
+      radial-gradient(900px 500px at -10% 0%,rgba(27,42,74,.06),transparent 55%),
+      var(--cream);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    line-height:1.5;
+  }
+  .ui{font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,sans-serif}
+
+  /* ---------- header ---------- */
+  header{
+    position:sticky;top:0;z-index:50;
+    background:linear-gradient(180deg,var(--navy),var(--navy2));
+    color:#fff;
+    padding:calc(env(safe-area-inset-top) + 18px) 20px 16px;
+    box-shadow:0 6px 24px rgba(27,42,74,.28);
+    border-bottom:2px solid var(--gold);
+  }
+  .brand{display:flex;align-items:baseline;gap:10px}
+  .brand .logo{font-size:30px;font-weight:700;letter-spacing:4px;line-height:1}
+  .brand .sub{font-size:11px;letter-spacing:3px;color:var(--gold-soft);text-transform:uppercase;font-family:ui-sans-serif,sans-serif;font-weight:600}
+  .htitle{margin-top:6px;font-size:15px;color:#dfe6f2;font-family:ui-sans-serif,sans-serif;letter-spacing:.2px}
+  .htitle b{color:#fff;font-weight:600}
+
+  /* ---------- search ---------- */
+  .searchwrap{position:relative;margin-top:14px}
+  .searchwrap svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;stroke:var(--muted);pointer-events:none}
+  #q{
+    width:100%;border:none;outline:none;border-radius:13px;
+    padding:14px 42px 14px 42px;font-size:16px;
+    font-family:ui-sans-serif,sans-serif;color:var(--ink);
+    background:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.15),var(--shadow);
+  }
+  #q::placeholder{color:var(--muted)}
+  #clearq{position:absolute;right:8px;top:50%;transform:translateY(-50%);
+    border:none;background:var(--line);color:var(--ink2);width:28px;height:28px;border-radius:50%;
+    font-size:16px;cursor:pointer;display:none;align-items:center;justify-content:center}
+  #clearq.show{display:flex}
+
+  /* ---------- filter chips ---------- */
+  .chips{display:flex;gap:8px;overflow-x:auto;padding:14px 20px 4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{
+    flex:0 0 auto;font-family:ui-sans-serif,sans-serif;font-size:13px;font-weight:600;
+    padding:8px 15px;border-radius:999px;border:1.5px solid var(--line);
+    background:#fff;color:var(--ink2);cursor:pointer;transition:.15s;white-space:nowrap;letter-spacing:.2px
+  }
+  .chip .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:middle}
+  .chip.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .chip.active .dot{background:var(--gold-soft)!important}
+
+  /* ---------- main ---------- */
+  main{max-width:760px;margin:0 auto;padding:8px 16px calc(env(safe-area-inset-bottom) + 60px)}
+  .count{font-family:ui-sans-serif,sans-serif;font-size:12px;color:var(--muted);padding:8px 6px 12px;letter-spacing:.3px}
+
+  /* ---------- cards ---------- */
+  .card{
+    background:var(--paper);border:1px solid var(--line);border-radius:var(--r);
+    margin-bottom:12px;box-shadow:var(--shadow);overflow:hidden;transition:.2s
+  }
+  .card.open{box-shadow:var(--shadow-lg);border-color:var(--gold)}
+  .chd{display:flex;align-items:center;gap:13px;padding:16px 16px;cursor:pointer;user-select:none}
+  .ic{
+    flex:0 0 auto;width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+    font-size:20px;background:linear-gradient(150deg,var(--cream),#fff);border:1px solid var(--line2)
+  }
+  .ctext{flex:1;min-width:0}
+  .ct{font-size:21px;font-weight:600;color:var(--navy);line-height:1.25}
+  .cmeta{font-family:ui-sans-serif,sans-serif;font-size:11.5px;color:var(--muted);margin-top:2px;letter-spacing:.2px}
+  .tag{display:inline-block;font-family:ui-sans-serif,sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+    padding:3px 8px;border-radius:6px;margin-right:6px;vertical-align:middle}
+  .t-task{background:rgba(60,90,154,.12);color:var(--blue)}
+  .t-price{background:rgba(176,141,87,.16);color:var(--amber)}
+  .t-rule{background:rgba(47,143,107,.13);color:var(--green)}
+  .caret{flex:0 0 auto;width:22px;height:22px;stroke:var(--muted);stroke-width:2;fill:none;transition:transform .25s}
+  .card.open .caret{transform:rotate(90deg);stroke:var(--gold)}
+
+  .cbody{display:none;padding:0 16px 18px;border-top:1px solid var(--line2)}
+  .card.open .cbody{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .cbody p{margin:13px 0 0;font-size:18.5px;color:var(--ink);line-height:1.55}
+  .cbody p.lead{color:var(--ink2)}
+
+  ol.steps{margin:14px 0 0;padding:0;counter-reset:s;list-style:none}
+  ol.steps li{position:relative;padding:0 0 0 40px;margin-bottom:13px;font-size:18px;line-height:1.5}
+  ol.steps li::before{
+    counter-increment:s;content:counter(s);
+    position:absolute;left:0;top:1px;width:27px;height:27px;border-radius:50%;
+    background:var(--navy);color:#fff;font-family:ui-sans-serif,sans-serif;font-size:13px;font-weight:700;
+    display:flex;align-items:center;justify-content:center
+  }
+  ul.bl{margin:12px 0 0;padding:0 0 0 4px;list-style:none}
+  ul.bl li{position:relative;padding:0 0 0 20px;margin-bottom:9px;font-size:18px;line-height:1.5}
+  ul.bl li::before{content:'';position:absolute;left:2px;top:11px;width:7px;height:7px;border-radius:50%;background:var(--gold)}
+
+  b,strong{color:var(--navy);font-weight:700}
+  .pill{font-family:ui-sans-serif,sans-serif;font-size:13px;font-weight:600;background:var(--cream);
+    border:1px solid var(--line);border-radius:7px;padding:2px 8px;color:var(--navy);white-space:nowrap;display:inline-block}
+
+  /* callout */
+  .note{margin:15px 0 0;border-radius:12px;padding:13px 15px;font-size:17px;line-height:1.5;
+    background:var(--gold-soft);background:linear-gradient(180deg,#FCF6EA,#FBF1DF);border:1px solid #EAD7B4;border-left:4px solid var(--gold)}
+  .note .nl{font-family:ui-sans-serif,sans-serif;display:block;font-size:11px;font-weight:800;letter-spacing:.8px;
+    text-transform:uppercase;color:var(--amber);margin-bottom:4px}
+  .note.warn{background:linear-gradient(180deg,#FCEDEA,#FBE6E1);border-color:#E6C3B9;border-left-color:var(--red)}
+  .note.warn .nl{color:var(--red)}
+
+  /* price table */
+  table.pt{width:100%;border-collapse:collapse;margin-top:14px;font-family:ui-sans-serif,sans-serif}
+  table.pt th,table.pt td{text-align:left;padding:10px 12px;font-size:15px;border-bottom:1px solid var(--line2)}
+  table.pt th{background:var(--navy);color:#fff;font-size:12px;letter-spacing:.4px;text-transform:uppercase}
+  table.pt th:last-child,table.pt td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+  table.pt tr:nth-child(even) td{background:var(--cream)}
+  table.pt td b{color:var(--navy)}
+  .neg{color:var(--green)!important;font-weight:700}
+
+  /* no results */
+  .empty{text-align:center;padding:60px 20px;color:var(--muted)}
+  .empty .big{font-size:40px;margin-bottom:8px}
+  .empty .et{font-size:22px;color:var(--ink2)}
+  .empty .es{font-family:ui-sans-serif,sans-serif;font-size:14px;margin-top:6px}
+
+  /* highlight */
+  mark{background:rgba(176,141,87,.32);color:inherit;border-radius:3px;padding:0 1px}
+
+  footer{text-align:center;padding:26px 20px 36px;color:var(--muted);font-family:ui-sans-serif,sans-serif;font-size:12px;letter-spacing:.3px}
+  footer .b{color:var(--gold);letter-spacing:2px;font-weight:700}
+
+  /* quick-jump bar */
+  .qj{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;justify-content:center;
+    padding:0 0 env(safe-area-inset-bottom);pointer-events:none}
+  .qj-inner{pointer-events:auto;margin-bottom:14px;background:rgba(27,42,74,.96);backdrop-filter:blur(8px);
+    border:1px solid rgba(255,255,255,.12);border-radius:999px;display:flex;gap:4px;padding:5px;box-shadow:var(--shadow-lg)}
+  .qj-inner button{border:none;background:transparent;color:#cdd6e6;font-family:ui-sans-serif,sans-serif;
+    font-size:12px;font-weight:600;padding:8px 14px;border-radius:999px;cursor:pointer;letter-spacing:.3px}
+  .qj-inner button.on{background:var(--gold);color:#1a1206}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><span class="logo">BISO</span><span class="sub">by Dinushi</span></div>
+  <div class="htitle"><b>CRM Manager Guide</b> — search any task, price, or rule</div>
+  <div class="searchwrap ui">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    <input id="q" type="search" inputmode="search" autocomplete="off" placeholder="Try “log a call”, “homecoming price”, “refund”…">
+    <button id="clearq" aria-label="clear">×</button>
+  </div>
+</header>
+
+<div class="chips ui" id="chips"></div>
+<div class="count ui" id="count"></div>
+
+<main id="list"></main>
+
+<div class="qj ui">
+  <div class="qj-inner">
+    <button data-f="all" class="on">All</button>
+    <button data-f="task">Tasks</button>
+    <button data-f="price">Pricing</button>
+    <button data-f="rule">Rules</button>
+  </div>
+</div>
+
+<footer>
+  <div class="b">BISO BY DINUSHI</div>
+  Every queen deserves to be seen · crm.bisobydinushi.com
+</footer>
+
+<script>
+/* ============================================================
+   DATA  — single searchable index.
+   type: task | price | rule   (drives colour + filters)
+   kw:   extra search keywords (synonyms the manager might type)
+   html: body content
+   ============================================================ */
+const DATA = [
+ {
+  id:"add-bride", type:"task", icon:"👰", title:"Add a new bride (new lead)",
+  meta:"Pipeline → + New", kw:"create new enquiry inquiry lead customer client add register start",
+  html:`
+  <p class="lead">When a new enquiry comes in — WhatsApp, phone, Instagram, walk-in, anything — create the bride right away so nothing is lost.</p>
+  <ol class="steps">
+   <li>Open the menu → <b>Pipeline</b> (or <b>Profiles</b>).</li>
+   <li>Tap <span class="pill">+ New</span>. The Overview Form opens, titled <b>New Bride</b>.</li>
+   <li>Enter the <b>WhatsApp Number</b> — type the local number (e.g. 77 123 4567); it defaults to Sri Lanka (+94).</li>
+   <li>Enter the <b>Full Name</b>.</li>
+   <li>Optionally add an <b>Email</b>.</li>
+   <li>Choose the <b>Source</b> (where the enquiry came from).</li>
+   <li>Check <b>Date Inquired</b> (defaults to today).</li>
+   <li>Under <b>Events</b>, tick <b>Wedding</b>, <b>Homecoming</b> and/or <b>Going Away</b>. At least one event with a date is required.</li>
+   <li>For each ticked event add the <b>Date</b> (required), plus optional Venue, Theme, Start/End time.</li>
+   <li>For the <b>Wedding only</b>, set Bridesmaids / Flower Girls / Little Maids counts if needed.</li>
+   <li>Add anything useful in <b>Notes</b>.</li>
+   <li>Tap <span class="pill">Save</span>.</li>
+  </ol>
+  <div class="note"><span class="nl">Event rules</span> Going Away is always the <b>same day as the Wedding</b> (auto, locked). Homecoming must be <b>after</b> the Wedding. Bridesmaids / flower girls / little maids apply to the <b>Wedding only</b>.</div>`
+ },
+ {
+  id:"edit", type:"task", icon:"✎", title:"Change a bride’s details",
+  meta:"Open bride → Edit in Overview Form", kw:"edit update fix correct change phone name date venue notes amend modify",
+  html:`
+  <p class="lead">Correct a number, fix a name, change an event date, add a venue or update notes — all in the same Overview Form.</p>
+  <ol class="steps">
+   <li>From <b>Pipeline</b> or <b>Profiles</b>, tap the bride’s card (or the pencil ✎ on the card).</li>
+   <li>If you opened the detail view first, tap <span class="pill">✎ Edit in Overview Form</span>.</li>
+   <li>Change whatever you need — contact, events, themes, counts, notes.</li>
+   <li>Tap <span class="pill">Save</span>. Changes store immediately.</li>
+  </ol>
+  <div class="note"><span class="nl">Tip</span> If you try to close with unsaved changes, the CRM warns you so nothing is lost.</div>`
+ },
+ {
+  id:"log", type:"task", icon:"📞", title:"Log a contact attempt",
+  meta:"Pipeline → card → 📞 Log Attempt", kw:"call called phone whatsapp reached no answer attempt followup follow up disposition contacted try tried",
+  html:`
+  <p class="lead">Every time you try to reach a bride — through or not — log it. This keeps records accurate and sets your next reminder automatically.</p>
+  <ol class="steps">
+   <li>Go to <b>Pipeline</b> (or <b>Daily Brief</b>).</li>
+   <li>On the bride’s card tap <span class="pill">📞 Log Attempt</span>.</li>
+   <li>Pick what happened — one of the four outcomes below.</li>
+  </ol>
+  <ul class="bl">
+   <li><b>📵 No answer</b> — tried but couldn’t reach.</li>
+   <li><b>📞 Reached — call back later</b> — got through, call again.</li>
+   <li><b>📅 Reached — book consultation</b> — they want to come in.</li>
+   <li><b>❌ Reached — not interested</b> — close as Lost.</li>
+  </ul>
+  <div class="note warn"><span class="nl">Auto-close</span> On the <b>3rd</b> no-answer there’s no new reminder — the lead <b>auto-closes after 14 days</b> if still no reply. A warning shows when you reach this point.</div>
+  <p><b>No answer:</b> choose channel (WhatsApp / Call / Both), pick the next reminder (suggested 2 days, then 4), add a note, tap <span class="pill">Save Attempt</span>.</p>
+  <p><b>Call back later:</b> enter a specific time, or choose “vague” to be reminded in 3 days.</p>
+  <p><b>Book consultation:</b> enter date + time, tap <span class="pill">Book &amp; Move to Stage 2</span>. Reminders stop.</p>
+  <p><b>Not interested:</b> pick a reason (budget, already booked, browsing, wrong number, postponed, other), tap <span class="pill">Close as Lost</span>. Kept on record; can be reopened.</p>`
+ },
+ {
+  id:"consult", type:"task", icon:"📅", title:"Book a consultation",
+  meta:"Log Attempt → Book consultation", kw:"appointment meeting schedule trial booking consultation book stage 2",
+  html:`
+  <ol class="steps">
+   <li>On the bride’s card tap <span class="pill">📞 Log Attempt</span>.</li>
+   <li>Choose <b>📅 Reached — book consultation</b>.</li>
+   <li>Enter the <b>Consultation Date</b> (required) and <b>Time</b>.</li>
+   <li>Add a note if useful, then tap <span class="pill">Book &amp; Move to Stage 2</span>.</li>
+  </ol>
+  <p>This books the consultation, moves the bride to <b>Consultation Booked</b>, and stops chase-up reminders. It then shows on the <b>Schedule</b>.</p>`
+ },
+ {
+  id:"pipeline", type:"rule", icon:"📊", title:"Pipeline stages & what to do next",
+  meta:"How a lead moves forward", kw:"stage stages move advance progress new contacted consultation quoted confirmed funnel next step",
+  html:`
+  <p class="lead">Most moves happen automatically when you log an attempt; you can also use the button on the card. It always shows the next action.</p>
+  <table class="pt"><thead><tr><th>Stage</th><th style="text-align:left">Next action</th></tr></thead><tbody>
+   <tr><td><b>New Lead</b></td><td style="text-align:left">Make first contact — WhatsApp / Call buttons (mark Contacted), or Log Attempt, or <b>Mark Contacted</b>.</td></tr>
+   <tr><td><b>Contacted</b></td><td style="text-align:left">Tap <b>Book Consultation</b> when they agree to come in.</td></tr>
+   <tr><td><b>Consultation Booked</b></td><td style="text-align:left">After meeting, tap <b>Mark Consultation Done</b>.</td></tr>
+   <tr><td><b>Consultation Done</b></td><td style="text-align:left">Tap <b>Create Quotation</b>.</td></tr>
+   <tr><td><b>Quoted</b></td><td style="text-align:left">Follow up; when accepted, tap <b>Convert to Invoice</b>.</td></tr>
+  </tbody></table>
+  <div class="note"><span class="nl">Note</span> There’s no manual “Confirm” button — a bride becomes <b>confirmed</b> the moment an invoice is created. <b>Walk-ins</b> start at Consultation Booked.</div>`
+ },
+ {
+  id:"quote", type:"task", icon:"🧾", title:"Build a quotation",
+  meta:"Card → Create Quotation", kw:"quote quotation price estimate line items services cost charge proposal create send",
+  html:`
+  <p class="lead">A quote lists services and prices. The CRM fills most of it from the events you ticked; you adjust from there.</p>
+  <ul class="bl">
+   <li>From a lead at <b>Consultation Done</b>, tap <b>Create Quotation</b> on the card.</li>
+   <li>Or from the <b>Quotations</b> page, tap <span class="pill">+ New</span>.</li>
+  </ul>
+  <ol class="steps">
+   <li>Make sure the <b>events are ticked correctly</b> — the lines build from these.</li>
+   <li>Review the <b>line items</b> (auto-filled at standard prices).</li>
+   <li><b>Edit</b> any value, quantity or discount.</li>
+   <li><b>Delete</b> lines that don’t apply.</li>
+   <li><b>Add</b> a custom line for extras (add-ons, tailoring, jewellery, bouquets).</li>
+   <li>Check the total, then tap <span class="pill">Save Bride &amp; Quote</span>.</li>
+  </ol>
+  <div class="note"><span class="nl">Auto discount</span> Ticking <b>both Wedding and Homecoming</b> adds the <b>Homecoming Package Discount (−Rs 30,000)</b> automatically as its own line. It’s the only standard discount, and it’s removed if you untick either event.</div>`
+ },
+ {
+  id:"invoice", type:"task", icon:"✅", title:"Confirm booking (create invoice)",
+  meta:"Bride at Quoted → Convert to Invoice", kw:"invoice confirm booking convert accept deposit advance bill finalise close won",
+  html:`
+  <p class="lead">When the bride accepts, turn the quote into an invoice. This confirms the booking.</p>
+  <ol class="steps">
+   <li>Open the bride’s record (they should be at <b>Quoted</b>).</li>
+   <li>Tap <span class="pill">Convert to Invoice</span>.</li>
+   <li>Review the carried-over details and confirm.</li>
+  </ol>
+  <p>They now appear on the <b>Confirmed</b> page and the <b>Schedule</b>; the event cards become visible once the invoice exists.</p>`
+ },
+ {
+  id:"payment", type:"task", icon:"💰", title:"Record a payment",
+  meta:"Open invoice → Record Payment", kw:"payment pay paid money received advance deposit balance cash bank transfer record",
+  html:`
+  <ol class="steps">
+   <li>Open the invoice from the <b>Invoices</b> page or the bride’s record.</li>
+   <li>Tap to add a payment; enter the <b>amount</b> and <b>method</b>.</li>
+   <li>Tap <span class="pill">Record Payment</span>. The balance updates automatically.</li>
+  </ol>
+  <div class="note"><span class="nl">Balances</span> Final balance is due <b>on or before the final trial date</b> (usually 7–10 days before the wedding). A bride with a balance owing shows a <b>red urgent card</b> from 14 days before the wedding.</div>`
+ },
+ {
+  id:"approval", type:"rule", icon:"🔒", title:"Actions that need owner approval",
+  meta:"Delete / refund / cancel", kw:"approval approve owner kushan dinushi delete remove cancel refund request permission blocked restricted",
+  html:`
+  <p class="lead">You can do almost everything directly. A few sensitive actions go to the owner for approval first — that protects the business, it isn’t a sign you did anything wrong.</p>
+  <p>These create an approval request:</p>
+  <ul class="bl">
+   <li><b>Deleting a bride</b> record.</li>
+   <li><b>Deleting a payment.</b></li>
+   <li><b>Cancelling a booking with a refund.</b></li>
+  </ul>
+  <p>You’ll type a short reason; it goes to the owner. Track status under <b>My Requests</b>. Once approved, it’s carried out.</p>
+  <div class="note"><span class="nl">Instant — no approval</span> Adding/editing brides, logging attempts, booking consultations, building quotes, creating invoices, and recording payments all happen immediately.</div>`
+ },
+ {
+  id:"lost", type:"task", icon:"↩︎", title:"Close a dead lead / reopen it",
+  meta:"Log Attempt → Not interested", kw:"lost close dead not interested reopen reactivate cancel lead reason budget browsing",
+  html:`
+  <ol class="steps">
+   <li>On the card tap <span class="pill">📞 Log Attempt</span> → <b>❌ Reached — not interested</b>.</li>
+   <li>Pick a <b>reason</b> (budget, already booked, just browsing, wrong number, postponed, other).</li>
+   <li>Add a note, tap <span class="pill">Close as Lost</span>.</li>
+  </ol>
+  <p>The lead leaves the active pipeline but stays on record. To bring it back, open the bride’s profile and <b>reopen the lead</b>.</p>`
+ },
+ {
+  id:"screens", type:"rule", icon:"🧭", title:"The menu & screens",
+  meta:"What each page is for", kw:"menu navigation pages daily brief pipeline schedule profiles confirmed quotations invoices analytics finance settings home",
+  html:`
+  <p class="lead">Tap the menu icon (top-left) to switch pages.</p>
+  <ul class="bl">
+   <li><b>Daily Brief</b> — your landing page; what needs attention today. Start here daily.</li>
+   <li><b>Pipeline</b> — active leads by stage.</li>
+   <li><b>Schedule</b> — upcoming weddings, homecomings, going-aways, consultations.</li>
+   <li><b>Profiles</b> — every bride on record; find anyone.</li>
+   <li><b>Confirmed</b> — brides with a confirmed booking.</li>
+   <li><b>Quotations</b> — all open quotes.</li>
+   <li><b>Invoices</b> — invoices and payment status.</li>
+   <li><b>Analytics</b> — performance numbers.</li>
+  </ul>
+  <div class="note"><span class="nl">Note</span> <b>Finance</b> and <b>Settings</b> are owner-only and won’t appear in your menu. That’s normal.</div>`
+ },
+ {
+  id:"overview-form", type:"rule", icon:"📋", title:"What the Overview Form is",
+  meta:"The one form for everything", kw:"overview form single record bride contact events quote where everything modal",
+  html:`
+  <p class="lead">Almost everything about a bride lives in one place: the <b>Overview Form</b>.</p>
+  <p>It’s the single form for creating a bride, editing contact details, managing events (Wedding / Homecoming / Going Away), and building the quotation. Whenever this guide says “open the bride’s record,” it means this form.</p>`
+ },
+ {
+  id:"routine", type:"rule", icon:"☀️", title:"Your simple daily routine",
+  meta:"Follow this every day", kw:"daily routine morning workflow checklist habit each day start day",
+  html:`
+  <ol class="steps">
+   <li>Open the <b>Daily Brief</b>; read what’s new since last visit.</li>
+   <li>Work through <b>today’s contact attempts</b> — and <b>log every one</b>.</li>
+   <li>Confirm today’s <b>consultations</b> are ready.</li>
+   <li>For <b>completed consultations</b>, build &amp; send the <b>quotation</b>.</li>
+   <li>Follow up on <b>quoted</b> brides not yet confirmed.</li>
+   <li>Check <b>upcoming weddings</b> for outstanding balances (red urgent cards).</li>
+  </ol>
+  <div class="note"><span class="nl">When unsure</span> Don’t delete or cancel — message Kushan or Dinushi. It’s always safe to ask.</div>`
+ },
+ {
+  id:"sources", type:"rule", icon:"📨", title:"Lead sources list",
+  meta:"Where enquiries come from", kw:"source sources whatsapp phone walk-in instagram facebook google ads website referral channel origin",
+  html:`
+  <p class="lead">When adding a bride, pick where the enquiry came from:</p>
+  <ul class="bl">
+   <li>WhatsApp · Phone Call · Walk-in</li>
+   <li>Instagram DM · Facebook DM</li>
+   <li>Facebook Form · Facebook Ads · Google Ads</li>
+   <li>Website Form · Referral</li>
+  </ul>`
+ },
+ {
+  id:"price-events", type:"price", icon:"💎", title:"Pricing — main events",
+  meta:"Standard retail prices (Rs)", kw:"price pricing cost rate wedding homecoming going away bridesmaid flower girl little maid how much charge rupees rs discount package",
+  html:`
+  <p class="lead">Shown at full retail; any discount appears as a separate line — exactly as the bride should see it.</p>
+  <table class="pt"><thead><tr><th>Service</th><th>Price</th></tr></thead><tbody>
+   <tr><td>Wedding</td><td><b>125,000</b></td></tr>
+   <tr><td>Homecoming</td><td><b>125,000</b></td></tr>
+   <tr><td>Going Away</td><td><b>65,000</b></td></tr>
+   <tr><td>Bridesmaids (each)</td><td><b>38,000</b></td></tr>
+   <tr><td>Flower Girls (each)</td><td><b>8,000</b></td></tr>
+   <tr><td>Little Maids (each)</td><td><b>10,000</b></td></tr>
+   <tr><td>Homecoming Package Discount</td><td class="neg">−30,000</td></tr>
+  </tbody></table>
+  <div class="note"><span class="nl">Discount rule</span> The <b>−Rs 30,000</b> discount applies <b>only</b> when both Wedding <b>and</b> Homecoming are booked, and the CRM adds it automatically.</div>`
+ },
+ {
+  id:"price-advance", type:"price", icon:"💵", title:"Pricing — advances",
+  meta:"Deposit to confirm a booking", kw:"advance deposit upfront booking fee confirm pay first installment destination engagement rupees rs",
+  html:`
+  <table class="pt"><thead><tr><th>Booking</th><th>Advance</th></tr></thead><tbody>
+   <tr><td>Wedding</td><td><b>50,000</b></td></tr>
+   <tr><td>Destination wedding</td><td><b>75,000</b></td></tr>
+   <tr><td>Wedding + Homecoming</td><td><b>80,000</b></td></tr>
+   <tr><td>Homecoming only</td><td><b>25,000</b></td></tr>
+   <tr><td>Engagement only</td><td><b>25,000</b></td></tr>
+  </tbody></table>
+  <div class="note"><span class="nl">Note</span> Destination weddings are by proposal. Confirm the advance with the owner if a booking doesn’t match the list.</div>`
+ },
+ {
+  id:"price-addons", type:"price", icon:"➕", title:"Pricing — add-ons & extras",
+  meta:"Touch-ups, jewellery, bouquets, tailoring", kw:"addon add-on extra touch up standby jewellery kandyan bouquet bridal tailoring saree lehenga western dressing hair makeup price rs",
+  html:`
+  <p class="lead">Add these as custom lines on the quote at the agreed price.</p>
+  <table class="pt"><thead><tr><th>Add-on</th><th>From (Rs)</th></tr></thead><tbody>
+   <tr><td>Touch-up</td><td><b>10,000</b></td></tr>
+   <tr><td>Venue standby</td><td><b>20,000</b></td></tr>
+   <tr><td>Jewellery — Kandyan</td><td><b>20,000</b></td></tr>
+   <tr><td>Bouquet — bridal</td><td><b>25,000</b></td></tr>
+   <tr><td>Bouquet — bridesmaid</td><td><b>12,000</b></td></tr>
+  </tbody></table>
+  <table class="pt"><thead><tr><th>Tailoring</th><th>Price (Rs)</th></tr></thead><tbody>
+   <tr><td>Kandyan saree — bride</td><td><b>45,000</b></td></tr>
+   <tr><td>Kandyan saree — bridesmaid</td><td><b>25,000</b></td></tr>
+   <tr><td>Indian saree — bride</td><td><b>35,000</b></td></tr>
+   <tr><td>Indian saree — bridesmaid</td><td><b>25,000</b></td></tr>
+   <tr><td>Lehenga</td><td><b>35,000</b></td></tr>
+   <tr><td>Western frock — bride</td><td><b>65,000</b></td></tr>
+   <tr><td>Western frock — bridesmaid</td><td><b>18,000</b></td></tr>
+  </tbody></table>
+  <table class="pt"><thead><tr><th>Normal dressing</th><th>Price (Rs)</th></tr></thead><tbody>
+   <tr><td>Full (hair + makeup + dressing)</td><td><b>7,500</b></td></tr>
+   <tr><td>Hair + makeup</td><td><b>6,000</b></td></tr>
+   <tr><td>Hair or makeup only</td><td><b>5,000</b></td></tr>
+  </tbody></table>`
+ },
+ {
+  id:"ceremony-order", type:"rule", icon:"📿", title:"Sri Lankan ceremony order",
+  meta:"How the events relate", kw:"order ceremony sequence wedding going away homecoming honeymoon date sequence which first poruwa same day",
+  html:`
+  <ol class="steps">
+   <li><b>Wedding</b> — the main day.</li>
+   <li><b>Going Away</b> — same day, outfit change before the honeymoon. Its date <b>auto-mirrors the Wedding</b> and is locked.</li>
+   <li><b>Homecoming</b> — after returning from honeymoon; must be <b>after</b> the Wedding date.</li>
+  </ol>
+  <div class="note"><span class="nl">Remember</span> Bridesmaids, flower girls and little maids attend the <b>Wedding only</b> — there are no such fields on Homecoming or Going Away.</div>`
+ },
+ {
+  id:"sla", type:"rule", icon:"⏱️", title:"Response times & urgency",
+  meta:"How fast to act", kw:"sla deadline response time urgency reminder how fast contact quote follow up 12 hours days red urgent",
+  html:`
+  <ul class="bl">
+   <li><b>First contact:</b> within 12 hours of a new lead.</li>
+   <li><b>Book consultation:</b> within ~3 days.</li>
+   <li><b>Send quote:</b> within ~2 days of the consultation.</li>
+   <li><b>Follow up after quote:</b> within ~7 days.</li>
+   <li><b>Final balance:</b> on or before the final trial date (usually 7–10 days pre-wedding).</li>
+  </ul>
+  <div class="note warn"><span class="nl">Red urgent card</span> A bride with a balance still owing turns urgent (red) from <b>14 days before the wedding</b>.</div>`
+ },
+ {
+  id:"cancel", type:"rule", icon:"🚫", title:"Cancellations & refunds",
+  meta:"What happens to cancelled bookings", kw:"cancel cancellation refund money back booking stays confirmed locked negative payment greyed badge",
+  html:`
+  <p class="lead">Cancelling a booking with a refund needs <b>owner approval</b> (see “Actions that need owner approval”).</p>
+  <ul class="bl">
+   <li>A cancelled booking <b>stays in Confirmed</b>, but greyed out and locked, with a <b>CANCELLED</b> badge.</li>
+   <li>A <b>refund</b> is recorded as a negative payment on the invoice — shown as “refund of Rs …”, never a minus sign to the bride.</li>
+  </ul>`
+ },
+ {
+  id:"login", type:"task", icon:"🔑", title:"Signing in & home screen",
+  meta:"Open the CRM", kw:"login log in sign in password email open app home screen install pwa forgot password access url",
+  html:`
+  <ol class="steps">
+   <li>Open <b>crm.bisobydinushi.com</b> in your phone browser.</li>
+   <li>Sign in with the email &amp; password you were given.</li>
+   <li>Forgot it? Use <b>Forgot password</b> to get a reset email.</li>
+  </ol>
+  <div class="note"><span class="nl">Tip</span> Add the CRM to your home screen so it opens like an app — browser menu → <b>Add to Home Screen</b>.</div>`
+ }
+];
+
+/* ============================================================ */
+const TYPE_META = {
+  task:{label:"Task", color:"#3C5A9A"},
+  price:{label:"Pricing", color:"#B08D57"},
+  rule:{label:"Rule", color:"#2F8F6B"}
+};
+
+const listEl=document.getElementById('list');
+const countEl=document.getElementById('count');
+const qEl=document.getElementById('q');
+const clearEl=document.getElementById('clearq');
+let activeFilter='all';
+let query='';
+let openId=null;
+
+function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+
+function highlight(text,q){
+  if(!q) return text;
+  const terms=q.trim().split(/\s+/).filter(t=>t.length>1).map(t=>t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));
+  if(!terms.length) return text;
+  // only highlight in plain-text title; bodies left as-is to avoid breaking HTML
+  let out=text;
+  terms.forEach(t=>{ out=out.replace(new RegExp('('+t+')','ig'),'<mark>$1</mark>'); });
+  return out;
+}
+
+function matches(item,q){
+  if(!q) return true;
+  const hay=(item.title+' '+(item.kw||'')+' '+(item.meta||'')+' '+item.html.replace(/<[^>]+>/g,' ')).toLowerCase();
+  return q.toLowerCase().trim().split(/\s+/).every(t=>hay.includes(t));
+}
+
+function render(){
+  const items=DATA.filter(it=>(activeFilter==='all'||it.type===activeFilter)&&matches(it,query));
+  // counts per type for chips handled separately
+  if(!items.length){
+    listEl.innerHTML=`<div class="empty"><div class="big">🔍</div><div class="et">No matches</div><div class="es ui">Try a simpler word — e.g. “price”, “call”, “invoice”.</div></div>`;
+    countEl.textContent='';
+    return;
+  }
+  countEl.textContent=items.length+(items.length===1?' result':' results')+(query?(' for “'+query+'”'):'');
+  listEl.innerHTML=items.map(it=>{
+    const tm=TYPE_META[it.type];
+    const isOpen=(it.id===openId)||(query&&items.length<=2);
+    return `<div class="card${isOpen?' open':''}" data-id="${it.id}">
+      <div class="chd" onclick="toggle('${it.id}')">
+        <div class="ic">${it.icon}</div>
+        <div class="ctext">
+          <div class="ct">${highlight(esc(it.title),query)}</div>
+          <div class="cmeta"><span class="tag t-${it.type}">${tm.label}</span>${esc(it.meta||'')}</div>
+        </div>
+        <svg class="caret" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+      </div>
+      <div class="cbody">${it.html}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggle(id){
+  openId=(openId===id)?null:id;
+  render();
+  if(openId){
+    const c=document.querySelector('.card[data-id="'+openId+'"]');
+    if(c) c.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+}
+window.toggle=toggle;
+
+/* chips (type filters at top, mirror bottom bar) */
+function buildChips(){
+  const counts={all:DATA.length,task:0,price:0,rule:0};
+  DATA.forEach(d=>counts[d.type]++);
+  const defs=[['all','All',null],['task','Tasks',TYPE_META.task.color],['price','Pricing',TYPE_META.price.color],['rule','Rules',TYPE_META.rule.color]];
+  document.getElementById('chips').innerHTML=defs.map(([f,l,c])=>
+    `<div class="chip${activeFilter===f?' active':''}" data-f="${f}">${c?`<span class="dot" style="background:${c}"></span>`:''}${l} <span style="opacity:.6">${counts[f]}</span></div>`
+  ).join('');
+}
+
+function setFilter(f){
+  activeFilter=f; openId=null;
+  buildChips();
+  document.querySelectorAll('.qj-inner button').forEach(b=>b.classList.toggle('on',b.dataset.f===f));
+  render();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+document.getElementById('chips').addEventListener('click',e=>{
+  const c=e.target.closest('.chip'); if(c) setFilter(c.dataset.f);
+});
+document.querySelectorAll('.qj-inner button').forEach(b=>b.addEventListener('click',()=>setFilter(b.dataset.f)));
+
+qEl.addEventListener('input',()=>{
+  query=qEl.value; openId=null;
+  clearEl.classList.toggle('show',!!query);
+  render();
+});
+clearEl.addEventListener('click',()=>{query='';qEl.value='';clearEl.classList.remove('show');qEl.focus();render();});
+
+buildChips();
+render();
+</script>
+</body>
+</html>
