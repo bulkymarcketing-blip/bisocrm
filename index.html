@@ -1931,6 +1931,7 @@ function openIDoc(src,sId,iId){
 function openAddPay(src,sId,iId){
   var obj=src==='lead'?leads[sId]:custs[sId];if(!obj)return;
   var inv=(obj.invoices||{})[iId];if(!inv)return;
+  if(obj.cancelled){notif('This booking is cancelled. Payments cannot be added \u2014 use Issue Refund instead.');return;}
   var tot=qTot(inv.items);
   var bp=inv.advance||0;
   var paid=invPaid(inv);
@@ -1946,6 +1947,8 @@ function openAddPay(src,sId,iId){
 async function addPay(src,sId,iId){
   if(window._busy)return; window._busy=true;
   try{
+  var objC=src==='lead'?leads[sId]:custs[sId];
+  if(objC&&objC.cancelled){notif('This booking is cancelled. Payments cannot be added \u2014 use Issue Refund instead.');return;}
   var amt=parseFloat((document.getElementById('pay-amt')||{}).value)||0;
   if(amt<=0){notif('Enter a valid amount.');return;}
   // C3: warn if payment exceeds remaining balance
@@ -1992,6 +1995,9 @@ async function delPay(src,sId,iId,pid){
   var isRefund=amt<0;
   var displayAmt=fR(Math.abs(amt));
   var kind=isRefund?'refund':'payment';
+  // Cancelled bookings have frozen financial history — deleting a payment or refund here
+  // would rewrite the record and desync the retained-amount math. Block it.
+  if(obj.cancelled){notif('This booking is cancelled — its '+kind+' history is locked and cannot be deleted.');return;}
   if(needsApproval('delete_payment')){
     var rr=await showRequestApprovalConfirm({
       title:isRefund?'Request: Delete refund':'Request: Delete payment',
