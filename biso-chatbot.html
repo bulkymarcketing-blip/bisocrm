@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Biso by Dinushi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --navy:#1B2B4B; --navy-lt:#243556; --navy-dk:#13203A; --gold:#C9A84C; --gold-lt:#DDB96A;
+  --gold-dim:rgba(201,168,76,0.12); --wall:#ECE7DC; --surf:#FFFFFF;
+  --border:#E2DBCC; --text:#1B2B4B; --text2:#5A5247; --muted:#9A917E;
+  --usr:#243556; --tick:#C9A84C;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:'Inter',sans-serif;background:var(--navy-dk);color:var(--text);
+  min-height:100dvh;display:flex;align-items:center;justify-content:center;
+  overflow:hidden;position:relative;
+}
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;
+  background:radial-gradient(circle at 50% 0%, rgba(201,168,76,0.12), transparent 55%),linear-gradient(160deg,#1B2B4B,#13203A);
+}
+.shell{
+  position:relative;z-index:1;width:100%;max-width:440px;height:100dvh;max-height:880px;
+  background:var(--wall);display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:0 20px 60px rgba(0,0,0,0.4);
+}
+@media(min-width:480px){ .shell{border-radius:18px;height:92dvh} }
+
+/* ---- header (navy, WhatsApp-layout but luxury palette) ---- */
+.hdr{
+  flex-shrink:0;background:var(--navy);display:flex;align-items:center;gap:12px;
+  padding:14px 16px;padding-top:calc(14px + env(safe-area-inset-top));
+  border-bottom:1px solid rgba(201,168,76,0.25);position:relative;
+}
+.hdr::after{content:'';position:absolute;left:0;bottom:0;width:100%;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.5}
+.av{
+  width:42px;height:42px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--gold),var(--gold-lt));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Cinzel',serif;font-size:18px;color:var(--navy);font-weight:600;
+}
+.hd-txt{flex:1;min-width:0}
+.hd-name{font-family:'Cinzel',serif;font-size:16px;color:#fff;letter-spacing:1.5px;line-height:1.1}
+.hd-name b{color:var(--gold-lt);font-weight:500}
+.hd-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:13px;color:rgba(255,255,255,0.55);margin-top:1px}
+.hd-on{display:flex;align-items:center;gap:5px;font-size:11px;color:rgba(255,255,255,0.5);margin-top:2px;font-family:'Inter',sans-serif;font-style:normal}
+.hd-on .dot{width:6px;height:6px;border-radius:50%;background:#5BD17A}
+
+/* ---- chat area ---- */
+.body{
+  flex:1;overflow-y:auto;padding:18px 14px 6px;display:flex;flex-direction:column;gap:8px;
+  scroll-behavior:smooth;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cg fill='none' stroke='%23C9A84C' stroke-width='0.5' opacity='0.06'%3E%3Cpath d='M40 12 L46 30 L40 26 L34 30 Z'/%3E%3Ccircle cx='40' cy='40' r='3'/%3E%3C/g%3E%3C/svg%3E");
+}
+.body::-webkit-scrollbar{width:0}
+
+.row{display:flex;animation:rise .4s cubic-bezier(.2,.7,.3,1) both}
+.row.left{justify-content:flex-start}
+.row.right{justify-content:flex-end}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+.bub{max-width:80%;padding:9px 12px 7px;border-radius:12px;font-size:14.5px;line-height:1.45;position:relative;box-shadow:0 1px 1px rgba(27,43,75,0.07)}
+.bub.bot{background:var(--surf);color:var(--text);border-top-left-radius:3px}
+.bub.usr{background:var(--usr);color:#fff;border-top-right-radius:3px}
+.bub .meta{display:flex;align-items:center;gap:3px;justify-content:flex-end;margin-top:3px;font-size:10px;line-height:1}
+.bub.bot .meta{color:var(--muted)}
+.bub.usr .meta{color:rgba(255,255,255,0.55)}
+.bub .tick{color:var(--tick);font-size:11px;letter-spacing:-2px}
+.bub .lead-em{font-family:'Cormorant Garamond',serif;font-size:18px;font-style:italic;color:var(--navy);display:block;margin-bottom:1px}
+
+.typing{display:inline-flex;gap:4px;padding:12px 14px;background:var(--surf);border-radius:12px;border-top-left-radius:3px}
+.typing span{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:bounce 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-5px);opacity:1}}
+
+/* ---- input dock ---- */
+.foot{flex-shrink:0;background:var(--wall);border-top:1px solid var(--border);padding:12px 14px calc(12px + env(safe-area-inset-bottom));min-height:68px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;animation:rise .4s both}
+.chip{
+  appearance:none;border:1.5px solid var(--navy);background:var(--surf);color:var(--navy);
+  font-family:'Inter',sans-serif;font-size:14px;font-weight:500;padding:11px 16px;
+  border-radius:22px;cursor:pointer;transition:all .16s;display:inline-flex;align-items:center;gap:7px;
+}
+.chip:active{transform:scale(.96)}
+.chip:hover{background:var(--navy);color:#fff}
+.chip.sel{background:var(--gold);border-color:var(--gold);color:#fff;font-weight:600}
+.chip .em{font-size:16px}
+.chip.lang{flex:1;justify-content:center;border-color:var(--gold);color:var(--navy)}
+.chip.lang:hover{background:var(--gold);color:#fff}
+
+.field{display:flex;gap:9px;align-items:stretch}
+.field input{flex:1;border:1.5px solid var(--border);background:var(--surf);border-radius:22px;padding:13px 18px;font-size:15px;font-family:'Inter',sans-serif;color:var(--navy);outline:none;transition:border-color .16s;min-width:0;-webkit-appearance:none}
+.field input:focus{border-color:var(--gold)}
+.send{flex-shrink:0;width:48px;height:48px;border:none;border-radius:50%;background:var(--navy);color:var(--gold-lt);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .16s;align-self:flex-end}
+.send:active{transform:scale(.92)}
+.send svg{width:19px;height:19px}
+.donebar{display:flex;flex-direction:column;gap:8px}
+.cta{width:100%;border:none;border-radius:22px;background:var(--gold);color:#fff;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;padding:13px;cursor:pointer;transition:all .16s}
+.cta:active{transform:scale(.98)}
+.cta.navy{background:var(--navy);color:var(--gold-lt)}
+.err{font-size:12px;color:#C0392B;margin-top:7px;text-align:center}
+
+/* ---- final card ---- */
+.done-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 32px;background:var(--navy);animation:rise .6s both}
+.crest{width:76px;height:76px;border-radius:50%;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:36px;margin-bottom:22px;animation:pop .6s cubic-bezier(.2,1.3,.4,1) both}
+@keyframes pop{0%{transform:scale(0);opacity:0}100%{transform:scale(1);opacity:1}}
+.done-wrap h2{font-family:'Cinzel',serif;font-size:20px;color:#fff;font-weight:500;letter-spacing:.5px;margin-bottom:12px}
+.done-wrap p{font-size:14.5px;line-height:1.65;color:rgba(255,255,255,0.75);max-width:300px}
+.done-wrap .when{margin-top:18px;background:rgba(201,168,76,0.15);border:1px solid var(--gold);border-radius:10px;padding:10px 18px;font-size:13.5px;color:var(--gold-lt);font-weight:600}
+.done-wrap .quote{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:18px;color:var(--gold);margin-top:26px;letter-spacing:.3px}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="hdr">
+    <div class="av">B</div>
+    <div class="hd-txt">
+      <div class="hd-name">BISO <b>by Dinushi</b></div>
+      <div class="hd-on"><span class="dot"></span> online</div>
+    </div>
+  </div>
+  <div class="body" id="chat"></div>
+  <div class="foot" id="foot"></div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<script>
+/* BISO LEAD-CAPTURE CHATBOT  (navy/gold chat-bubble style)
+   7-step flow: language -> phone -> date -> events -> call time -> name -> close
+   Writes ONE lead on the final step, in the manager "call back later" disposition shape:
+     stage:1, nextReminderAt:<ISO from chosen time>, contactAttempts:{outcome:'callback_later'}
+   -> auto-appears in CRM Today's Actions > Follow-ups. No CRM change needed.
+   Engagement is stored forward-compatibly (events.engagement) + in notes,
+   ready for when the CRM gains an engagement event type. */
+
+var FB = 'https://biso-crm-default-rtdb.asia-southeast1.firebasedatabase.app';
+var LEAD_SOURCE = 'Website Chatbot';
+var TEST_MODE = false; /* false = live: anon-auth write to /leadintake. true = /leadintake_test */
+var INTAKE_PATH = TEST_MODE ? '/leadintake_test' : '/leadintake';
+
+/* Firebase config — copy these values from the CRM's _FBCFG constant
+   (or Firebase Console > Project Settings > your Web app).
+   Only apiKey + authDomain + projectId are needed for Anonymous Auth. */
+var _FBCFG = {
+  apiKey: 'AIzaSyD67tAE_gTUqOsJWCJ07VH2e4drIvYGhvA',
+  authDomain: 'biso-crm.firebaseapp.com',
+  databaseURL: FB,
+  projectId: 'biso-crm'
+};
+
+/* Anonymous sign-in: gives us auth!=null so the locked /leadintake rule accepts the write.
+   _authReady resolves with an ID token (or null if auth failed). */
+var _authToken = null;
+var _authReady = new Promise(function(resolve){
+  try {
+    firebase.initializeApp(_FBCFG);
+    firebase.auth().signInAnonymously()
+      .then(function(){ return firebase.auth().currentUser.getIdToken(); })
+      .then(function(tok){ _authToken = tok; resolve(tok); })
+      .catch(function(e){ console.error('Anon auth failed:', e); resolve(null); });
+  } catch(e){ console.error('Firebase init failed:', e); resolve(null); }
+});
+
+var L = {
+  en:{
+    name:'English',
+    s1:'What\u2019s the best number to call you on? \ud83d\udcde WhatsApp works too!',
+    s1ph:'07X XXX XXXX',
+    s1err:'That number doesn\u2019t look quite right \u2014 mind trying again?',
+    s2:['Have you picked a date yet? \ud83d\udc8d','Don\u2019t worry if it\u2019s not confirmed yet, just give us a rough idea!'],
+    s2skip:'Not decided yet',
+    s3:['What are you planning for your big day? \ud83c\udf38','Select all that apply!'],
+    ev:{wedding:'Wedding',homecoming:'Homecoming',goingAway:'Going Away',engagement:'Engagement'},
+    s4:'What would be a good time to call you? \ud83d\udcde',
+    bands:{morning:'Morning (9\u201312)',afternoon:'Afternoon (12\u20134)',evening:'Evening (4\u20138)',any:'Anytime',exact:'Pick an exact time'},
+    s5:'And lastly, what do we call our queen? \ud83d\udc51',
+    s5ph:'Your name',
+    cont:'Continue',
+    sending:'Saving your details\u2026',
+    doneH:'Thank you so much, ', doneHx:'! \ud83d\udc8d\u2728',
+    doneP:'We\u2019ve got your details. One of our team will call you during {t} for a little chat about your big day!',
+    doneWhen:'We\u2019ll call you: ', quote:'Every queen deserves to be seen \ud83d\udc51'
+  },
+  si:{
+    name:'\u0DC3\u0DD2\u0D82\u0DC4\u0DBD',
+    s1:'\u0D94\u0DBA\u0DCF\u0DC0 \u0DC3\u0DB8\u0DCAබන්ධ \u0D9A\u0DBB\u0D9C\u0DB1\u0DCAන \u0DB4\u0DD4\u0DC5\u0DD4\u0DC0\u0DB1\u0DCA number \u0D91\u0D9A \u0DB8\u0DDC\u0D9A\u0D9A්ද? \ud83d\udcde WhatsApp \u0D8B\u0DB1\u0DAD\u0DCA \u0D9A\u0DB8\u0D9A් \u0DB1\u0DD0!',
+    s1ph:'07X XXX XXXX',
+    s1err:'\u0D8A number \u0D91\u0D9A \u0DC4\u0DBB\u0DD2\u0DBA\u0DA7 \u0DB4\u0DD9\u0DB1\u0DDA \u0DB1\u0DD0 \u2014 \u0D86\u0DBA\u0DAD\u0DCA \u0D9A\u0DBB\u0DB1්න\u0DAF?',
+    s2:['\u0D94\u0DBA\u0DCF\u0D9C\u0DDA function \u0D91\u0D9A \u0D9C\u0DB1්න \u0DC4\u0DD2\u0DAD\u0DB1් \u0D89\u0DB1්නේ \u0D9A\u0DC0\u0DAF\u0DAF? \ud83d\udc8d','\u0DAD\u0DCF\u0DB8 confirm \u0DB1\u0DD0\u0DAD\u0DAD් \u0D9A\u0DB8\u0D9A් \u0DB1\u0DD0, \u0DAF\u0DC5 \u0DC0\u0DC1\u0DBA\u0DDA\u0DB1\u0DCA \u0D9A\u0DD2\u0DBA\u0DB1්න!'],
+    s2skip:'\u0DAD\u0DC0\u0DB8 \u0DAD\u0DD3\u0DBB\u0DAB\u0DBA \u0D9A\u0DBB \u0DB1\u0DD0',
+    s3:['\u0D94\u0DBA\u0DCF\u0D9C\u0DDA special day \u0D91\u0D9A\u0DA7 \u0DB8\u0DDC\u0DB1\u0DC0\u0DAF plan \u0D9A\u0DBB\u0DB1\u0DCAනේ? \ud83c\udf38','\u0DC4\u0DD2\u0DAD\u0DCF\u0D9C\u0DB1 \u0D89\u0DB1්න \u0D94\u0D9A\u0DCA\u0D9A\u0DDC\u0DB8 \u0DAD\u0DDDරන්න!'],
+    ev:{wedding:'Wedding',homecoming:'Homecoming',goingAway:'Going Away',engagement:'Engagement'},
+    s4:'\u0D94\u0DBA\u0DCF\u0DC0 call \u0D9A\u0DBB\u0DB1\u0DCAන \u0DC4\u0DDDදම \u0DC0\u0DDA\u0DBD\u0DCF\u0DC0 \u0DB8\u0DDC\u0D9A\u0D9A්ද? \ud83d\udcde',
+    bands:{morning:'\u0D8B\u0DAF\u0DDA (9\u201312)',afternoon:'\u0DAF\u0DC0\u0DBD් (12\u20134)',evening:'\u0DC4\u0DC0\u0DC3 (4\u20138)',any:'\u0D94\u0DB1\u0DD1\u0DB8 \u0DC0\u0DDA\u0DBD\u0DCF\u0DC0\u0D9A',exact:'\u0DC0\u0DDA\u0DBD\u0DCF\u0DC0\u0D9A් \u0DAD\u0DDDරන්න'},
+    s5:'\u0D94\u0D9A\u0DCAකොම \u0D87\u0DC4\u0DD4\u0DC0\u0DCF \u0DB1\u0DB8 \u0D87\u0DC4\u0DD4\u0DC0\u0DDA \u0DB1\u0DD0\u0DB1, \u0DB1\u0DB8 \u0DB8\u0DDC\u0D9A\u0DAF \u0D94\u0DBA\u0DCF\u0D9C\u0DDA? \ud83d\udc51',
+    s5ph:'\u0D94\u0DB6\u0DDA \u0DB1\u0DB8',
+    cont:'\u0D89\u0DAF\u0DD2\u0DBB\u0DD2\u0DBA\u0DA7',
+    sending:'\u0D94\u0DBA\u0DCF\u0D9C\u0DDA details save \u0D9A\u0DBBනවා\u2026',
+    doneH:'\u0DB6\u0DDC\u0DC4\u0DDC\u0DB8 \u0DC3්\u0DAD\u0DD6\u0DAD\u0DD2\u0DBA ', doneHx:'! \ud83d\udc8d\u2728',
+    doneP:'\u0D94\u0DBA\u0DCF\u0D9C\u0DDA details \u0D85\u0DB4\u0DD2\u0DA7 \u0DBD\u0DD0\u0DB6\u0DD4\u0DAB\u0DCF. \u0D85\u0DB4\u0DDA team \u0D91\u0D9A\u0DD9\u0DB1් \u0D9A\u0DD9\u0DB1\u0D9A් {t} \u0DC0\u0DDA\u0DBD\u0DCF\u0DC0\u0DA7 \u0D94\u0DBA\u0DCF\u0DA7 call \u0D9A\u0DBBලා \u0D94\u0DBA\u0DCF\u0D9C\u0DDA big day \u0D91\u0D9A \u0D9C\u0DD0\u0DB1 \u0D9A\u0DAD\u0DCF \u0D9A\u0DBBගනීවි!',
+    doneWhen:'\u0D85\u0DB4\u0DD2 call \u0D9A\u0DBBන්නේ: ', quote:'Every queen deserves to be seen \ud83d\udc51'
+  },
+  sg:{
+    name:'Singlish',
+    s1:'Oyawa sambandha karaganna puluwan number eka mokakda? \ud83d\udcde WhatsApp unath kamak naa!',
+    s1ph:'07X XXX XXXX',
+    s1err:'Ee number eka harita penne na \u2014 ayeth try karannada?',
+    s2:['Oyage function eka ganna hitan inne kavadada? \ud83d\udc8d','Confirm natte kamak naa, daḷa vashayen kiyanna!'],
+    s2skip:'Thawama decide karala na',
+    s3:['Oyage special day ekata monawada plan karanne? \ud83c\udf38','Hitagana inna okkoma thoranna!'],
+    ev:{wedding:'Wedding',homecoming:'Homecoming',goingAway:'Going Away',engagement:'Engagement'},
+    s4:'Oyawa call karanna hodama welawa mokakda? \ud83d\udcde',
+    bands:{morning:'Ude (9\u201312)',afternoon:'Dawal (12\u20134)',evening:'Hawasa (4\u20138)',any:'Mona welawaka hari',exact:'Welawak thoranna'},
+    s5:'Okkoma ahuwa nama ahuwe naane, nama mokada oyage? \ud83d\udc51',
+    s5ph:'Oyage nama',
+    cont:'Continue',
+    sending:'Oyage details save karanawa\u2026',
+    doneH:'Bohoma stuthi ', doneHx:'! \ud83d\udc8d\u2728',
+    doneP:'Oyage details apita læbuna. Ape team eken kenek {t} welawata oyata call karala oyage big day eka gana katha karaganawi!',
+    doneWhen:'Api call karanne: ', quote:'Every queen deserves to be seen \ud83d\udc51'
+  }
+};
+
+var S = { lang:null, data:{ phone:'', weddingDate:'', events:{}, band:'', exactTime:'', name:'' } };
+var chat = document.getElementById('chat');
+var foot = document.getElementById('foot');
+
+function el(tag,cls,html){ var e=document.createElement(tag); if(cls)e.className=cls; if(html!=null)e.innerHTML=html; return e; }
+function scrollDown(){ setTimeout(function(){ chat.scrollTop = chat.scrollHeight; }, 40); }
+function nowTime(){ var d=new Date(); var h=d.getHours(); var m=d.getMinutes(); var ap=h>=12?'PM':'AM'; var hh=h%12; if(hh===0)hh=12; return hh+':'+(m<10?'0':'')+m+' '+ap; }
+
+function botSay(lines, cb){
+  var trow = el('div','row left'); var t = el('div','typing','<span></span><span></span><span></span>');
+  trow.appendChild(t); chat.appendChild(trow); scrollDown();
+  setTimeout(function(){
+    chat.removeChild(trow);
+    var arr = Array.isArray(lines) ? lines : [lines];
+    var inner;
+    if(arr.length>1){ inner = '<span class="lead-em">'+arr[0]+'</span>'+arr.slice(1).join('<br/>'); }
+    else { inner = arr[0]; }
+    var row = el('div','row left');
+    var b = el('div','bub bot', inner + '<div class="meta">'+nowTime()+'</div>');
+    row.appendChild(b); chat.appendChild(row); scrollDown();
+    if(cb) setTimeout(cb, 240);
+  }, 560);
+}
+function userEcho(text){
+  var row = el('div','row right');
+  var b = el('div','bub usr', text + '<div class="meta">'+nowTime()+' <span class="tick">\u2713\u2713</span></div>');
+  row.appendChild(b); chat.appendChild(row); scrollDown();
+}
+function clearFoot(){ foot.innerHTML=''; }
+
+function normPhone(raw){
+  if(!raw) return '';
+  var digits = String(raw).replace(/\D/g,'');
+  if(!digits) return '';
+  if(digits.length>=11 && digits[0]!=='0') return digits;
+  if(digits[0]==='0') return '94'+digits.slice(1);
+  if(digits.length===9) return '94'+digits;
+  return digits;
+}
+function validPhone(raw){ var n=normPhone(raw); return n.length>=11 && n.slice(0,2)==='94'; }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function sendBtn(){ return el('button','send','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>'); }
+function fmtDate(iso){ try{ return new Date(iso+'T00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }catch(e){ return iso; } }
+function fmtTime(hhmm){ try{ var p=hhmm.split(':'); var h=parseInt(p[0]); var m=p[1]; var ap=h>=12?'PM':'AM'; var hh=h%12; if(hh===0)hh=12; return hh+':'+m+' '+ap; }catch(e){ return hhmm; } }
+
+/* exact-time -> next occurrence of that time (today if still ahead, else tomorrow) */
+function exactToISO(hhmm){
+  var p=hhmm.split(':'); var d=new Date(); d.setHours(parseInt(p[0]),parseInt(p[1]||0),0,0);
+  if(d.getTime() <= Date.now()) d.setDate(d.getDate()+1);
+  return d.toISOString();
+}
+/* band -> concrete time */
+function bandToISO(band){
+  var hourMap = { morning:9, afternoon:13, evening:16, any:10 };
+  var h = hourMap[band]!=null ? hourMap[band] : 10;
+  var d = new Date();
+  if(d.getHours() >= h){ d.setDate(d.getDate()+1); }
+  d.setHours(h,0,0,0);
+  return d.toISOString();
+}
+
+/* ---------------- FLOW ---------------- */
+function start(){
+  botSay(['Every queen deserves to be seen. \ud83d\udc51','Please select your language.','\u0DC3\u0DD2\u0D82\u0DC4\u0DBD\u0DD9\u0DB1\u0DCA \u0D9A\u0DAD\u0DCF \u0D9A\u0DBBමු \ud83d\ude4f'], function(){
+    clearFoot();
+    var box = el('div','chips');
+    ['en','si','sg'].forEach(function(code){
+      var b = el('button','chip lang', L[code].name);
+      b.onclick = function(){ pickLang(code); };
+      box.appendChild(b);
+    });
+    foot.appendChild(box);
+  });
+}
+function pickLang(code){
+  S.lang = code; userEcho(L[code].name); clearFoot(); askPhone();
+}
+/* Step 1 — phone */
+function askPhone(){
+  var t = L[S.lang];
+  botSay(t.s1, function(){
+    clearFoot();
+    var wrap = el('div','field');
+    var inp = el('input'); inp.type='tel'; inp.placeholder=t.s1ph; inp.autocomplete='tel';
+    var btn = sendBtn(); var errEl=null;
+    function go(){
+      var v=inp.value.trim();
+      if(!validPhone(v)){ if(!errEl){ errEl=el('div','err',t.s1err); foot.appendChild(errEl);} inp.focus(); return; }
+      S.data.phone = normPhone(v); userEcho(v); clearFoot(); askDate();
+    }
+    btn.onclick=go; inp.addEventListener('keydown',function(e){ if(e.key==='Enter') go(); });
+    wrap.appendChild(inp); wrap.appendChild(btn); foot.appendChild(wrap); inp.focus();
+  });
+}
+/* Step 2 — date */
+function askDate(){
+  var t = L[S.lang];
+  botSay(t.s2, function(){
+    clearFoot();
+    var wrap = el('div','field');
+    var inp = el('input'); inp.type='date';
+    var today = new Date().toISOString().slice(0,10); inp.min=today; inp.value=today;
+    var btn = sendBtn();
+    btn.onclick=function(){ var v=inp.value; if(!v){ inp.focus(); return; } S.data.weddingDate=v; userEcho(fmtDate(v)); clearFoot(); askEvents(); };
+    wrap.appendChild(inp); wrap.appendChild(btn); foot.appendChild(wrap);
+  });
+}
+/* Step 3 — events (multi-select) */
+function askEvents(){
+  var t = L[S.lang];
+  botSay(t.s3, function(){
+    clearFoot();
+    var picked={};
+    var box = el('div','chips');
+    var emoji = {wedding:'\ud83d\udc92',homecoming:'\ud83c\udfe0',goingAway:'\u2708\ufe0f',engagement:'\ud83d\udc8d'};
+    ['wedding','homecoming','goingAway','engagement'].forEach(function(k){
+      var b = el('button','chip','<span class="em">'+emoji[k]+'</span>'+t.ev[k]);
+      b.onclick=function(){
+        picked[k]=!picked[k]; b.classList.toggle('sel',!!picked[k]);
+        var any=false; for(var p in picked){ if(picked[p])any=true; }
+        contBtn.style.display = any?'block':'none';
+      };
+      box.appendChild(b);
+    });
+    foot.appendChild(box);
+    var contBtn = el('button','cta navy',t.cont); contBtn.style.display='none'; contBtn.style.marginTop='10px';
+    contBtn.onclick=function(){
+      S.data.events=picked;
+      var labels=[]; for(var p in picked){ if(picked[p]) labels.push(t.ev[p]); }
+      userEcho(labels.join(' \u00b7 ')); clearFoot(); askBand();
+    };
+    foot.appendChild(contBtn);
+  });
+}
+/* Step 4 — call time */
+function askBand(){
+  var t = L[S.lang];
+  botSay(t.s4, function(){
+    clearFoot();
+    var box = el('div','chips');
+    var emoji = {morning:'\ud83c\udf05',afternoon:'\u2600\ufe0f',evening:'\ud83c\udf06',any:'\ud83d\udd50',exact:'\ud83d\udd50'};
+    ['morning','afternoon','evening','any','exact'].forEach(function(k){
+      var b = el('button','chip','<span class="em">'+emoji[k]+'</span>'+t.bands[k]);
+      b.onclick=function(){
+        if(k==='exact'){ openExact(); return; }
+        S.data.band=k; S.data.exactTime=''; userEcho(t.bands[k]); clearFoot(); askName();
+      };
+      box.appendChild(b);
+    });
+    foot.appendChild(box);
+  });
+}
+function openExact(){
+  var t = L[S.lang];
+  clearFoot();
+  var wrap = el('div','field');
+  var inp = el('input'); inp.type='time'; inp.value='10:00';
+  var btn = sendBtn();
+  btn.onclick=function(){
+    var v=inp.value; if(!v){ inp.focus(); return; }
+    S.data.band='exact'; S.data.exactTime=v; userEcho(fmtTime(v)); clearFoot(); askName();
+  };
+  wrap.appendChild(inp); wrap.appendChild(btn); foot.appendChild(wrap);
+}
+/* Step 5 — name */
+function askName(){
+  var t = L[S.lang];
+  botSay(t.s5, function(){
+    clearFoot();
+    var wrap = el('div','field');
+    var inp = el('input'); inp.type='text'; inp.placeholder=t.s5ph; inp.autocomplete='name';
+    var btn = sendBtn();
+    function go(){ var v=inp.value.trim(); if(!v){ inp.focus(); return; } S.data.name=v; userEcho(v); clearFoot(); submitLead(); }
+    btn.onclick=go; inp.addEventListener('keydown',function(e){ if(e.key==='Enter') go(); });
+    wrap.appendChild(inp); wrap.appendChild(btn); foot.appendChild(wrap); inp.focus();
+  });
+}
+/* Step 6 — submit + close */
+function submitLead(){
+  var t = L[S.lang];
+  botSay(t.sending); clearFoot();
+  var nowIso=new Date().toISOString();
+  var langName={en:'English',si:'Sinhala',sg:'Singlish'}[S.lang];
+
+  /* compute call-time label (EN for notes) + nextReminderAt */
+  var bandEN, whenLabel, nextReminderAt;
+  if(S.data.band==='exact'){
+    bandEN='Exact time '+fmtTime(S.data.exactTime);
+    whenLabel=fmtTime(S.data.exactTime);
+    nextReminderAt=exactToISO(S.data.exactTime);
+  } else {
+    bandEN=L.en.bands[S.data.band];
+    whenLabel=t.bands[S.data.band];
+    nextReminderAt=bandToISO(S.data.band);
+  }
+
+  var events={};
+  if(S.data.events.wedding){ events.wedding={enabled:true,date:S.data.weddingDate||''}; }
+  if(S.data.events.homecoming){ events.homecoming={enabled:true}; }
+  if(S.data.events.goingAway){ events.goingAway={enabled:true,date:S.data.weddingDate||''}; }
+  /* engagement: forward-compatible — CRM has no engagement event yet, so write the
+     flag AND surface it in notes so nothing is lost until the CRM is updated */
+  var engNote='';
+  if(S.data.events.engagement){ events.engagement={enabled:true,date:S.data.weddingDate||''}; engNote=' Interested in ENGAGEMENT styling (not yet a CRM event type).'; }
+
+  var attId='att-'+uid(); var brideId='bride-'+uid();
+  var record={
+    id:brideId, name:S.data.name, phone:S.data.phone, email:'',
+    source:LEAD_SOURCE, stage:1, confirmed:false, cancelled:false, lost:false,
+    events:events, weddingDate:S.data.weddingDate||'',
+    notes:'Self-service lead via chatbot. Preferred call time: '+bandEN+'. Language: '+langName+'.'+engNote,
+    nextReminderAt:nextReminderAt, remindersStopped:false,
+    contactAttempts:{}, createdAt:nowIso, lastActivity:nowIso,
+    quotes:{}, invoices:{}, appointments:{}, notesLog:{}, documents:{}, _history:{}
+  };
+  record.contactAttempts[attId]={ id:attId, at:nowIso, outcome:'callback_later',
+    note:'Customer requested callback ('+bandEN+') via website chatbot. Language: '+langName+'.'+engNote,
+    by:'self-service', channel:'whatsapp' };
+  record._history['h-'+uid()]={ at:nowIso, action:'contact-attempt', by:'self-service',
+    details:{ outcome:'callback_later', source:LEAD_SOURCE } };
+  /* intake markers — consumed by the CRM "New Enquiries" accept-UI (separate session) */
+  record.intake = true;
+  record.intakeAt = nowIso;
+
+  _authReady.then(function(tok){
+    var url = FB + INTAKE_PATH + '/' + brideId + '.json' + (tok ? ('?auth=' + tok) : '');
+    return fetch(url,{ method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(record) });
+  })
+    .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+    .then(function(){ showDone(whenLabel); })
+    .catch(function(e){ console.error('Lead save failed:',e); showDone(whenLabel); });
+}
+function showDone(whenLabel){
+  var t = L[S.lang];
+  var shell=document.querySelector('.shell');
+  document.querySelector('.body').style.display='none';
+  foot.style.display='none';
+  var dw=el('div','done-wrap');
+  dw.appendChild(el('div','crest','\ud83d\udc51'));
+  dw.appendChild(el('h2',null,t.doneH+S.data.name+t.doneHx));
+  dw.appendChild(el('p',null,t.doneP.replace('{t}',whenLabel)));
+  dw.appendChild(el('div','when',t.doneWhen+whenLabel));
+  dw.appendChild(el('div','quote','\u201C'+t.quote+'\u201D'));
+  shell.appendChild(dw);
+}
+start();
+</script>
+</body>
+</html>
