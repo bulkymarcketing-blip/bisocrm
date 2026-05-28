@@ -381,7 +381,7 @@ const FB='https://biso-crm-default-rtdb.asia-southeast1.firebasedatabase.app';
 // Login is always required. Every DB call includes the user's ID token, and the
 // Realtime Database security rules require auth != null (locked down in Phase 1C).
 var _FBCFG={apiKey:"AIzaSyD67tAE_gTUqOsJWCJ07VH2e4drIvYGhvA",authDomain:"biso-crm.firebaseapp.com",databaseURL:"https://biso-crm-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"biso-crm",storageBucket:"biso-crm.firebasestorage.app",messagingSenderId:"719449210972",appId:"1:719449210972:web:065afbef711c056f94a699"};
-window._auth={enabled:false,ready:false,user:null,role:'owner'};
+window._auth={enabled:false,ready:false,user:null,role:'owner',roleResolved:false};
 function authIsOn(){return !!window._auth.enabled;}
 async function authToken(){
   // Returns ID token string when auth is on and user is logged in, else null.
@@ -825,6 +825,7 @@ function canViewPage(v){return isOwner()||!RESTRICTED_PAGES[v];}
 async function loadRole(){
   if(!window._auth||!window._auth.enabled||!window._auth.user){
     window._auth&&(window._auth.role='owner');
+    window._auth&&(window._auth.roleResolved=true);
     return;
   }
   var uid=window._auth.user.uid;
@@ -835,25 +836,31 @@ async function loadRole(){
     if(existing&&typeof existing==='string'){
       window._auth.role=existing==='owner'?'owner':'manager';
       window._auth.name='';
+      window._auth.roleResolved=true;
       console.log('[role] resolved to:',window._auth.role,'(legacy string)');
       return;
     }
     if(existing&&existing.role){
       window._auth.role=existing.role==='owner'?'owner':'manager';
       window._auth.name=existing.name||'';
+      window._auth.roleResolved=true;
       console.log('[role] resolved to:',window._auth.role);
       return;
     }
     // Phase 1C: no auto-bootstrap. Roles are seeded manually in Firebase Console.
     // A logged-in user with no role record defaults to manager (operational access only).
+    // This is a CONFIRMED read (record genuinely absent), so it counts as resolved.
     window._auth.role='manager';
     window._auth.name='';
+    window._auth.roleResolved=true;
     console.log('[role] No role record for uid, defaulting to manager:',window._auth.user.email);
   }catch(e){
-    // On error, default to manager (safe). User can still log in but with limited access.
-    console.error('[role] loadRole failed, defaulting to manager:',e.message);
+    // On error we DON'T know the role. Use manager for safe gating but leave
+    // roleResolved=false so startAfterAuth retries instead of locking it in.
+    console.error('[role] loadRole failed (will retry):',e.message);
     window._auth.role='manager';
     window._auth.name='';
+    window._auth.roleResolved=false;
     throw e; // propagate so startAfterAuth knows it failed
   }
 }
@@ -6543,22 +6550,54 @@ async function startAfterAuth(){
   // Show user chip immediately (with default role) so it's never missing even if loadRole hangs
   updateAuthUI();
   try{
-    // Cap loadRole at 5s — if it hangs we proceed with safe default
+    // Cap loadRole at 12s — mobile first-calls after wake/token-refresh can be slow.
     await Promise.race([
       loadRole(),
-      new Promise(function(_,rej){setTimeout(function(){rej(new Error('loadRole timeout'));},5000);})
+      new Promise(function(_,rej){setTimeout(function(){rej(new Error('loadRole timeout'));},12000);})
     ]);
   }catch(e){
-    console.error('[auth] loadRole failed or timed out:',e.message,'\u2014 defaulting to manager');
-    if(window._auth)window._auth.role='manager';
+    // Do NOT lock in 'manager' here. roleResolved stays false; we retry below
+    // once loadData proves the network is healthy. This prevents the owner from
+    // being silently shown the manager view on a slow/returning session.
+    console.error('[auth] loadRole failed or timed out (will retry after data):',e.message);
   }
-  // Re-update UI now that we know the role (may change the avatar border color)
+  // Re-update UI now that we (may) know the role
   updateAuthUI();
   await loadData();
+  // If the role never truly resolved, retry now — the network is clearly up
+  // (loadData succeeded). Rebuild nav + re-render if the role actually changes.
+  ensureRoleResolved();
   // Load approval requests (Phase 1B-2). Best-effort - don't block on failure.
   try{await loadRequests();}catch(e){console.error('[req] initial load failed:',e.message);}
   setTimeout(function(){ checkAutoLost().catch(function(e){console.error('autoLost:',e);}); }, 1500);
   setTimeout(function(){ checkNoShows().catch(function(e){console.error('noShows:',e);}); }, 2500);
+}
+// Background retry: if the role wasn't confirmed-read yet, keep trying (network is up
+// by now). On a successful resolve that changes the role, rebuild nav + re-render so
+// the correct pages appear without a manual reload. Bounded to a few attempts.
+function ensureRoleResolved(attempt){
+  attempt=attempt||0;
+  if(!window._auth||!window._auth.enabled||!window._auth.user)return;
+  if(window._auth.roleResolved)return; // already confirmed — nothing to do
+  if(attempt>=4){
+    console.error('[role] still unresolved after retries; staying on safe default (manager)');
+    return;
+  }
+  var before=window._auth.role;
+  loadRole().then(function(){
+    if(window._auth.roleResolved){
+      if(window._auth.role!==before){
+        console.log('[role] retry resolved role change',before,'->',window._auth.role);
+        updateAuthUI();
+        buildNav();
+        render();
+      }
+    }else{
+      setTimeout(function(){ensureRoleResolved(attempt+1);}, 2000);
+    }
+  }).catch(function(){
+    setTimeout(function(){ensureRoleResolved(attempt+1);}, 2000);
+  });
 }
 
 (function(){
