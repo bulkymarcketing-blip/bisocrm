@@ -1,7 +1,15 @@
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover"/>
 <title>Biso CRM</title>
+<!-- PWA / iOS Home Screen install (Phase B) -->
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#1B2B4B"/>
+<link rel="apple-touch-icon" href="apple-touch-icon.png"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Biso CRM"/>
 <!-- Build: 2026-05-25 09:14 v10.4 - if you see old UI, hard refresh (settings > clear browser data) -->
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/css/intlTelInput.min.css">
@@ -10,6 +18,7 @@
 <!-- Firebase Auth SDK (compat) - REQUIRED: login is mandatory (Phase 1C) -->
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{--navy:#1B2B4B;--navy-lt:#243556;--navy-dim:rgba(27,43,75,0.06);--gold:#C9A84C;--gold-lt:#DDB96A;--gold-dim:rgba(201,168,76,0.12);--bg:#F5F6FA;--surf:#FFF;--border:#E4E8F0;--text:#1B2B4B;--text2:#4A5568;--muted:#8896B0;--danger:#E53E3E;--success:#38A169;--warn:#D69E2E;--sh:0 1px 3px rgba(27,43,75,0.08),0 4px 16px rgba(27,43,75,0.06);--sh2:0 4px 24px rgba(27,43,75,0.14)}
@@ -6685,6 +6694,63 @@ function openMyRequests(){
   if(dmf)dmf.innerHTML='<button class="btn btn-ghost" onclick="CM(\u0027detail-modal\u0027)">Close</button>';
   OM('detail-modal');
 }
+/* ===== Push transport (Phase B: service worker + FCM token registration) =====
+   Registers the messaging service worker and mints/stores an FCM token so
+   Phase C's Cloud Functions can deliver lock-screen pushes. Degrades gracefully:
+   if the SW or VAPID key isn't ready, enablePush() (Phase A) just keeps the
+   toggle off with a clear message. */
+
+// Paste the Web Push certificate "Key pair" from Firebase Console →
+// Project settings → Cloud Messaging → Web configuration → Web Push certificates.
+// Until this is filled, push token registration is skipped (in-app feed still works).
+var FCM_VAPID_KEY = "";
+
+window._fcm = { sw: null, messaging: null };
+window._fcmReady = false;
+
+async function initPushTransport(){
+  try{
+    if(!('serviceWorker' in navigator)){console.log('[push] no service worker support');return;}
+    if(typeof firebase==='undefined'||!firebase.messaging){console.log('[push] messaging SDK absent');return;}
+    if(!firebase.messaging.isSupported||!firebase.messaging.isSupported()){
+      console.log('[push] messaging not supported on this browser');return;
+    }
+    var reg=await navigator.serviceWorker.register('firebase-messaging-sw.js');
+    window._fcm.sw=reg;
+    window._fcm.messaging=firebase.messaging();
+    // Foreground messages: app is open → drop into the in-app feed + toast.
+    try{
+      window._fcm.messaging.onMessage(function(payload){
+        var d=(payload&&payload.data)||{};
+        var u=notifUid();
+        if(u){
+          var id=uid();
+          var entry={type:d.type||'push',title:d.title||'Biso CRM',body:d.body||'',brideId:d.brideId||'',read:false,at:new Date().toISOString()};
+          window._notif.items[id]=entry;renderNotifBadge();
+          try{fbP('/notifications/'+u+'/'+id,entry);}catch(e){}
+        }
+        if(d.title)notif(d.title+(d.body?' — '+d.body:''));
+      });
+    }catch(e){console.log('[push] onMessage wire failed:',e.message);}
+    // Ready only when we can actually mint a token (needs the VAPID key).
+    window._fcmReady=!!FCM_VAPID_KEY;
+    console.log('[push] transport ready; token mint '+(window._fcmReady?'ENABLED':'pending VAPID key'));
+  }catch(e){console.log('[push] init failed:',e.message);}
+}
+
+async function registerFcmToken(){
+  if(!window._fcm.messaging||!window._fcm.sw)throw new Error('Push transport not ready');
+  if(!FCM_VAPID_KEY)throw new Error('Push not configured yet');
+  var token=await window._fcm.messaging.getToken({vapidKey:FCM_VAPID_KEY,serviceWorkerRegistration:window._fcm.sw});
+  if(!token)throw new Error('No token returned');
+  var u=notifUid();if(!u)throw new Error('Not signed in');
+  // Store under the user's uid. Key is the token itself (one entry per device).
+  var safe=token.replace(/[.#$\[\]\/]/g,'_');
+  await fbP('/fcmTokens/'+u+'/'+safe,{token:token,ua:(navigator.userAgent||'').slice(0,180),at:new Date().toISOString()});
+  return token;
+}
+
+
 /* ===== Notifications (Phase A: in-app feed + per-user prefs + push scaffolding) =====
    Feed entries and push are both written by Cloud Functions in Phase C.
    This module renders the bell, the feed, and per-user preferences, and holds
@@ -6838,7 +6904,7 @@ function renderNotifPrefs(){
   var p=window._notif.prefs||notifDefaults();
   var owner=(window._auth&&window._auth.role==='owner');
   var h='';
-  h+='<div class="nt-prow"><div class="nt-pl"><div class="nt-pt">Push notifications</div><div class="nt-ps">Lock-screen alerts on this device. Requires adding the CRM to your Home Screen.</div></div>'+prefSwitch('push',p.push)+'</div>';
+  h+='<div class="nt-prow"><div class="nt-pl"><div class="nt-pt">Push notifications</div><div class="nt-ps">Lock-screen alerts. Add the CRM to your Home Screen and open it from that icon first.</div></div>'+prefSwitch('push',p.push)+'</div>';
   h+='<div class="nt-prow"><div class="nt-pl"><div class="nt-pt">New lead alerts</div><div class="nt-ps">When an online enquiry arrives.</div></div>'+prefSwitch('newLead',p.newLead)+'</div>';
   if(owner){
     h+='<div class="nt-prow"><div class="nt-pl"><div class="nt-pt">Appointment reminders</div><div class="nt-ps">Evening before and morning of each appointment.</div></div>'+prefSwitch('apptReminders',p.apptReminders)+'</div>';
@@ -6862,8 +6928,15 @@ async function enablePush(){
   if(!('Notification' in window)){
     notif('This device does not support web notifications.');return false;
   }
+  // Standalone = launched from the Home Screen. iOS only allows push from there.
+  var nav = (typeof navigator!=='undefined') ? navigator : (window.navigator||{});
+  var standalone = (nav.standalone===true) || (window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);
+  if(!standalone){
+    notif('To turn on push, first add the CRM to your Home Screen and open it from that icon.');
+    return false;
+  }
   if(!window._fcmReady||typeof registerFcmToken!=='function'){
-    notif('Push will activate once the app is added to your Home Screen — coming in the next update.');
+    notif('Push isn\u2019t fully switched on yet — it goes live once setup is complete.');
     return false;
   }
   try{
@@ -6920,6 +6993,7 @@ async function startAfterAuth(){
   // Load approval requests (Phase 1B-2). Best-effort - don't block on failure.
   try{await loadRequests();}catch(e){console.error('[req] initial load failed:',e.message);}
   try{startNotifications();}catch(e){console.error('[notif] start failed:',e.message);}
+  try{initPushTransport();}catch(e){console.error('[push] start failed:',e.message);}
   setTimeout(function(){ checkAutoLost().catch(function(e){console.error('autoLost:',e);}); }, 1500);
   setTimeout(function(){ checkNoShows().catch(function(e){console.error('noShows:',e);}); }, 2500);
 }
