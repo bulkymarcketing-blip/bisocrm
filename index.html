@@ -280,6 +280,37 @@ textarea{resize:vertical;min-height:80px}
 .av-menu .av-item .ic{font-size:14px;width:18px;text-align:center;opacity:.7}
 .av-bkdrp{position:fixed;inset:0;background:transparent;z-index:299;display:none}
 .av-bkdrp.show{display:block}
+.nt-bell{display:none;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:var(--bg);color:var(--navy);border:1.5px solid var(--border);cursor:pointer;flex-shrink:0;padding:0;position:relative;transition:transform .15s}
+.nt-bell.show{display:flex}
+.nt-bell:active{transform:scale(0.94)}
+.nt-bell:hover{background:var(--surf)}
+.nt-dot{display:none;position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;line-height:16px;text-align:center;border:2px solid var(--surf);box-sizing:border-box}
+.nt-dot.show{display:block}
+.nt-panel{position:absolute;top:54px;right:14px;background:var(--surf);border:1px solid var(--border);border-radius:10px;box-shadow:var(--sh2);width:320px;max-width:calc(100vw - 28px);z-index:300;display:none;overflow:hidden}
+.nt-panel.show{display:block;animation:avFade .18s ease-out}
+.nt-hd{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,var(--navy) 0%,var(--navy-lt) 100%);color:#fff}
+.nt-title{flex:1;font-family:'Cinzel',serif;font-size:13px;font-weight:600;letter-spacing:.5px}
+.nt-act{background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:10.5px;font-weight:600;padding:4px 8px;border-radius:6px;cursor:pointer;font-family:'Inter',sans-serif}
+.nt-gear{background:none;border:none;color:#fff;font-size:16px;cursor:pointer;padding:2px 4px;line-height:1;opacity:.85}
+.nt-list{max-height:60vh;overflow-y:auto}
+.nt-item{display:flex;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;background:none;border-left:3px solid transparent;width:100%;text-align:left;font-family:'Inter',sans-serif}
+.nt-item:hover,.nt-item:active{background:var(--bg)}
+.nt-item.unread{background:rgba(201,168,76,0.07);border-left-color:var(--gold)}
+.nt-item .nt-ic{font-size:16px;flex-shrink:0;width:22px;text-align:center}
+.nt-item .nt-bd{flex:1;min-width:0}
+.nt-item .nt-t{display:block;font-size:12.5px;font-weight:600;color:var(--navy);line-height:1.3}
+.nt-item .nt-m{display:block;font-size:12px;color:var(--text);margin-top:2px;line-height:1.35;word-break:break-word}
+.nt-item .nt-tm{display:block;font-size:10.5px;color:var(--muted);margin-top:3px}
+.nt-empty{padding:36px 16px;text-align:center;color:var(--muted);font-size:12.5px}
+.nt-prow{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--border)}
+.nt-prow .nt-pl{flex:1;min-width:0}
+.nt-prow .nt-pt{font-size:13px;font-weight:600;color:var(--text)}
+.nt-prow .nt-ps{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.35}
+.nt-sw{position:relative;width:42px;height:24px;flex-shrink:0;border-radius:12px;background:var(--border);border:none;cursor:pointer;transition:background .18s;padding:0}
+.nt-sw.on{background:var(--gold)}
+.nt-sw::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .18s;box-shadow:0 1px 3px rgba(0,0,0,0.25)}
+.nt-sw.on::after{transform:translateX(18px)}
+.nt-pbtn{display:block;width:calc(100% - 32px);margin:12px 16px;padding:10px;border-radius:8px;border:1.5px solid var(--border);background:none;color:var(--navy);font-size:12.5px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
 .notif{position:fixed;bottom:20px;right:20px;background:var(--navy);border-radius:10px;padding:12px 16px;font-size:13px;color:#fff;z-index:9999;transform:translateY(16px);opacity:0;transition:all .3s;pointer-events:none;max-width:280px;box-shadow:var(--sh2)}
 .notif.show{transform:translateY(0);opacity:1}
 /* When a modal is open on mobile, lift the notif above the modal footer so it doesn't cover the buttons */
@@ -346,12 +377,22 @@ textarea{resize:vertical;min-height:80px}
 <div id="APP" style="display:none"><div class="app">
 <aside class="sidebar" id="SB"><div class="brand"><img class="brand-logo" src="logo.png" alt="" onerror="this.style.display='none'"/><div><div class="brand-name">BISO</div><div class="brand-sub">Bridal CRM</div></div></div><nav class="nav" id="SN"></nav><div class="sidebar-foot"><div class="user-chip" id="UC"><span class="em" id="UC-em"></span><span class="rl" id="UC-rl"></span></div><div class="sync-badge"><div class="sync-dot"></div><div class="sync-txt" id="ST">Connecting…</div></div><button class="logout-btn" id="LO" onclick="doLogout()">Sign Out</button></div></aside>
 <div class="mov" id="MOV" onclick="closeSB()"></div>
-<div class="main"><div class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="hamburger" onclick="openSB()"><svg width="20" height="16" viewBox="0 0 20 16" fill="none"><rect width="20" height="2" rx="1" fill="currentColor"/><rect y="7" width="20" height="2" rx="1" fill="currentColor"/><rect y="14" width="20" height="2" rx="1" fill="currentColor"/></svg></button><div class="page-title" id="PT">Lead Pipeline</div></div><div class="topbar-right"><div class="swrap"><span class="sicon">⌕</span><input type="text" class="sbox" id="SI" placeholder="Search…" oninput="doSearch()"/></div><button id="MSB" style="display:none;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:8px;cursor:pointer" onclick="toggleMSB()">⌕</button><button class="av-btn" id="AV" onclick="toggleAvMenu(event)" aria-label="Account"><span id="AV-in">··</span><span class="av-dot" id="AV-dot"></span></button><button class="btn btn-primary" id="AB" onclick="handleAdd()">+ Add</button></div></div>
+<div class="main"><div class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="hamburger" onclick="openSB()"><svg width="20" height="16" viewBox="0 0 20 16" fill="none"><rect width="20" height="2" rx="1" fill="currentColor"/><rect y="7" width="20" height="2" rx="1" fill="currentColor"/><rect y="14" width="20" height="2" rx="1" fill="currentColor"/></svg></button><div class="page-title" id="PT">Lead Pipeline</div></div><div class="topbar-right"><div class="swrap"><span class="sicon">⌕</span><input type="text" class="sbox" id="SI" placeholder="Search…" oninput="doSearch()"/></div><button id="MSB" style="display:none;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:8px;cursor:pointer" onclick="toggleMSB()">⌕</button><button class="nt-bell" id="NT-bell" onclick="toggleNotifPanel(event)" aria-label="Notifications"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="nt-dot" id="NT-dot"></span></button><button class="av-btn" id="AV" onclick="toggleAvMenu(event)" aria-label="Account"><span id="AV-in">··</span><span class="av-dot" id="AV-dot"></span></button><button class="btn btn-primary" id="AB" onclick="handleAdd()">+ Add</button></div></div>
 <div class="av-bkdrp" id="AV-bk" onclick="closeAvMenu()"></div>
 <div class="av-menu" id="AV-m" onclick="event.stopPropagation()">
   <div class="av-info"><div class="em" id="AV-em"></div><div class="rl" id="AV-rl"></div></div>
   <button class="av-item" id="AV-myreq" onclick="closeAvMenu();openMyRequests()" style="display:none"><span class="ic">\u2691</span>My Requests <span id="AV-myreq-c" style="margin-left:auto;background:var(--gold);color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:8px"></span></button>
   <button class="av-item dgr" onclick="closeAvMenu();doLogout()"><span class="ic">⏻</span>Sign Out</button>
+</div>
+<div class="av-bkdrp" id="NT-bk" onclick="closeNotifPanel()"></div>
+<div class="nt-panel" id="NT-m" onclick="event.stopPropagation()">
+  <div class="nt-hd"><span class="nt-title">Notifications</span><button class="nt-act" onclick="markAllNotifsRead()">Mark all read</button><button class="nt-gear" onclick="openNotifPrefs()" aria-label="Notification settings">⚙</button></div>
+  <div class="nt-list" id="NT-list"></div>
+</div>
+<div class="av-bkdrp" id="NTP-bk" onclick="closeNotifPrefs()"></div>
+<div class="nt-panel" id="NTP-m" onclick="event.stopPropagation()">
+  <div class="nt-hd"><span class="nt-title">Notification Settings</span><button class="nt-gear" onclick="closeNotifPrefs()" aria-label="Close">×</button></div>
+  <div id="NTP-body"></div>
 </div>
 <div id="MSBar" style="display:none;padding:10px 14px;background:var(--surf);border-bottom:1.5px solid var(--border)"><div class="swrap" style="width:100%"><span class="sicon">⌕</span><input type="text" class="sbox" id="MSI" placeholder="Search…" oninput="document.getElementById('SI').value=this.value;doSearch()" style="width:100%"/></div></div><div class="content" id="MC"></div></div>
 <nav class="mnav"><div class="mni" id="MN"></div></nav>
@@ -750,9 +791,10 @@ async function loadData(){
         try{await loadRequests();}catch(re){}
         // Refresh chatbot intake queue too. Non-fatal.
         try{await loadIntake();}catch(ie){}
-        // Don't re-render if a modal is open (the user is interacting)
+        // Don't re-render if a modal is open (the user is interacting),
+        // or if on the Settings page (user may be mid-edit; settings show no live bride data)
         var anyOpen = document.querySelector('.overlay.show, .overlay[style*="display: flex"], .overlay[style*="display:flex"]');
-        if(!anyOpen)render();
+        if(!anyOpen && view!=='settings')render();
         // Update avatar red-dot regardless
         updateAvatarDot();
       }catch(e){}
@@ -1290,7 +1332,9 @@ function dBadge(d){if(d===null)return '';var c=d<30?'ds':d<90?'dn':'dok';return 
 function gSet(){try{return JSON.parse(localStorage.getItem('biso_s')||'{}');}catch(e){return {};}}
 function sSet(s){localStorage.setItem('biso_s',JSON.stringify(s));}
 function defNotes(){return gSet().defaultNotes||'An additional Venue Dressing Fee will apply if the bride wishes to be dressed at her chosen location.\n\nBespeaking fee of Rs 50,000 is due upon reception of the quotation. It is non-refundable and deducted from the final bill.\n\nFinal payment is due on the day of service.';}
-function svcP(desc){var lp=gSet().linePrices||{};if(lp[desc]>0)return lp[desc];var s=SVCS.find(function(x){return x.d===desc;});return s?s.b:0;}
+function getCustomSvcs(){var c=gSet().customServices;return Array.isArray(c)?c:[];}
+function allSvcs(){return SVCS.concat(getCustomSvcs().map(function(cs){return {c:cs.c||'Custom',d:cs.d,b:Number(cs.b)||0,aT:false,aA:false,custom:true};}));}
+function svcP(desc){var lp=gSet().linePrices||{};if(lp[desc]>0)return lp[desc];var s=allSvcs().find(function(x){return x.d===desc;});return s?s.b:0;}
 function smartP(desc){
   var sp=svcP(desc);if(sp>0)return sp;
   var hB=QB.items.some(function(i){return i.cat==='Bridal';});
@@ -1299,7 +1343,7 @@ function smartP(desc){
   if(desc==='Homecoming')return hB?95000:125000;
   if(desc==='Going Away')return(hB&&hH&&bmC>=2)?60000:65000;
   if(desc==='Bridesmaid')return(hB&&hH)?35000:38000;
-  var s=SVCS.find(function(x){return x.d===desc;});return s?s.b:0;
+  var s=allSvcs().find(function(x){return x.d===desc;});return s?s.b:0;
 }
 function applyDisc(){
   QB.items=QB.items.filter(function(i){return !i.auto;});
@@ -2360,7 +2404,8 @@ function OS(t){
 function CS(t){document.getElementById(t+'-ov').classList.remove('open');document.getElementById(t+'-sheet').classList.remove('open');}
 function filterSvcs(sq){
   var s=sq.toLowerCase().trim();
-  var f=s?SVCS.filter(function(sv){return sv.d.toLowerCase().includes(s)||sv.c.toLowerCase().includes(s);}):SVCS;
+  var src=allSvcs();
+  var f=s?src.filter(function(sv){return sv.d.toLowerCase().includes(s)||sv.c.toLowerCase().includes(s);}):src;
   var h='';
   f.forEach(function(sv){
     var lp=svcP(sv.d);
@@ -4251,7 +4296,11 @@ function buildQuoteSection(){
     var linkBadge = it.linkedTo ? '<span style="font-size:9px;color:var(--gold);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-left:6px">⚓ linked</span>' : '';
     rowsHtml += '<div style="background:'+(isDiscount?'#FEF7E5':'var(--bg)')+';border:1.5px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px">';
     rowsHtml += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">';
-    rowsHtml += '<div style="flex:1;font-size:13px;font-weight:600;color:'+(isDiscount?'var(--gold)':'var(--navy)')+'">'+escHtml(it.desc)+linkBadge+'</div>';
+    if(it.custom && !it.linkedTo){
+      rowsHtml += '<input type="text" value="'+escHtml(it.desc)+'" onchange="qiUpdate(\''+k+'\',\'desc\',this.value)" placeholder="Service description" style="flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--navy);padding:6px 8px;border:1.5px solid var(--border);border-radius:6px"/>';
+    } else {
+      rowsHtml += '<div style="flex:1;font-size:13px;font-weight:600;color:'+(isDiscount?'var(--gold)':'var(--navy)')+'">'+escHtml(it.desc)+linkBadge+'</div>';
+    }
     rowsHtml += '<button class="btn btn-ghost btn-xs" onclick="qiDelete(\''+k+'\')" style="color:var(--danger);padding:4px 8px">✕</button>';
     rowsHtml += '</div>';
     rowsHtml += '<div style="display:flex;gap:6px;align-items:flex-end">';
@@ -4261,7 +4310,10 @@ function buildQuoteSection(){
     rowsHtml += '<div style="flex:1;text-align:right;font-size:13px;font-weight:700;color:'+(line<0?'var(--gold)':'var(--navy)')+';padding-bottom:6px">'+(line<0?'-':'')+'Rs '+Math.abs(Math.round(line)).toLocaleString()+'</div>';
     rowsHtml += '</div></div>';
   });
-  var addCustomBtn = '<button class="btn btn-outline btn-sm" onclick="qiAddCustom()" style="width:100%;margin-top:4px">+ Add custom line</button>';
+  var addCustomBtn = '<div style="margin-top:6px">'
+    +'<input type="text" id="qi-search" placeholder="Search a service, or type a custom name…" oninput="qiSearch(this.value)" onfocus="qiSearch(this.value)" style="width:100%;padding:9px 11px;font-size:13px;border:1.5px solid var(--border);border-radius:8px;box-sizing:border-box"/>'
+    +'<div id="qi-results" style="margin-top:4px"></div>'
+    +'</div>';
   var totalsHtml = '';
   if(keys.length > 0){
     totalsHtml = '<div style="background:var(--navy);color:#fff;border-radius:10px;padding:12px 16px;margin-top:10px;display:flex;align-items:center;justify-content:space-between"><div style="font-size:11px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;opacity:.85">Total</div><div style="font-size:18px;font-weight:700">Rs '+Math.round(subtotal).toLocaleString()+'</div></div>';
@@ -4328,11 +4380,37 @@ async function qiDelete(key){
   }
 }
 
-function qiAddCustom(){
+function qiSearch(qstr){
+  var box=document.getElementById('qi-results');if(!box)return;
+  var s=(qstr||'').toLowerCase().trim();
+  var src=allSvcs();
+  var f=s?src.filter(function(sv){return sv.d.toLowerCase().includes(s)||(sv.c||'').toLowerCase().includes(s);}):src;
+  var h='';
+  f.slice(0,40).forEach(function(sv){
+    var price=svcP(sv.d)||sv.b||0;
+    h+='<div onclick="qiAddCatalog(\''+escAttr(sv.d)+'\','+price+')" style="display:flex;justify-content:space-between;gap:8px;align-items:center;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;margin-bottom:5px;cursor:pointer;background:var(--bg)">'
+      +'<div style="min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escHtml(sv.d)+'</div><div style="font-size:11px;color:var(--muted)">'+escHtml(sv.c||'')+'</div></div>'
+      +'<div style="font-size:12px;font-weight:700;color:var(--navy);white-space:nowrap">'+fR(price)+'</div></div>';
+  });
+  if(s){
+    h+='<div onclick="qiAddCustom('+JSON.stringify(qstr||'').replace(/"/g,'&quot;')+')" style="padding:9px 11px;border:1.5px dashed var(--gold);border-radius:8px;margin-bottom:5px;cursor:pointer"><span style="color:var(--gold);font-weight:600;font-size:13px">+ Add custom line: \u201C'+escHtml(qstr)+'\u201D</span></div>';
+  }
+  if(!h)h='<div style="font-size:12px;color:var(--muted);font-style:italic;padding:6px 4px">No matching services. Type a name to add a custom line.</div>';
+  box.innerHTML=h;
+}
+function qiAddCatalog(desc,price){
   ofMark();
   OF.draft.quoteItems = OF.draft.quoteItems || {};
   var k = 'L-'+Math.random().toString(36).slice(2,9);
-  OF.draft.quoteItems[k] = {key:k, desc:'Custom service', qty:1, unit:0, disc:0, custom:true};
+  OF.draft.quoteItems[k] = {key:k, desc:desc, qty:1, unit:Number(price)||0, disc:0, custom:false};
+  renderOverviewForm();
+}
+function qiAddCustom(name){
+  ofMark();
+  OF.draft.quoteItems = OF.draft.quoteItems || {};
+  var k = 'L-'+Math.random().toString(36).slice(2,9);
+  var desc=(name||'').trim()||'Custom service';
+  OF.draft.quoteItems[k] = {key:k, desc:desc, qty:1, unit:0, disc:0, custom:true};
   renderOverviewForm();
 }
 
@@ -4957,7 +5035,7 @@ function rAnalytics(){
 }
 
 function rSettings(tab){
-  var s=gSet();var at=tab||'invoice';var lp=s.linePrices||{};
+  var s=gSet();var at=tab||window._settingsTab||'invoice';window._settingsTab=at;var lp=s.linePrices||{};
   var pi='';
   SVCS.filter(function(sv){return sv.aA||sv.b>0;}).forEach(function(sv){
     var pid='p-'+sv.d.replace(/[^a-z0-9]/gi,'_');
@@ -4965,6 +5043,21 @@ function rSettings(tab){
   });
   var it='<div class="fi" style="margin-bottom:18px"><label>Default Notes / Terms</label><textarea id="s-notes" style="min-height:130px">'+escHtml(s.defaultNotes||defNotes())+'</textarea></div><div class="fi" style="margin-bottom:18px"><label>Company Logo URL</label><input type="text" id="s-logo" value="'+escHtml(s.logoUrl||'')+'" placeholder="https://... image URL"/></div><button class="btn btn-primary" onclick="saveInvS()">Save Invoice Settings</button>';
   var pt='<div style="margin-bottom:12px;font-size:13px;color:var(--muted)">Override defaults. Leave blank to use default.</div><div style="display:flex;flex-direction:column;gap:8px">'+pi+'</div><button class="btn btn-primary" style="margin-top:14px" onclick="savePriceS()">Save Prices</button>';
+  // Custom services (name + price), added by the owner
+  var csList=getCustomSvcs();
+  var csRows='';
+  csList.forEach(function(cs,idx){
+    csRows+='<div style="display:flex;align-items:center;gap:8px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:6px">'
+      +'<input type="text" value="'+escHtml(cs.d)+'" data-cidx="'+idx+'" class="cs-name" placeholder="Service name" style="flex:1;min-width:0"/>'
+      +'<input type="number" value="'+(Number(cs.b)||0)+'" data-cidx="'+idx+'" class="cs-price" placeholder="Rs" style="width:100px;text-align:right"/>'
+      +'<button class="btn btn-ghost btn-xs" style="color:var(--danger)" onclick="removeCustomSvc('+idx+')">Remove</button>'
+      +'</div>';
+  });
+  pt+='<div style="margin-top:26px;border-top:1px solid var(--border);padding-top:18px"><div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:4px">Your Custom Services</div>'
+    +'<div style="font-size:12px;color:var(--muted);margin-bottom:12px">Extra services you offer. These become searchable line items when building quotes and invoices.</div>'
+    +(csRows||'<div style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:8px">No custom services yet.</div>')
+    +'<div style="display:flex;gap:8px;margin-top:10px"><input type="text" id="newCsName" placeholder="New service name" style="flex:1;min-width:0"/><input type="number" id="newCsPrice" placeholder="Rs" style="width:100px;text-align:right"/><button class="btn btn-outline btn-sm" onclick="addCustomSvc()">+ Add</button></div>'
+    +'<button class="btn btn-primary" style="margin-top:14px" onclick="saveCustomSvcs()">Save Custom Services</button></div>';
   var dt='<div style="background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:10px;padding:18px;margin-bottom:14px"><div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:7px">Backfill Missing Leads</div><div style="font-size:13px;color:var(--text2);margin-bottom:14px">Creates lead records for any customer who has quotes or invoices but no matching lead. Use this if customers have quotes but the pipeline shows empty.</div><button class="btn btn-primary" onclick="backfillLeads()">Backfill Leads from Customers</button></div>';
   // Sources tab
   var srcs=getSources();
@@ -4992,6 +5085,49 @@ function rSettings(tab){
 }
 function saveInvS(){var notes=document.getElementById('s-notes')?document.getElementById('s-notes').value:'';var logo=document.getElementById('s-logo')?document.getElementById('s-logo').value:'';sSet(Object.assign({},gSet(),{defaultNotes:notes,logoUrl:logo}));notif('Saved!');}
 function savePriceS(){var s=gSet();var lp=s.linePrices||{};SVCS.filter(function(sv){return sv.aA||sv.b>0;}).forEach(function(sv){var pid='p-'+sv.d.replace(/[^a-z0-9]/gi,'_');var el=document.getElementById(pid);if(el&&el.value&&parseFloat(el.value)>0)lp[sv.d]=parseFloat(el.value);else delete lp[sv.d];});sSet(Object.assign({},s,{linePrices:lp}));notif('Prices saved!');}
+// --- Custom services (Prices tab) ---
+function readCustomSvcRows(){
+  // Pull any in-progress edits from the rendered rows into the stored list
+  var list=getCustomSvcs().slice();
+  document.querySelectorAll('.cs-name').forEach(function(inp){
+    var i=parseInt(inp.getAttribute('data-cidx'));
+    if(isNaN(i)||!list[i])return;
+    list[i].d=inp.value.trim()||list[i].d;
+  });
+  document.querySelectorAll('.cs-price').forEach(function(inp){
+    var i=parseInt(inp.getAttribute('data-cidx'));
+    if(isNaN(i)||!list[i])return;
+    list[i].b=parseFloat(inp.value)||0;
+  });
+  return list;
+}
+function addCustomSvc(){
+  var ni=document.getElementById('newCsName');var pi2=document.getElementById('newCsPrice');
+  var name=(ni&&ni.value||'').trim();
+  var price=parseFloat(pi2&&pi2.value)||0;
+  if(!name){notif('Enter a service name.');return;}
+  if(price<=0){notif('Enter a price greater than 0.');return;}
+  var list=readCustomSvcRows();
+  if(list.some(function(cs){return cs.d.toLowerCase()===name.toLowerCase();})||SVCS.some(function(sv){return sv.d.toLowerCase()===name.toLowerCase();})){
+    notif('A service with that name already exists.');return;
+  }
+  list.push({d:name,b:price,c:'Custom',key:uid()});
+  sSet(Object.assign({},gSet(),{customServices:list}));
+  if(ni)ni.value='';if(pi2)pi2.value='';
+  rSettings('prices');
+}
+function removeCustomSvc(idx){
+  var list=readCustomSvcRows();
+  if(idx<0||idx>=list.length)return;
+  list.splice(idx,1);
+  sSet(Object.assign({},gSet(),{customServices:list}));
+  rSettings('prices');
+}
+function saveCustomSvcs(){
+  sSet(Object.assign({},gSet(),{customServices:readCustomSvcRows()}));
+  notif('Custom services saved.');
+  rSettings('prices');
+}
 function slugify(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,'').slice(0,30)||'src'+Date.now();}
 var _srcsDraft=null;
 function getDraftSrcs(){if(!_srcsDraft)_srcsDraft=getSources().slice();return _srcsDraft;}
@@ -6419,6 +6555,8 @@ function updateAuthUI(){
       // Tint by role: gold border for owner, navy-dim for manager
       av.style.borderColor=role==='owner'?'var(--gold)':'rgba(255,255,255,0.4)';
     }
+    var _bell=document.getElementById('NT-bell');
+    if(_bell)_bell.classList.add('show');
     // Dropdown content: name as primary line, email as secondary
     var avEm=document.getElementById('AV-em');
     var avRl=document.getElementById('AV-rl');
@@ -6428,7 +6566,12 @@ function updateAuthUI(){
     if(uc)uc.classList.remove('show');
     if(lo)lo.classList.remove('show');
     if(av)av.classList.remove('show');
+    var _bell2=document.getElementById('NT-bell');
+    if(_bell2)_bell2.classList.remove('show');
     closeAvMenu();
+    if(typeof closeNotifPanel==='function')closeNotifPanel();
+    if(typeof closeNotifPrefs==='function')closeNotifPrefs();
+    if(window._notif&&window._notif._iv){clearInterval(window._notif._iv);window._notif._iv=null;}
   }
   // Update red dot and My Requests visibility based on auth + role + requests
   updateAvatarDot();
@@ -6542,6 +6685,213 @@ function openMyRequests(){
   if(dmf)dmf.innerHTML='<button class="btn btn-ghost" onclick="CM(\u0027detail-modal\u0027)">Close</button>';
   OM('detail-modal');
 }
+/* ===== Notifications (Phase A: in-app feed + per-user prefs + push scaffolding) =====
+   Feed entries and push are both written by Cloud Functions in Phase C.
+   This module renders the bell, the feed, and per-user preferences, and holds
+   the token-registration entry point (enablePush) that Phase C will activate. */
+window._notif={items:{},prefs:null,_iv:null};
+function notifUid(){
+  if(!window._auth||!window._auth.enabled||!window._auth.user)return null;
+  return window._auth.user.uid||null;
+}
+function notifDefaults(){
+  var owner=(window._auth&&window._auth.role==='owner');
+  return {push:false,newLead:true,apptReminders:!!owner};
+}
+function notifAgo(iso){
+  if(!iso)return '';
+  var t=new Date(iso).getTime();if(isNaN(t))return '';
+  var s=Math.floor((Date.now()-t)/1000);
+  if(s<60)return 'just now';
+  var m=Math.floor(s/60);if(m<60)return m+'m ago';
+  var h=Math.floor(m/60);if(h<24)return h+'h ago';
+  var d=Math.floor(h/24);if(d===1)return 'yesterday';
+  if(d<7)return d+'d ago';
+  return fmt(iso);
+}
+function notifIcon(type){
+  if(type==='new_lead')return '\uD83D\uDC70';
+  if(type==='appt_reminder')return '\uD83D\uDCC5';
+  if(type==='test')return '\uD83D\uDD14';
+  return '\u2022';
+}
+async function loadNotifPrefs(){
+  var u=notifUid();var def=notifDefaults();
+  if(!u){window._notif.prefs=def;return;}
+  try{
+    var p=await fbG('/notificationPrefs/'+u);
+    if(p&&typeof p==='object'){
+      window._notif.prefs={
+        push:p.push===true,
+        newLead:p.newLead!==false,
+        apptReminders:(p.apptReminders!==undefined)?(p.apptReminders===true):def.apptReminders
+      };
+    }else{window._notif.prefs=def;}
+  }catch(e){window._notif.prefs=def;}
+}
+async function saveNotifPref(key,val){
+  var u=notifUid();if(!u)return;
+  window._notif.prefs=window._notif.prefs||notifDefaults();
+  window._notif.prefs[key]=val;
+  try{
+    var patch={};patch[key]=val;patch.updatedAt=new Date().toISOString();
+    await fbP('/notificationPrefs/'+u,patch);
+  }catch(e){notif('Could not save setting: '+e.message);}
+}
+async function refreshNotifs(){
+  var u=notifUid();if(!u)return;
+  try{
+    var data=await fbG('/notifications/'+u);
+    window._notif.items=(data&&typeof data==='object')?data:{};
+  }catch(e){/* best-effort; keep last-known items */}
+  renderNotifBadge();
+  var panel=document.getElementById('NT-m');
+  if(panel&&panel.classList.contains('show'))renderNotifList();
+}
+function notifUnreadCount(){
+  var items=window._notif.items||{};var c=0;
+  Object.keys(items).forEach(function(k){var n=items[k];if(n&&n.read!==true)c++;});
+  return c;
+}
+function renderNotifBadge(){
+  var dot=document.getElementById('NT-dot');if(!dot)return;
+  var c=notifUnreadCount();
+  if(c>0){dot.textContent=c>9?'9+':String(c);dot.classList.add('show');}
+  else{dot.textContent='';dot.classList.remove('show');}
+}
+function notifSorted(){
+  var items=window._notif.items||{};
+  return Object.keys(items).map(function(k){return Object.assign({_id:k},items[k]);})
+    .filter(function(n){return n&&typeof n==='object';})
+    .sort(function(a,b){return new Date(b.at||0)-new Date(a.at||0);});
+}
+function renderNotifList(){
+  var box=document.getElementById('NT-list');if(!box)return;
+  var list=notifSorted();
+  if(!list.length){box.innerHTML='<div class="nt-empty">No notifications yet.</div>';return;}
+  var h='';
+  list.forEach(function(n){
+    var unread=n.read!==true;
+    var bid=n.brideId?escAttr(n.brideId):'';
+    h+='<button class="nt-item'+(unread?' unread':'')+'" onclick="onNotifTap(\''+escAttr(n._id)+'\',\''+bid+'\')">';
+    h+='<span class="nt-ic">'+notifIcon(n.type)+'</span>';
+    h+='<span class="nt-bd"><span class="nt-t">'+escHtml(n.title||'Notification')+'</span>';
+    if(n.body)h+='<span class="nt-m">'+escHtml(n.body)+'</span>';
+    h+='<span class="nt-tm">'+escHtml(notifAgo(n.at))+'</span></span></button>';
+  });
+  box.innerHTML=h;
+}
+async function onNotifTap(id,brideId){
+  await markNotifRead(id);
+  if(brideId){
+    closeNotifPanel();
+    if(typeof openOverviewForm==='function')openOverviewForm(brideId);
+  }
+}
+async function markNotifRead(id){
+  var u=notifUid();if(!u||!id)return;
+  if(window._notif.items[id])window._notif.items[id].read=true;
+  renderNotifBadge();renderNotifList();
+  try{await fbP('/notifications/'+u+'/'+id,{read:true});}catch(e){}
+}
+async function markAllNotifsRead(){
+  var u=notifUid();if(!u)return;
+  var items=window._notif.items||{};var any=false;
+  Object.keys(items).forEach(function(k){if(items[k]&&items[k].read!==true){items[k].read=true;any=true;}});
+  if(!any)return;
+  renderNotifBadge();renderNotifList();
+  try{
+    var patch={};Object.keys(items).forEach(function(k){patch[k+'/read']=true;});
+    await fbP('/notifications/'+u,patch);
+  }catch(e){}
+}
+function toggleNotifPanel(ev){
+  if(ev)ev.stopPropagation();
+  var m=document.getElementById('NT-m');var bk=document.getElementById('NT-bk');
+  if(!m||!bk)return;
+  if(m.classList.contains('show')){closeNotifPanel();return;}
+  closeAvMenu();closeNotifPrefs();
+  renderNotifList();
+  m.classList.add('show');bk.classList.add('show');
+  refreshNotifs();
+}
+function closeNotifPanel(){
+  var m=document.getElementById('NT-m');var bk=document.getElementById('NT-bk');
+  if(m)m.classList.remove('show');if(bk)bk.classList.remove('show');
+}
+function openNotifPrefs(){
+  closeNotifPanel();
+  var m=document.getElementById('NTP-m');var bk=document.getElementById('NTP-bk');
+  if(!m||!bk)return;
+  renderNotifPrefs();
+  m.classList.add('show');bk.classList.add('show');
+}
+function closeNotifPrefs(){
+  var m=document.getElementById('NTP-m');var bk=document.getElementById('NTP-bk');
+  if(m)m.classList.remove('show');if(bk)bk.classList.remove('show');
+}
+function prefSwitch(key,on){
+  return '<button class="nt-sw'+(on?' on':'')+'" onclick="onPrefToggle(\''+escAttr(key)+'\',this)" aria-label="toggle"></button>';
+}
+function renderNotifPrefs(){
+  var body=document.getElementById('NTP-body');if(!body)return;
+  var p=window._notif.prefs||notifDefaults();
+  var owner=(window._auth&&window._auth.role==='owner');
+  var h='';
+  h+='<div class="nt-prow"><div class="nt-pl"><div class="nt-pt">Push notifications</div><div class="nt-ps">Lock-screen alerts on this device. Requires adding the CRM to your Home Screen.</div></div>'+prefSwitch('push',p.push)+'</div>';
+  h+='<div class="nt-prow"><div class="nt-pl"><div class="nt-pt">New lead alerts</div><div class="nt-ps">When an online enquiry arrives.</div></div>'+prefSwitch('newLead',p.newLead)+'</div>';
+  if(owner){
+    h+='<div class="nt-prow"><div class="nt-pl"><div class="nt-pt">Appointment reminders</div><div class="nt-ps">Evening before and morning of each appointment.</div></div>'+prefSwitch('apptReminders',p.apptReminders)+'</div>';
+    h+='<button class="nt-pbtn" onclick="sendTestNotif()">Send test notification</button>';
+  }
+  body.innerHTML=h;
+}
+async function onPrefToggle(key,btn){
+  var p=window._notif.prefs||notifDefaults();
+  var newVal=!(p[key]===true);
+  if(key==='push'&&newVal){
+    var ok=await enablePush();
+    if(!ok)return; // leave toggle off until push is actually wired (Phase C)
+  }
+  if(btn){if(newVal)btn.classList.add('on');else btn.classList.remove('on');}
+  await saveNotifPref(key,newVal);
+}
+async function enablePush(){
+  // Phase A scaffolding. Real FCM token registration is wired in Phase C
+  // (needs the service worker from Phase B + the Blaze Cloud Functions).
+  if(!('Notification' in window)){
+    notif('This device does not support web notifications.');return false;
+  }
+  if(!window._fcmReady||typeof registerFcmToken!=='function'){
+    notif('Push will activate once the app is added to your Home Screen — coming in the next update.');
+    return false;
+  }
+  try{
+    var perm=await Notification.requestPermission();
+    if(perm!=='granted'){notif('Notifications were not allowed.');return false;}
+    await registerFcmToken();
+    notif('Push notifications enabled on this device.');
+    return true;
+  }catch(e){notif('Could not enable push: '+e.message);return false;}
+}
+async function sendTestNotif(){
+  var u=notifUid();if(!u){notif('Sign in first.');return;}
+  var id=uid();
+  var entry={type:'test',title:'Test notification',body:'If you can see this, the in-app feed is working.',read:false,at:new Date().toISOString()};
+  try{
+    await fbP('/notifications/'+u+'/'+id,entry);
+    window._notif.items[id]=entry;
+    renderNotifBadge();
+    notif('Test notification added — open the bell to see it.');
+  }catch(e){notif('Could not send test: '+e.message);}
+}
+async function startNotifications(){
+  var u=notifUid();if(!u)return;
+  await loadNotifPrefs();
+  await refreshNotifs();
+  if(window._notif._iv)clearInterval(window._notif._iv);
+  window._notif._iv=setInterval(function(){refreshNotifs();},25000);
+}
 async function startAfterAuth(){
   // Called after successful login (or if already logged in at boot in auth mode).
   // Order matters: resolve role BEFORE loading data so the right nav is built.
@@ -6569,6 +6919,7 @@ async function startAfterAuth(){
   ensureRoleResolved();
   // Load approval requests (Phase 1B-2). Best-effort - don't block on failure.
   try{await loadRequests();}catch(e){console.error('[req] initial load failed:',e.message);}
+  try{startNotifications();}catch(e){console.error('[notif] start failed:',e.message);}
   setTimeout(function(){ checkAutoLost().catch(function(e){console.error('autoLost:',e);}); }, 1500);
   setTimeout(function(){ checkNoShows().catch(function(e){console.error('noShows:',e);}); }, 2500);
 }
