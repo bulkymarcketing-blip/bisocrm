@@ -1336,6 +1336,33 @@ function isLeadOverdue(l){
   var dw=dU(l.weddingDate);
   return hoursSince>slaThreshold(s,dw);
 }
+// Wedding-date sort key for pipeline ordering (soonest wedding first; no/invalid date sinks to bottom)
+function leadWedTs(l){
+  if(!l||!l.weddingDate)return Infinity;
+  var t=new Date(l.weddingDate).getTime();
+  return isNaN(t)?Infinity:t;
+}
+// Human explanation of WHY a lead is overdue (shown when an overdue card is expanded).
+// Derived from the SAME logic as isLeadOverdue/slaThreshold so the reason always matches the tag.
+function overdueReason(l){
+  var s=Number(l.stage||0);
+  if(s>=5||l.confirmed)return '';
+  var lastAct=new Date(l.lastActivity||l.createdAt||0).getTime();
+  var hoursSince=(Date.now()-lastAct)/3600000;
+  var dw=dU(l.weddingDate);
+  var thr=slaThreshold(s,dw);
+  if(hoursSince<=thr)return '';
+  var what=['Awaiting first contact','Consultation not yet booked','Consultation not yet completed','Quote not yet sent','Quote follow-up due'][s]||'Action overdue';
+  var target=['contact within 12h','book consultation within 3 days','complete consultation within 3 days','send quote within 2 days','follow up within 7 days'][s]||'';
+  var sinceTxt=hoursSince<24?Math.round(hoursSince)+'h':Math.round(hoursSince/24)+'d';
+  var urg='';
+  if(dw!==null){
+    if(dw<0)urg=' — wedding date has passed';
+    else if(dw<14)urg=' — wedding in '+dw+'d, SLA tightened';
+    else if(dw<30)urg=' — wedding in '+dw+'d';
+  }
+  return what+': '+sinceTxt+' since last activity (target: '+target+')'+urg+'.';
+}
 
 function dBadge(d){if(d===null)return '';var c=d<30?'ds':d<90?'dn':'dok';return '<span class="db '+c+'">'+d+'d</span>';}
 function gSet(){try{return JSON.parse(localStorage.getItem('biso_s')||'{}');}catch(e){return {};}}
@@ -1387,6 +1414,11 @@ function rPipeline(){
   h+='</div><div class="pipeline">';
   STAGES.forEach(function(st,i){
     var cols=pl.filter(function(l){return Number(l.stage||0)===i;});
+    cols.sort(function(a,b){
+      var ta=leadWedTs(a),tb=leadWedTs(b);
+      if(ta!==tb)return ta-tb;
+      return new Date(b.lastActivity||b.createdAt||0)-new Date(a.lastActivity||a.createdAt||0);
+    });
     var overdue=cols.filter(isLeadOverdue).length;
     var subText=overdue>0?'<span style="font-size:9px;color:var(--danger);font-weight:700;margin-left:5px">'+overdue+' overdue</span>':'';
     h+='<div class="stage-col"><div class="shdr '+SC[i]+'"><span class="sname">'+st+subText+'</span><span class="scnt">'+cols.length+'</span></div><div class="sbdy">';
@@ -1538,7 +1570,12 @@ function lCard(l){
     if(ev.homecoming&&ev.homecoming.enabled)bits.push('Homecoming '+(ev.homecoming.date?fmt(ev.homecoming.date):'(date TBD)'));
     if(ev.goingAway&&ev.goingAway.enabled)bits.push('Going Away '+(ev.goingAway.date?fmt(ev.goingAway.date):'(date TBD)'));
     if(!bits.length&&l.weddingDate)bits.push('Wedding '+fmt(l.weddingDate));
-    summary='<div style="padding-top:10px;margin-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--text2);line-height:1.6">'
+    var odBlock='';
+    if(overdue){
+      var odr=overdueReason(l);
+      if(odr)odBlock='<div style="padding-top:10px;margin-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--danger);font-weight:600;line-height:1.5">⚠ Overdue — '+odr+'</div>';
+    }
+    summary=odBlock+'<div style="padding-top:10px;margin-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--text2);line-height:1.6">'
       +(bits.length?bits.map(function(b){return '• '+b;}).join('<br/>'):'<em>No events yet</em>')
       +(l.phone?'<br/>📞 '+fmtPhone(l.phone):'')
       +(l.email?'<br/>✉ '+escHtml(l.email):'')
