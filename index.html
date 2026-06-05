@@ -782,6 +782,24 @@ async function loadData(){
         }
       }
     }
+    // Load shared settings into the in-memory cache (gSet() reads it synchronously).
+    if(window._auth&&window._auth.user){
+      try{
+        var fbSettings=await fbG('/settings');
+        if(fbSettings&&typeof fbSettings==='object'&&Object.keys(fbSettings).length>0){
+          window._settings=fbSettings;sSetLocal(window._settings);
+        }else{
+          // Firebase has no settings yet. Owner-gated one-time seed from this device,
+          // so the FIRST OWNER to open the new version sets the shared canonical copy.
+          window._settings=gSetLocal();
+          if(isOwner()&&Object.keys(window._settings).length>0){
+            try{await fbS('/settings',window._settings);}catch(se){}
+          }
+        }
+      }catch(e){window._settings=gSetLocal();} // offline / error -> use local copy
+    }else{
+      window._settings=gSetLocal();
+    }
     projectViews();
     document.getElementById('LS').style.display='none';
     document.getElementById('APP').style.display='block';
@@ -800,6 +818,16 @@ async function loadData(){
         try{await loadRequests();}catch(re){}
         // Refresh chatbot intake queue too. Non-fatal.
         try{await loadIntake();}catch(ie){}
+        // Refresh shared settings so other devices' changes propagate. Skip while a
+        // local settings write is in flight so it can't clobber just-saved values.
+        try{
+          if(window._auth&&window._auth.user&&!window._settingsSyncing){
+            var newS=await fbG('/settings');
+            if(newS&&typeof newS==='object'&&Object.keys(newS).length>0){
+              window._settings=newS;sSetLocal(window._settings);
+            }
+          }
+        }catch(se){}
         // Don't re-render if a modal is open (the user is interacting),
         // or if on the Settings page (user may be mid-edit; settings show no live bride data)
         var anyOpen = document.querySelector('.overlay.show, .overlay[style*="display: flex"], .overlay[style*="display:flex"]');
@@ -1365,8 +1393,26 @@ function overdueReason(l){
 }
 
 function dBadge(d){if(d===null)return '';var c=d<30?'ds':d<90?'dn':'dok';return '<span class="db '+c+'">'+d+'d</span>';}
-function gSet(){try{return JSON.parse(localStorage.getItem('biso_s')||'{}');}catch(e){return {};}}
-function sSet(s){localStorage.setItem('biso_s',JSON.stringify(s));}
+// Settings store: in-memory cache backed by Firebase /settings, with localStorage
+// as an offline mirror. gSet() stays SYNCHRONOUS (reads the cache) so all read
+// sites are unchanged. loadData() populates the cache from Firebase before first
+// render; the poll refreshes it; sSet() writes cache + localStorage + cloud.
+function gSetLocal(){try{return JSON.parse(localStorage.getItem('biso_s')||'{}');}catch(e){return {};}}
+function sSetLocal(s){try{localStorage.setItem('biso_s',JSON.stringify(s||{}));}catch(e){}}
+window._settings=window._settings||gSetLocal();
+function gSet(){return window._settings||{};}
+function sSet(s){
+  window._settings=s||{};
+  sSetLocal(window._settings);
+  // Push to the shared copy (fire-and-forget) when authenticated. _settingsSyncing
+  // tells the poll not to clobber the cache with a stale read while this is in flight.
+  if(window._auth&&window._auth.user){
+    window._settingsSyncing=true;
+    fbS('/settings',window._settings).catch(function(e){
+      notif('Saved on this device, but cloud sync failed: '+((e&&e.message)||e));
+    }).finally(function(){window._settingsSyncing=false;});
+  }
+}
 function defNotes(){return gSet().defaultNotes||'An additional Venue Dressing Fee will apply if the bride wishes to be dressed at her chosen location.\n\nBespeaking fee of Rs 50,000 is due upon reception of the quotation. It is non-refundable and deducted from the final bill.\n\nFinal payment is due on the day of service.';}
 function getCustomSvcs(){var c=gSet().customServices;return Array.isArray(c)?c:[];}
 function allSvcs(){return SVCS.concat(getCustomSvcs().map(function(cs){return {c:cs.c||'Custom',d:cs.d,b:Number(cs.b)||0,aT:false,aA:false,custom:true};}));}
