@@ -72,7 +72,8 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
 .pipeline{display:flex;gap:14px;overflow-x:auto;padding-bottom:10px}
 .pipeline::-webkit-scrollbar{height:4px}.pipeline::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 .stage-col{min-width:200px;flex-shrink:0}
-.shdr{padding:10px 14px;border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:space-between;border:1.5px solid var(--border);border-bottom:none}
+.shdr{padding:10px 14px;border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:space-between;border:1.5px solid var(--border);border-bottom:none;cursor:pointer}
+.shdr.collapsed{border-radius:10px;border-bottom:1.5px solid var(--border)}
 .sname{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px}
 .scnt{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,0.8)}
 .sbdy{background:var(--bg);border-radius:0 0 10px 10px;min-height:100px;padding:8px;display:flex;flex-direction:column;gap:8px;border:1.5px solid var(--border);border-top:none}
@@ -93,10 +94,17 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
 .lcard-icon-btn:active{background:var(--navy-dim)}
 .lcard-cta-btn{background:var(--navy);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap}
 .lcard-cta-btn:active{opacity:.8}
-.lcard-actions{flex-shrink:0}
 .lname{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:3px}
 .ldate{font-size:11px;color:var(--muted)}
 .ltags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.lcard-icons{display:flex;gap:4px;flex-shrink:0}
+.lcard-cta-full{display:block;width:100%;margin-top:10px;background:var(--gold);color:var(--navy);border:none;border-radius:8px;padding:11px 10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;text-align:center}
+.lcard-cta-full:active{opacity:.85}
+.lcard.lc-overdue{box-shadow:inset 3px 0 0 var(--danger)}
+.lane-chev{font-size:10px;margin-right:5px;opacity:.7}
+.lane-help-btn{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;border:1px solid currentColor;font-size:9px;font-weight:700;margin-left:6px;opacity:.65;vertical-align:middle}
+.lane-help{background:var(--gold-dim);border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;margin-top:4px;font-size:11px;color:var(--text2);line-height:1.5}
+.mc-toggle{font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;padding:6px 2px;margin-bottom:6px;display:inline-flex;align-items:center;gap:6px;user-select:none}
 .tag{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500}
 .tw{background:#DCFCE7;color:#15803D}.ti{background:#FCE7F3;color:#BE185D}
 .tf{background:var(--gold-dim);color:#92400E}.tr{background:#EDE9FE;color:#6D28D9}.twi{background:#E0F2FE;color:#0369A1}
@@ -1450,27 +1458,50 @@ function rPipeline(){
   var h='';
   // === Today's Actions widget ===
   h += renderTodaysActions(actions);
-  h+='<div class="mc-grid">';
-  h+=metricCard('New Inquiries', m.thisWeek, '<span style="color:'+deltaColor+'">'+deltaTxt+'</span>');
-  h+=metricCard('Booking Rate', m.convRate+'%', m.bookedCount+' of '+m.leadCount+' booked', '#1A2B4A');
-  h+=metricCard('Response Time', respTxt, respSub, m.avgResp===null?'var(--muted)':(m.avgResp<=24?'var(--success)':'var(--warn)'));
-  h+=metricCard('Avg Booking', fRshort(m.avgValue), 'per confirmed bride', 'var(--gold)');
-  h+=metricCard('Pipeline Value', fRshort(m.pipelineValue), 'in active quotes', 'var(--gold)');
-  h+=metricCard('Upcoming', m.upcoming90, 'weddings in 90 days', '#6B4FA0');
-  h+='</div><div class="pipeline">';
-  STAGES.forEach(function(st,i){
+  if(window._showMetrics===undefined)window._showMetrics=(window.innerWidth>900);
+  h+='<div class="mc-toggle" onclick="toggleMetrics()">'+(window._showMetrics?'▾':'▸')+' Pipeline metrics</div>';
+  if(window._showMetrics){
+    h+='<div class="mc-grid">';
+    h+=metricCard('New Inquiries', m.thisWeek, '<span style="color:'+deltaColor+'">'+deltaTxt+'</span>');
+    h+=metricCard('Booking Rate', m.convRate+'%', m.bookedCount+' of '+m.leadCount+' booked', '#1A2B4A');
+    h+=metricCard('Response Time', respTxt, respSub, m.avgResp===null?'var(--muted)':(m.avgResp<=24?'var(--success)':'var(--warn)'));
+    h+=metricCard('Avg Booking', fRshort(m.avgValue), 'per confirmed bride', 'var(--gold)');
+    h+=metricCard('Pipeline Value', fRshort(m.pipelineValue), 'in active quotes', 'var(--gold)');
+    h+=metricCard('Upcoming', m.upcoming90, 'weddings in 90 days', '#6B4FA0');
+    h+='</div>';
+  }
+  h+='<div class="pipeline">';
+  // Build lane data first so we can decide which lanes open by default.
+  var isMobile=window.innerWidth<=900;
+  var laneData=STAGES.map(function(st,i){
     var cols=pl.filter(function(l){return Number(l.stage||0)===i;});
     cols.sort(function(a,b){
       var ta=leadWedTs(a),tb=leadWedTs(b);
       if(ta!==tb)return ta-tb;
       return new Date(b.lastActivity||b.createdAt||0)-new Date(a.lastActivity||a.createdAt||0);
     });
-    var overdue=cols.filter(isLeadOverdue).length;
-    var subText=overdue>0?'<span style="font-size:9px;color:var(--danger);font-weight:700;margin-left:5px">'+overdue+' overdue</span>':'';
-    h+='<div class="stage-col"><div class="shdr '+SC[i]+'"><span class="sname">'+st+subText+'</span><span class="scnt">'+cols.length+'</span></div><div class="sbdy">';
-    if(cols.length)cols.forEach(function(l){h+=lCard(l);});
-    else h+='<div class="empty" style="padding:18px"><div class="et">No leads</div></div>';
-    h+='</div></div>';
+    return {st:st,i:i,cols:cols,overdue:cols.filter(isLeadOverdue).length,attention:cols.some(leadNeedsAttention)};
+  });
+  var anyAttention=laneData.some(function(d){return d.attention;});
+  var firstNonEmpty=-1;
+  for(var fi=0;fi<laneData.length;fi++){if(laneData[fi].cols.length){firstNonEmpty=fi;break;}}
+  laneData.forEach(function(d){
+    // Desktop: all lanes open. Mobile: open lanes needing attention; if none need it, open the first non-empty lane.
+    var dflt=isMobile?(d.attention||(!anyAttention&&d.i===firstNonEmpty)):true;
+    var open=(window._laneOpen[d.i]===undefined)?dflt:window._laneOpen[d.i];
+    var subText=d.overdue>0?'<span style="font-size:9px;color:var(--danger);font-weight:700;margin-left:5px">'+d.overdue+' overdue</span>':'';
+    var chev='<span class="lane-chev">'+(open?'▾':'▸')+'</span>';
+    var helpBtn='<span class="lane-help-btn" onclick="event.stopPropagation();toggleLaneHelp('+d.i+')" title="What is this stage?">?</span>';
+    h+='<div class="stage-col">';
+    h+='<div class="shdr '+SC[d.i]+(open?'':' collapsed')+'" onclick="toggleLane('+d.i+','+open+')"><span class="sname">'+chev+d.st+helpBtn+subText+'</span><span class="scnt">'+d.cols.length+'</span></div>';
+    if(window._laneHelp[d.i])h+='<div class="lane-help">'+STAGE_DEFS[d.i]+'</div>';
+    if(open){
+      h+='<div class="sbdy">';
+      if(d.cols.length)d.cols.forEach(function(l){h+=lCard(l);});
+      else h+='<div class="empty" style="padding:18px"><div class="et">No leads</div></div>';
+      h+='</div>';
+    }
+    h+='</div>';
   });
   h+='</div>';
   // Closed-Lost link (collapsed by default)
@@ -1579,7 +1610,8 @@ function lCard(l){
   var age=dS(l.createdAt);
   var src=SRC[l.source]||SRC.form;var tc=src[0];var tl=src[1];
   var overdue=isLeadOverdue(l);
-  var dt=overdue?'<span class="tag tu">Overdue</span>':age>7?'<span class="tag tu">'+age+'d old</span>':'<span class="tag td">'+age+'d</span>';
+  var idle=dS(l.lastActivity||l.createdAt);
+  var dt=overdue?'<span class="tag tu">⏰ '+idle+'d idle</span>':age>7?'<span class="tag tu">'+age+'d old</span>':'<span class="tag td">'+age+'d</span>';
   var qt=Object.keys(l.quotations||{}).length>0?'<span class="tag tq">Quoted</span>':'';
   var dw=dU(l.weddingDate);
   var dwTag=dw!==null&&dw<60?'<span class="tag twg">Wedding in '+dw+'d</span>':'';
@@ -1605,7 +1637,6 @@ function lCard(l){
       remTag='<span class="tag '+rCls+'">'+rTxt+'</span>';
     }
   }
-  var actions=cardActions(l);
   var expanded=_expandedCards[l.id];
   var summary='';
   if(expanded){
@@ -1628,17 +1659,16 @@ function lCard(l){
       +(l.notes?'<br/><em style="color:var(--muted)">'+escHtml(l.notes.length>120?l.notes.slice(0,120)+'…':l.notes)+'</em>':'')
       +'</div>';
   }
-  return '<div class="lcard" onclick="toggleLeadCard(\''+l.id+'\')">'
+  return '<div class="lcard'+(overdue?' lc-overdue':'')+'" onclick="toggleLeadCard(\''+l.id+'\')">'
     +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
     +'<div style="flex:1;min-width:0">'
     +'<div class="lname">'+escHtml(l.name)+'</div>'
     +'<div class="ldate">'+(l.weddingDate?'Wedding: '+fmt(l.weddingDate):'Date TBD')+'</div>'
     +'<div class="ltags"><span class="tag '+tc+'">'+tl+'</span>'+qt+dwTag+dt+attTag+remTag+'</div>'
     +'</div>'
-    +'<div class="lcard-actions" onclick="event.stopPropagation()" style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">'
-    +actions
+    +'<div class="lcard-icons" onclick="event.stopPropagation()">'+cardIcons(l)+'</div>'
     +'</div>'
-    +'</div>'
+    +cardCTA(l)
     +summary
     +'</div>';
 }
@@ -1649,32 +1679,49 @@ function toggleLeadCard(id){
   render();
 }
 
-function cardActions(l){
-  var s=Number(l.stage||0);
+function cardIcons(l){
   var ph=(l.phone||'').replace(/\D/g,'');
   var waBtn=ph?'<button onclick="event.stopPropagation();window.open(\'https://wa.me/'+ph+'\',\'_blank\')" class="lcard-icon-btn" title="WhatsApp">💬</button>':'';
   var callBtn=ph?'<button onclick="event.stopPropagation();window.open(\'tel:+'+ph+'\')" class="lcard-icon-btn" title="Call">📞</button>':'';
   var editBtn='<button onclick="event.stopPropagation();openOverviewForm(\''+l.id+'\')" class="lcard-icon-btn" title="Edit">✎</button>';
   var detailBtn='<button onclick="event.stopPropagation();openDetail(\''+l.id+'\')" class="lcard-icon-btn" title="Open">→</button>';
-  var actionBtn='';
-  if(s===0){
-    actionBtn='<button onclick="event.stopPropagation();openDisp(\''+l.id+'\')" class="lcard-cta-btn" title="Log Contact Attempt">📞 Log Attempt</button>';
-  } else if(s===1){
-    actionBtn='<button onclick="event.stopPropagation();openDisp(\''+l.id+'\')" class="lcard-cta-btn">📞 Log Attempt</button>';
-  } else if(s===2){
-    actionBtn='<button onclick="event.stopPropagation();advStage(\''+l.id+'\',3)" class="lcard-cta-btn">✓ Done</button>';
-  } else if(s===3){
-    actionBtn='<button onclick="event.stopPropagation();openOverviewForm(\''+l.id+'\',{intent:\'quote\'})" class="lcard-cta-btn">Quote</button>';
-  } else if(s===4){
-    var openQ=Object.values(l.quotations||{}).find(function(qt){return !qt.convertedToInvoice;});
-    if(openQ){
-      actionBtn='<button onclick="event.stopPropagation();openAdv(\'lead\',\''+l.id+'\',\''+openQ.id+'\')" class="lcard-cta-btn">→ Invoice</button>';
-    }
-  }
-  // Top row: contact icons. Bottom row: stage CTA. Then edit + detail icons.
-  var iconRow='<div style="display:flex;gap:4px">'+waBtn+callBtn+detailBtn+editBtn+'</div>';
-  return (actionBtn?actionBtn+iconRow:iconRow);
+  return waBtn+callBtn+detailBtn+editBtn;
 }
+// Full-width primary "next step" button — the hero of each card.
+function cardCTA(l){
+  var s=Number(l.stage||0);
+  if(s===0)return '<button onclick="event.stopPropagation();openDisp(\''+l.id+'\')" class="lcard-cta-full">📞 Log first contact</button>';
+  if(s===1)return '<button onclick="event.stopPropagation();openDisp(\''+l.id+'\')" class="lcard-cta-full">📞 Log follow-up</button>';
+  if(s===2)return '<button onclick="event.stopPropagation();advStage(\''+l.id+'\',3)" class="lcard-cta-full">✓ Mark consult done</button>';
+  if(s===3)return '<button onclick="event.stopPropagation();openOverviewForm(\''+l.id+'\',{intent:\'quote\'})" class="lcard-cta-full">✎ Create quote</button>';
+  if(s===4){
+    var openQ=Object.values(l.quotations||{}).find(function(qt){return !qt.convertedToInvoice;});
+    if(openQ)return '<button onclick="event.stopPropagation();openAdv(\'lead\',\''+l.id+'\',\''+openQ.id+'\')" class="lcard-cta-full">→ Convert to invoice</button>';
+  }
+  return '';
+}
+// A lead "needs attention" if it's past SLA or has a reminder due today/overdue.
+function leadNeedsAttention(l){
+  if(isLeadOverdue(l))return true;
+  if(l.nextReminderAt && !l.remindersStopped && !l.lost){
+    var rd=dU(l.nextReminderAt.slice(0,10));
+    if(rd!==null && rd<=0)return true;
+  }
+  return false;
+}
+// One-line "what is this stage / what's next" help, paired with the manager guide.
+var STAGE_DEFS=[
+  'A fresh enquiry, not contacted yet. → Log your first contact to move it on.',
+  'You\'ve reached out; waiting to book a consultation. → Book the consultation, then mark it done.',
+  'Consultation is scheduled. → Mark it done after it happens.',
+  'You\'ve met the bride and she\'s ready to price. → Create and send a quote.',
+  'Quote sent; awaiting her decision. → Convert it to an invoice once she confirms.'
+];
+window._laneOpen=window._laneOpen||{};
+window._laneHelp=window._laneHelp||{};
+function toggleLane(i,curOpen){window._laneOpen[i]=!curOpen;render();}
+function toggleLaneHelp(i){window._laneHelp[i]=!window._laneHelp[i];render();}
+function toggleMetrics(){window._showMetrics=!window._showMetrics;render();}
 function rClients(){
   var cl=lA().filter(function(l){return l.confirmed&&(q?l.name.toLowerCase().includes(q):true);});
   var rows='';
