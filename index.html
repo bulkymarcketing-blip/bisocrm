@@ -398,12 +398,13 @@ textarea{resize:vertical;min-height:80px}
 <div class="av-bkdrp" id="AV-bk" onclick="closeAvMenu()"></div>
 <div class="av-menu" id="AV-m" onclick="event.stopPropagation()">
   <div class="av-info"><div class="em" id="AV-em"></div><div class="rl" id="AV-rl"></div></div>
+  <button class="av-item" id="AV-acct" onclick="closeAvMenu();openMyAccount()"><span class="ic">👤</span>My Account</button>
   <button class="av-item" id="AV-myreq" onclick="closeAvMenu();openMyRequests()" style="display:none"><span class="ic">\u2691</span>My Requests <span id="AV-myreq-c" style="margin-left:auto;background:var(--gold);color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:8px"></span></button>
   <button class="av-item dgr" onclick="closeAvMenu();doLogout()"><span class="ic">⏻</span>Sign Out</button>
 </div>
 <div class="av-bkdrp" id="NT-bk" onclick="closeNotifPanel()"></div>
 <div class="nt-panel" id="NT-m" onclick="event.stopPropagation()">
-  <div class="nt-hd"><span class="nt-title">Notifications</span><button class="nt-act" onclick="markAllNotifsRead()">Mark all read</button><button class="nt-gear" onclick="openNotifPrefs()" aria-label="Notification settings">⚙</button></div>
+  <div class="nt-hd"><span class="nt-title">Notifications</span><button class="nt-act" onclick="markAllNotifsRead()">Mark all read</button><button class="nt-gear" onclick="closeNotifPanel();openMyAccount('notifications')" aria-label="Notification settings">⚙</button></div>
   <div class="nt-list" id="NT-list"></div>
 </div>
 <div class="av-bkdrp" id="NTP-bk" onclick="closeNotifPrefs()"></div>
@@ -6824,6 +6825,109 @@ function openMyRequests(){
   if(dmf)dmf.innerHTML='<button class="btn btn-ghost" onclick="CM(\u0027detail-modal\u0027)">Close</button>';
   OM('detail-modal');
 }
+// ===== Per-user My Account: profile (name/avatar), password, notifications =====
+// Self-editable, non-privilege fields live at /profiles/<uid>. Role stays in /roles
+// (owner-seeded, NEVER written here) so the privilege boundary holds under C1 rules.
+async function loadProfile(){
+  if(!window._auth||!window._auth.user)return;
+  try{
+    var pr=await fbG('/profiles/'+window._auth.user.uid);
+    window._auth.profile=(pr&&typeof pr==='object')?pr:{};
+    if(window._auth.profile.name)window._auth.name=window._auth.profile.name;
+  }catch(e){window._auth.profile=window._auth.profile||{};}
+}
+function maSection(title){
+  return '<div style="font-family:Cinzel,serif;font-size:12px;color:var(--navy);letter-spacing:1px;font-weight:600;text-transform:uppercase;margin:18px 0 10px">'+title+'</div>';
+}
+function openMyAccount(section){
+  if(!window._auth||!window._auth.user){notif('Sign in first.');return;}
+  var u=window._auth.user;
+  var role=window._auth.role||'owner';
+  var name=(window._auth.profile&&window._auth.profile.name)||window._auth.name||'';
+  var email=u.email||'';
+  var roleLabel=role==='owner'?'Owner':'Manager';
+  var ipw='padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:Inter,sans-serif';
+  var h='';
+  h+=maSection('Profile');
+  h+='<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">';
+  h+='<div id="ma-initials" style="width:46px;height:46px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex-shrink:0">'+escHtml(initials(name||email))+'</div>';
+  h+='<div style="flex:1"><div style="font-size:11px;color:var(--muted);margin-bottom:3px">Display name</div><input type="text" id="ma-name" value="'+escAttr(name)+'" placeholder="Your name" style="width:100%;'+ipw+'" oninput="maPreviewInitials()"/></div>';
+  h+='</div>';
+  h+='<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px"><span style="font-size:9px;font-weight:700;color:#fff;background:'+(role==='owner'?'var(--gold)':'var(--navy)')+';padding:2px 9px;border-radius:8px;letter-spacing:.5px">'+roleLabel.toUpperCase()+'</span><span style="font-size:12px;color:var(--muted)">'+escHtml(email)+'</span></div>';
+  h+='<button class="btn btn-primary btn-sm" onclick="saveMyProfile()">Save name</button>';
+  h+=maSection('Password');
+  h+='<div style="display:flex;flex-direction:column;gap:8px;max-width:340px">';
+  h+='<input type="password" id="ma-pw-cur" placeholder="Current password" autocomplete="current-password" style="'+ipw+'"/>';
+  h+='<input type="password" id="ma-pw-new" placeholder="New password (min 6)" autocomplete="new-password" style="'+ipw+'"/>';
+  h+='<input type="password" id="ma-pw-new2" placeholder="Confirm new password" autocomplete="new-password" style="'+ipw+'"/>';
+  h+='<button class="btn btn-primary btn-sm" onclick="changeMyPassword()">Update password</button>';
+  h+='<button class="btn btn-ghost btn-sm" onclick="sendMyReset()">Or email me a reset link instead</button>';
+  h+='</div>';
+  h+=maSection('Notifications');
+  h+='<div id="ma-notif"></div>';
+  h+=maSection('Messaging');
+  h+='<div style="font-size:12px;color:var(--muted);line-height:1.5">Your personal message signature and saved replies will appear here once the WhatsApp inbox is set up.</div>';
+  var dm=document.getElementById('dm-b');var dmt=document.getElementById('dm-n');var dms=document.getElementById('dm-s');var dmf=document.getElementById('dm-f');
+  if(!dm){notif('Cannot open account view.');return;}
+  if(dmt)dmt.textContent='My Account';
+  if(dms)dms.textContent=roleLabel;
+  dm.innerHTML=h;
+  if(dmf)dmf.innerHTML='<button class="btn btn-ghost" onclick="CM(\u0027detail-modal\u0027)">Close</button>';
+  OM('detail-modal');
+  renderNotifPrefs('ma-notif');
+  if(section==='notifications'){var t=document.getElementById('ma-notif');if(t&&t.scrollIntoView)setTimeout(function(){t.scrollIntoView({behavior:'smooth',block:'center'});},80);}
+}
+function maPreviewInitials(){
+  var inp=document.getElementById('ma-name');var box=document.getElementById('ma-initials');
+  if(inp&&box)box.textContent=initials(inp.value||(window._auth.user&&window._auth.user.email)||'');
+}
+async function saveMyProfile(){
+  if(window._saving)return;
+  if(!window._auth||!window._auth.user){notif('Sign in first.');return;}
+  var inp=document.getElementById('ma-name');var nm=inp?inp.value.trim():'';
+  if(!nm){notif('Enter a display name.');return;}
+  window._saving=true;
+  try{
+    await fbP('/profiles/'+window._auth.user.uid,{name:nm,updatedAt:new Date().toISOString()});
+    window._auth.profile=window._auth.profile||{};window._auth.profile.name=nm;
+    window._auth.name=nm;
+    updateAuthUI();
+    notif('Name saved.');
+  }catch(e){notif('Could not save name: '+e.message);}
+  finally{window._saving=false;}
+}
+async function changeMyPassword(){
+  if(!window._auth||!window._auth.user){notif('Sign in first.');return;}
+  var cur=document.getElementById('ma-pw-cur');var nw=document.getElementById('ma-pw-new');var nw2=document.getElementById('ma-pw-new2');
+  var curV=cur?cur.value:'';var nwV=nw?nw.value:'';var nw2V=nw2?nw2.value:'';
+  if(!curV||!nwV){notif('Enter your current and new password.');return;}
+  if(nwV.length<6){notif('New password must be at least 6 characters.');return;}
+  if(nwV!==nw2V){notif('New passwords do not match.');return;}
+  try{
+    var user=firebase.auth().currentUser;
+    var cred=firebase.auth.EmailAuthProvider.credential(user.email,curV);
+    await user.reauthenticateWithCredential(cred);
+    await user.updatePassword(nwV);
+    if(cur)cur.value='';if(nw)nw.value='';if(nw2)nw2.value='';
+    notif('Password updated.');
+  }catch(e){
+    var msg='Could not update password.';
+    if(e&&(e.code==='auth/wrong-password'||e.code==='auth/invalid-credential'))msg='Current password is incorrect.';
+    else if(e&&e.code==='auth/weak-password')msg='New password is too weak.';
+    else if(e&&e.code==='auth/too-many-requests')msg='Too many attempts — try again later.';
+    else if(e&&e.message)msg='Could not update password: '+e.message;
+    notif(msg);
+  }
+}
+async function sendMyReset(){
+  if(!window._auth||!window._auth.user){notif('Sign in first.');return;}
+  var email=window._auth.user.email||'';
+  if(!email){notif('No email on this account.');return;}
+  var r=await showConfirm({title:'Send reset link?',msg:'We\u2019ll email a password reset link to '+email+'.',yesText:'Send link',noText:'Cancel'});
+  if(!r||!r.ok)return;
+  try{await firebase.auth().sendPasswordResetEmail(email);notif('Reset link sent to '+email+'.');}
+  catch(e){notif('Could not send reset link: '+e.message);}
+}
 /* ===== Push transport (Phase B: service worker + FCM token registration) =====
    Registers the messaging service worker and mints/stores an FCM token so
    Phase C's Cloud Functions can deliver lock-screen pushes. Degrades gracefully:
@@ -7029,8 +7133,8 @@ function closeNotifPrefs(){
 function prefSwitch(key,on){
   return '<button class="nt-sw'+(on?' on':'')+'" onclick="onPrefToggle(\''+escAttr(key)+'\',this)" aria-label="toggle"></button>';
 }
-function renderNotifPrefs(){
-  var body=document.getElementById('NTP-body');if(!body)return;
+function renderNotifPrefs(bodyId){
+  var body=document.getElementById(bodyId||'NTP-body');if(!body)return;
   var p=window._notif.prefs||notifDefaults();
   var owner=(window._auth&&window._auth.role==='owner');
   var h='';
@@ -7115,6 +7219,7 @@ async function startAfterAuth(){
     console.error('[auth] loadRole failed or timed out (will retry after data):',e.message);
   }
   // Re-update UI now that we (may) know the role
+  try{await loadProfile();}catch(e){console.error('[profile] load failed:',e.message);}
   updateAuthUI();
   await loadData();
   // If the role never truly resolved, retry now — the network is clearly up
