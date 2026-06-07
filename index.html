@@ -1195,12 +1195,15 @@ function expD(){var d=new Date();d.setMonth(11);d.setDate(31);return d.toISOStri
 // climb continuously and never reset; the year in the prefix only marks WHEN issued, so no
 // single number reveals how many have been issued. Real numbers are minted at SAVE (inside the
 // save lock); previews show a DRAFT placeholder so cancelled previews never burn a number.
-var _INV_SEED=1247,_QUOTE_SEED=3061;
-function docDraft(kind){return (kind==='invoice'?'BI':'BQ')+'-'+(new Date().getFullYear())+'-DRAFT';}
-function docFmt(kind,n){return (kind==='invoice'?'BI':'BQ')+'-'+(new Date().getFullYear())+'-'+String(n).padStart(4,'0');}
+var _INV_SEED=1247,_QUOTE_SEED=3061,_RC_SEED=1000;
+var _DOC_PREFIX={invoice:'BI',quote:'BQ',receipt:'RC'};
+var _DOC_PATH={invoice:'/counters/invoiceSeq',quote:'/counters/quoteSeq',receipt:'/counters/receiptSeq'};
+var _DOC_SEED={invoice:_INV_SEED,quote:_QUOTE_SEED,receipt:_RC_SEED};
+function docDraft(kind){return (_DOC_PREFIX[kind]||'DOC')+'-'+(new Date().getFullYear())+'-DRAFT';}
+function docFmt(kind,n){return (_DOC_PREFIX[kind]||'DOC')+'-'+(new Date().getFullYear())+'-'+String(n).padStart(4,'0');}
 async function mintDocNum(kind){
-  var path=kind==='invoice'?'/counters/invoiceSeq':'/counters/quoteSeq';
-  var seed=kind==='invoice'?_INV_SEED:_QUOTE_SEED;
+  var path=_DOC_PATH[kind]||'/counters/invoiceSeq';
+  var seed=_DOC_SEED[kind]||1;
   var cur=await fbG(path);
   var n=(typeof cur==='number'&&cur>=seed)?cur+1:seed;
   await fbS(path,n);
@@ -2081,14 +2084,16 @@ function rInvoices(){
   var filt=allI.filter(function(i){return q?i.sN.toLowerCase().includes(q):true;});
   var rows='';
   filt.forEach(function(inv){
+    var cancelled=!!(brides[inv.sId]&&brides[inv.sId].cancelled);
     var tot=qTot(inv.items);
     var paid=invPaid(inv);
-    var bal=Math.max(0,tot-paid);
+    var bal=cancelled?0:Math.max(0,tot-paid);
     var pct=tot>0?Math.round(paid/tot*100):0;
-    var sc=pct>=100?'var(--success)':pct>0?'var(--warn)':'var(--danger)';
-    var sl=pct>=100?'PAID':pct>0?'PARTIAL':'UNPAID';
+    var sc=cancelled?'var(--muted)':pct>=100?'var(--success)':pct>0?'var(--warn)':'var(--danger)';
+    var sl=cancelled?'CANCELLED':pct>=100?'PAID':pct>0?'PARTIAL':'UNPAID';
+    var ctag=cancelled?' <span style="font-size:9px;font-weight:700;letter-spacing:.5px;color:var(--muted);background:var(--surf);border:1px solid var(--border);border-radius:4px;padding:1px 6px;vertical-align:middle">CANCELLED</span>':'';
     rows+='<div class="lr" onclick="openIDoc(\''+inv.src+'\',\''+inv.sId+'\',\''+inv.id+'\')">'
-      +'<div style="flex:1;min-width:0"><div class="lrn">'+escHtml(inv.sN)+'</div><div class="lrm">'+fmt(inv.date)+' · '+inv.id+'</div>'
+      +'<div style="flex:1;min-width:0"><div class="lrn">'+escHtml(inv.sN)+ctag+'</div><div class="lrm">'+fmt(inv.date)+' · '+inv.id+'</div>'
       +'<div style="margin-top:4px;display:flex;align-items:center;gap:6px"><span style="font-size:11px;font-weight:700;color:'+sc+'">'+sl+'</span>'+(bal>0?'<span style="font-size:11px;color:var(--muted)">Bal LKR '+Number(bal).toLocaleString()+'.00</span>':'')+'</div></div>'
       +'<div style="text-align:right;flex-shrink:0"><div class="lra">LKR '+Number(tot).toLocaleString()+'.00</div><div class="lrc">›</div></div></div>';
   });
@@ -2142,11 +2147,12 @@ function openIDoc(src,sId,iId){
   var tot=qTot(inv.items);var bp=inv.advance||0;
   var pays=Object.values(inv.payments||{});
   var paid=invPaid(inv);
-  var bal=tot-paid;
+  var cancelled=!!obj.cancelled;
+  var bal=cancelled?0:(tot-paid);
   var items=Object.values(inv.items||{});
   var pct=tot>0?Math.round(paid/tot*100):0;
-  var sc=pct>=100?'var(--success)':pct>0?'var(--warn)':'var(--danger)';
-  var sl=pct>=100?'PAID':pct>0?'PARTIAL':'UNPAID';
+  var sc=cancelled?'var(--muted)':pct>=100?'var(--success)':pct>0?'var(--warn)':'var(--danger)';
+  var sl=cancelled?'CANCELLED':pct>=100?'PAID':pct>0?'PARTIAL':'UNPAID';
   document.getElementById('doc-t').textContent=inv.id;
   var ih='';
   items.forEach(function(it,i){
@@ -2160,7 +2166,8 @@ function openIDoc(src,sId,iId){
   if(pays.length){
     var pr='';
     pays.sort(function(a,b){return new Date(b.date)-new Date(a.date);}).forEach(function(p){
-      pr+='<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border)"><div><div style="font-size:13px;font-weight:600;color:var(--navy)">'+fmt(p.date)+(p.method?' · '+escHtml(p.method):'')+'</div>'+(p.note?'<div style="font-size:11px;color:var(--muted);margin-top:2px">'+escHtml(p.note)+'</div>':'')+'</div><div style="display:flex;align-items:center;gap:8px"><div style="font-size:13px;font-weight:700;color:var(--success)">'+fR(p.amount)+'</div><button onclick="delPay(\''+src+'\',\''+sId+'\',\''+iId+'\',\''+p.id+'\')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:2px 6px">x</button></div></div>';
+      var rcBtn=(Number(p.amount)>0)?'<button onclick="viewReceipt(\''+src+'\',\''+sId+'\',\''+iId+'\',\''+p.id+'\')" style="background:none;border:1px solid var(--border);border-radius:6px;color:var(--navy);cursor:pointer;font-size:11px;font-weight:600;padding:4px 8px">Receipt</button>':'';
+      pr+='<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border)"><div><div style="font-size:13px;font-weight:600;color:var(--navy)">'+fmt(p.date)+(p.method?' · '+escHtml(p.method):'')+'</div>'+(p.note?'<div style="font-size:11px;color:var(--muted);margin-top:2px">'+escHtml(p.note)+'</div>':'')+'</div><div style="display:flex;align-items:center;gap:8px"><div style="font-size:13px;font-weight:700;color:var(--success)">'+fR(p.amount)+'</div>'+rcBtn+'<button onclick="delPay(\''+src+'\',\''+sId+'\',\''+iId+'\',\''+p.id+'\')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:2px 6px">x</button></div></div>';
     });
     payLog='<div class="ic" style="margin-top:14px"><div style="padding:11px 14px;background:var(--bg);border-bottom:1.5px solid var(--border);font-size:11px;font-weight:700;color:var(--navy);letter-spacing:.5px;text-transform:uppercase">Payments Log</div>'+pr+'</div>';
   }
@@ -2218,7 +2225,8 @@ async function addPay(src,sId,iId){
   var method=(document.getElementById('pay-method')||{}).value||'';
   var note=(document.getElementById('pay-note')||{}).value||'';
   var pid='p-'+uid();
-  var pay={id:pid,amount:amt,date:date,method:method,note:note,createdAt:new Date().toISOString()};
+  var receiptNo='';try{receiptNo=await mintDocNum('receipt');}catch(e){receiptNo='';}
+  var pay={id:pid,amount:amt,date:date,method:method,note:note,receiptNo:receiptNo,createdAt:new Date().toISOString()};
   var path=src==='lead'?'/leads/'+sId+'/invoices/'+iId+'/payments':'/customers/'+sId+'/invoices/'+iId+'/payments';
   try{
     await fbP(path,{[pid]:pay});
@@ -2312,11 +2320,12 @@ function openAdv(src,sId,qId){
   var obj=src==='lead'?leads[sId]:custs[sId];if(!obj)return;
   var qt=src==='lead'?(obj.quotations||{})[qId]:(obj.quotes||{})[qId];if(!qt)return;
   var tot=qTot(qt.items);
+  var _defBesp=parseFloat(gSet().defaultBespeaking)||50000;
   document.getElementById('adv-s').textContent=obj.name;
   document.getElementById('adv-b').innerHTML=
     '<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:13px;margin-bottom:14px;display:flex;justify-content:space-between"><div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600;margin-bottom:2px">Quote Total</div><div style="font-size:20px;font-weight:700;color:var(--gold)">'+fR(tot)+'</div></div><div style="font-size:11px;color:var(--muted);align-self:flex-end">'+qt.id+'</div></div>'
-    +'<div class="fg"><div class="fi"><label>Bespeaking Fee (Rs)</label><input type="number" id="adv-amt" min="0" value="50000"/></div><div class="fi"><label>Invoice Date</label><input type="date" id="adv-date" value="'+(new Date().toISOString().slice(0,10))+'"/></div><div class="fi s2"><label>Notes</label><textarea id="adv-notes">'+defNotes()+'</textarea></div></div>'
-    +'<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--muted);margin-top:8px">Balance: <strong id="adv-bal" style="color:var(--navy)">'+fR(tot-50000)+'</strong></div>';
+    +'<div class="fg"><div class="fi"><label>Bespeaking Fee (Rs)</label><input type="number" id="adv-amt" min="0" value="'+_defBesp+'"/></div><div class="fi"><label>Invoice Date</label><input type="date" id="adv-date" value="'+(new Date().toISOString().slice(0,10))+'"/></div><div class="fi s2"><label>Notes</label><textarea id="adv-notes">'+defNotes()+'</textarea></div></div>'
+    +'<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--muted);margin-top:8px">Balance: <strong id="adv-bal" style="color:var(--navy)">'+fR(tot-_defBesp)+'</strong></div>';
   document.getElementById('adv-f').innerHTML='<button class="btn btn-ghost" onclick="CM(\'adv-modal\')">Cancel</button><button class="btn btn-outline" onclick="prevAdv(\''+src+'\',\''+sId+'\',\''+qId+'\')" >Preview</button><button class="btn btn-primary" onclick="convInv(\''+src+'\',\''+sId+'\',\''+qId+'\')" >Save Invoice</button>';
   setTimeout(function(){var el=document.getElementById('adv-amt');if(el)el.oninput=function(){var b=document.getElementById('adv-bal');if(b)b.textContent=fR(tot-(parseFloat(this.value)||0));};},100);
   CM('doc-modal');OM('adv-modal');
@@ -2427,7 +2436,7 @@ function viewPDF(type,src,sId,dId){
 }
 function buildPDF(type,l,doc){
   var items=Object.values(doc.items||{});var tot=qTot(doc.items);
-  var isI=type==='I';var bp=isI?(doc.advance||0):0;var bal=isI?tot-bp:null;
+  var isI=type==='I';var paidI=isI?invPaid(doc):0;var bal=isI?(tot-paidI):null;
   var s=gSet();
   var logo=s.logoUrl?'<img src="'+s.logoUrl+'" style="height:56px;object-fit:contain" alt="Biso"/>'
     :'<div style="font-weight:700;font-size:15px;color:#1B2B4B;letter-spacing:2px">BISO</div>';
@@ -2440,8 +2449,8 @@ function buildPDF(type,l,doc){
     ir+='<tr style="border-bottom:1px solid #f0f2f8"><td style="padding:11px 8px;font-size:12px;color:#aaa">'+(i+1)+'</td><td style="padding:11px 8px"><div style="font-size:13px;color:#1B2B4B;font-weight:500">'+escHtml(it.desc)+'</div></td><td style="padding:11px 8px;text-align:center;font-size:13px;color:#555">'+it.qty+'</td><td style="padding:11px 8px;text-align:right;font-size:13px;color:#555">'+rv+'</td><td style="padding:11px 8px;text-align:right;font-size:13px;font-weight:600;'+as+'">'+av+'</td></tr>';
   });
   var th='<div style="display:flex;justify-content:space-between;padding:7px 8px;border-bottom:1px solid #f0f2f8;font-size:13px;color:#555"><span>Sub Total</span><span>'+Number(tot).toLocaleString()+'.00</span></div>';
-  if(isI&&bp>0)th+='<div style="display:flex;justify-content:space-between;padding:7px 8px;border-bottom:1px solid #f0f2f8;font-size:13px"><span style="color:#555">Bespeaking Fee</span><span style="color:#38A169">('+Number(bp).toLocaleString()+'.00)</span></div>';
-  th+='<div style="display:flex;justify-content:space-between;padding:9px 8px;font-size:14px;font-weight:700;border-top:2px solid #1B2B4B"><span>Total</span><span>LKR '+Number(isI?Math.max(0,bal):tot).toLocaleString()+'.00</span></div>';
+  if(isI&&paidI>0)th+='<div style="display:flex;justify-content:space-between;padding:7px 8px;border-bottom:1px solid #f0f2f8;font-size:13px"><span style="color:#555">Paid</span><span style="color:#38A169">('+Number(paidI).toLocaleString()+'.00)</span></div>';
+  th+='<div style="display:flex;justify-content:space-between;padding:9px 8px;font-size:14px;font-weight:700;border-top:2px solid #1B2B4B"><span>'+(isI?'Balance Due':'Total')+'</span><span>LKR '+Number(isI?Math.max(0,bal):tot).toLocaleString()+'.00</span></div>';
   var nh=doc.notes?'<div style="margin-bottom:18px"><div style="font-size:12px;font-weight:600;color:#555;margin-bottom:7px;border-bottom:1px solid #eee;padding-bottom:5px">Notes</div><div style="font-size:12px;color:#666;line-height:1.8">'+escHtmlMultiline(doc.notes)+'</div></div>':'';
   var exp=!isI?'<div style="font-size:11px;color:#e74c3c">Expiry: '+fmt(doc.expiry)+'</div>':'';
   var html=
@@ -2491,6 +2500,64 @@ function sendWA(phone,name,type,id,tot){
   if(!n){notif('No phone number. Add to customer profile.');return;}
   var m='Dear '+name+',%0A%0APlease find your '+type+' (Ref: '+id+').%0A%0ATotal: '+fR(tot)+'%0A%0A+94 70 755 0221%0Abisostyling@gmail.com%0A%0AEvery queen deserves to be seen.';
   window.open('https://wa.me/'+n+'?text='+m,'_blank');
+}
+async function viewReceipt(src,sId,iId,pid){
+  var obj=src==='lead'?leads[sId]:custs[sId];if(!obj)return;
+  var inv=(obj.invoices||{})[iId];if(!inv)return;
+  var pay=(inv.payments||{})[pid];if(!pay)return;
+  if(Number(pay.amount)<=0){notif('Receipts are only for payments received.');return;}
+  if(!pay.receiptNo){
+    try{
+      var rn=await mintDocNum('receipt');
+      var path=(src==='lead'?'/leads/':'/customers/')+sId+'/invoices/'+iId+'/payments/'+pid;
+      await fbP(path,{receiptNo:rn});
+      pay.receiptNo=rn;if(inv.payments&&inv.payments[pid])inv.payments[pid].receiptNo=rn;
+    }catch(e){}
+  }
+  buildReceipt({name:obj.name,phone:obj.phone||''},inv,pay);
+}
+function buildReceipt(l,inv,pay){
+  var s=gSet();
+  var tot=qTot(inv.items);
+  var paid=invPaid(inv);
+  var bal=Math.max(0,tot-paid);
+  var rno=pay.receiptNo||docDraft('receipt');
+  var logo=s.logoUrl?'<img src="'+s.logoUrl+'" style="height:56px;object-fit:contain" alt="Biso"/>'
+    :'<div style="font-weight:700;font-size:15px;color:#1B2B4B;letter-spacing:2px">BISO</div>';
+  var trow=function(lbl,val,strong){return '<div style="display:flex;justify-content:space-between;padding:7px 8px;border-bottom:1px solid #f0f2f8;font-size:13px'+(strong?';font-weight:700;border-top:2px solid #1B2B4B':'')+'"><span style="color:'+(strong?'#1B2B4B':'#555')+'">'+lbl+'</span><span style="color:#1B2B4B">'+val+'</span></div>';};
+  var html=
+    '<div id="print-area" style="background:#fff;font-family:Inter,Arial,sans-serif;font-size:13px;max-width:740px;margin:0 auto;padding:36px 44px">'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:26px">'
+    +'<div>'+logo+'<div style="margin-top:10px;font-size:11px;color:#666;line-height:1.8">BISO (PVT) LTD<br/>79 Minuwangoda Road, Negombo<br/>bisostyling@gmail.com | +94 70 755 0221</div></div>'
+    +'<div style="text-align:right"><div style="font-size:30px;color:#1B2B4B;letter-spacing:3px;font-weight:300">RECEIPT</div>'
+    +'<div style="font-size:13px;font-weight:700;color:#1B2B4B;margin-top:5px"># '+rno+'</div>'
+    +'<div style="font-size:11px;color:#777;margin-top:2px">'+fmt(pay.date)+'</div></div></div>'
+    +'<div style="height:1px;background:#e0e4ed;margin-bottom:18px"></div>'
+    +'<div style="display:flex;justify-content:space-between;margin-bottom:22px">'
+    +'<div><div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;font-weight:600">Received From</div>'
+    +'<div style="font-weight:700;font-size:15px;color:#1B2B4B">'+escHtml(l.name)+'</div>'
+    +(l.phone?'<div style="font-size:12px;color:#555;margin-top:2px">'+escHtml(l.phone)+'</div>':'')+'</div>'
+    +'<div style="text-align:right;font-size:12px;color:#555">Against Invoice<br/><strong style="color:#1B2B4B">'+inv.id+'</strong></div></div>'
+    +'<div style="background:#f7f9fc;border:1px solid #e0e4ed;border-radius:10px;padding:18px 20px;margin-bottom:18px;text-align:center">'
+    +'<div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:6px">Amount Received</div>'
+    +'<div style="font-size:30px;font-weight:700;color:#38A169">'+fR(pay.amount)+'</div>'
+    +(pay.method?'<div style="font-size:12px;color:#666;margin-top:6px">via '+escHtml(pay.method)+'</div>':'')+'</div>'
+    +'<div style="display:flex;justify-content:flex-end;margin-bottom:18px"><div style="width:270px">'
+    +trow('Invoice Total','LKR '+Number(tot).toLocaleString()+'.00')
+    +trow('Paid to Date','LKR '+Number(paid).toLocaleString()+'.00')
+    +trow('Balance Due','LKR '+Number(bal).toLocaleString()+'.00',true)
+    +'</div></div>'
+    +'<div style="border-top:1px solid #e0e4ed;padding-top:10px;display:flex;justify-content:space-between;align-items:center">'
+    +'<div style="font-size:10px;color:#aaa">BISO (PVT) LTD · 79 Minuwangoda Road, Negombo</div>'
+    +'<div style="font-size:11px;color:#C9A84C;font-style:italic">Every queen deserves to be seen.</div></div>'
+    +'</div>';
+  document.getElementById('pdf-t').textContent='Receipt - '+rno;
+  document.getElementById('pdf-b').innerHTML=html;
+  document.getElementById('pdf-f').innerHTML=
+    '<button class="btn btn-ghost" onclick="CM(\'pdf-modal\')">Close</button>'
+    +'<button class="btn btn-outline" onclick="printPDF()">Save as PDF</button>'
+    +'<button class="btn btn-gold" onclick="sendWA(\''+escAttr(l.phone)+'\',\''+escAttr(l.name)+'\',\'Receipt\',\''+rno+'\','+Number(pay.amount)+')">WhatsApp</button>';
+  OM('pdf-modal');
 }
 function openQM(lid,cid){
   QB={lid:lid,cid:cid,items:[],notes:defNotes(),psvc:null,editId:null};
@@ -4810,57 +4877,6 @@ function rFinance(){
   }
   html += '</div>'; // end Outstanding card
   
-  // ── SECTION 4: Invoice Ledger (per-invoice cards) ──
-  html += '<div class="card" style="padding:18px 20px;margin-bottom:14px">';
-  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
-  html += '<div style="font-family:Cinzel,serif;font-size:13px;color:var(--navy);letter-spacing:1px;font-weight:600">Invoice Ledger</div>';
-  html += '<div style="font-size:11px;color:var(--muted);font-weight:600">'+cnt+' invoice'+(cnt!==1?'s':'')+'</div>';
-  html += '</div>';
-  if(cnt === 0){
-    html += '<div style="padding:30px 0;text-align:center;color:var(--muted);font-size:12px;font-style:italic">No invoices yet</div>';
-  } else {
-    allI.forEach(function(inv, idx){
-      var cancelled = !!(brides[inv.brideId] && brides[inv.brideId].cancelled);
-      var t = qTot(inv.items);
-      var adv = parseFloat(inv.advance||0)||0;
-      var paid = invPaid(inv);
-      var bal = cancelled ? 0 : Math.max(0, t-paid); // a cancelled booking owes nothing
-      var pct = t > 0 ? Math.round((paid/t)*100) : 0;
-      var statusColor, statusLabel;
-      if(cancelled){ statusColor = 'var(--muted)'; statusLabel = 'CANCELLED'; }
-      else if(pct >= 100){ statusColor = 'var(--success)'; statusLabel = 'PAID'; }
-      else if(pct > 0){ statusColor = 'var(--warn)'; statusLabel = 'PARTIAL'; }
-      else { statusColor = 'var(--danger)'; statusLabel = 'UNPAID'; }
-      var mb = idx < allI.length-1 ? 'margin-bottom:10px' : '';
-      
-      html += '<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;'+mb+'" onclick="openDetail(\''+inv.brideId+'\')">';
-      // Header: name + total
-      html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:4px">';
-      html += '<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;color:var(--navy)">'+escHtml(inv.cn)+(cancelled?' <span style="font-size:9px;font-weight:700;letter-spacing:.5px;color:var(--muted);background:var(--surf);border:1px solid var(--border);border-radius:4px;padding:1px 6px;vertical-align:middle">CANCELLED</span>':'')+'</div></div>';
-      html += '<div style="text-align:right;flex-shrink:0"><div style="font-family:Cinzel,serif;font-size:16px;color:var(--gold);font-weight:600">'+fRshort(t)+'</div></div>';
-      html += '</div>';
-      // Subheader: date + ID
-      html += '<div style="font-size:10px;color:var(--muted);margin-bottom:12px">'+fmt(inv.date)+' · '+inv.id+'</div>';
-      // 3-column breakdown
-      html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:10px;background:var(--surf);border-radius:8px;margin-bottom:10px">';
-      html += '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:3px">Bespeaking</div><div style="font-size:12px;font-weight:600;color:var(--text2)">'+fRshort(adv)+'</div></div>';
-      html += '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:3px">Paid</div><div style="font-size:12px;font-weight:600;color:var(--success)">'+fRshort(paid)+'</div></div>';
-      html += '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:3px">Outstanding</div><div style="font-size:12px;font-weight:600;color:'+(bal>0?'var(--warn)':'var(--muted)')+'">'+fRshort(bal)+'</div></div>';
-      html += '</div>';
-      // Progress bar + status
-      html += '<div style="display:flex;align-items:center;gap:10px">';
-      if(cancelled){
-        html += '<div style="flex:1"></div>';
-        html += '<div style="font-size:9px;font-weight:700;letter-spacing:.5px;color:var(--muted);white-space:nowrap">CANCELLED</div>';
-      } else {
-        html += '<div style="flex:1;height:5px;background:var(--surf);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+statusColor+';border-radius:3px;transition:width .3s"></div></div>';
-        html += '<div style="font-size:9px;font-weight:700;letter-spacing:.5px;color:'+statusColor+';white-space:nowrap">'+statusLabel+' · '+pct+'%</div>';
-      }
-      html += '</div>';
-      html += '</div>';
-    });
-  }
-  html += '</div>'; // end Ledger card
   
   document.getElementById('MC').innerHTML = html;
 }
@@ -5261,7 +5277,7 @@ function rSettings(tab){
     var pid='p-'+sv.d.replace(/[^a-z0-9]/gi,'_');
     pi+='<div style="display:flex;align-items:center;gap:10px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 13px"><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+sv.d+'</div><div style="font-size:11px;color:var(--muted)">'+sv.c+' · Default Rs '+sv.b.toLocaleString()+'</div></div><input type="number" id="'+pid+'" value="'+(lp[sv.d]||'')+'" placeholder="'+sv.b+'" style="width:110px;text-align:right;background:#fff;border:1.5px solid var(--border);border-radius:6px;padding:6px 9px;font-size:13px;font-family:Inter,sans-serif;color:var(--text);outline:none"/></div>';
   });
-  var it='<div class="fi" style="margin-bottom:18px"><label>Default Notes / Terms</label><textarea id="s-notes" style="min-height:130px">'+escHtml(s.defaultNotes||defNotes())+'</textarea></div><div class="fi" style="margin-bottom:18px"><label>Company Logo URL</label><input type="text" id="s-logo" value="'+escHtml(s.logoUrl||'')+'" placeholder="https://... image URL"/></div><button class="btn btn-primary" onclick="saveInvS()">Save Invoice Settings</button>';
+  var it='<div class="fi" style="margin-bottom:18px"><label>Default Notes / Terms</label><textarea id="s-notes" style="min-height:130px">'+escHtml(s.defaultNotes||defNotes())+'</textarea></div><div class="fi" style="margin-bottom:18px"><label>Default Bespeaking Fee (Rs)</label><input type="number" id="s-besp" min="0" value="'+(parseFloat(s.defaultBespeaking)||50000)+'"/></div><div class="fi" style="margin-bottom:18px"><label>Company Logo URL</label><input type="text" id="s-logo" value="'+escHtml(s.logoUrl||'')+'" placeholder="https://... image URL"/></div><button class="btn btn-primary" onclick="saveInvS()">Save Invoice Settings</button>';
   var pt='<div style="margin-bottom:12px;font-size:13px;color:var(--muted)">Override defaults. Leave blank to use default.</div><div style="display:flex;flex-direction:column;gap:8px">'+pi+'</div><button class="btn btn-primary" style="margin-top:14px" onclick="savePriceS()">Save Prices</button>';
   // Custom services (name + price), added by the owner
   var csList=getCustomSvcs();
@@ -5303,7 +5319,7 @@ function rSettings(tab){
     +'<div class="card"><div class="mbdy">'+(at==='invoice'?it:at==='prices'?pt:at==='sources'?st:dt)+'</div></div>'
     +'</div>';
 }
-function saveInvS(){var notes=document.getElementById('s-notes')?document.getElementById('s-notes').value:'';var logo=document.getElementById('s-logo')?document.getElementById('s-logo').value:'';sSet(Object.assign({},gSet(),{defaultNotes:notes,logoUrl:logo}));notif('Saved!');}
+function saveInvS(){var notes=document.getElementById('s-notes')?document.getElementById('s-notes').value:'';var logo=document.getElementById('s-logo')?document.getElementById('s-logo').value:'';var besp=document.getElementById('s-besp')?(parseFloat(document.getElementById('s-besp').value)||0):0;sSet(Object.assign({},gSet(),{defaultNotes:notes,logoUrl:logo,defaultBespeaking:besp}));notif('Saved!');}
 function savePriceS(){var s=gSet();var lp=s.linePrices||{};SVCS.filter(function(sv){return sv.aA||sv.b>0;}).forEach(function(sv){var pid='p-'+sv.d.replace(/[^a-z0-9]/gi,'_');var el=document.getElementById(pid);if(el&&el.value&&parseFloat(el.value)>0)lp[sv.d]=parseFloat(el.value);else delete lp[sv.d];});sSet(Object.assign({},s,{linePrices:lp}));notif('Prices saved!');}
 // --- Custom services (Prices tab) ---
 function readCustomSvcRows(){
