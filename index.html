@@ -417,7 +417,6 @@ textarea{resize:vertical;min-height:80px}
 </div></div>
 <div class="overlay" id="lead-modal"><div class="modal"><div class="mhd"><div style="display:flex;align-items:center;gap:10px;flex:1"><button class="btn btn-ghost btn-xs" onclick="closeOverview()" style="padding:6px 10px;border:none;background:var(--bg)">‹ Back</button><div style="flex:1"><div class="mt" id="of-title">New Bride</div><div class="msb" id="of-sub" style="display:none"></div></div></div><button class="mc" onclick="closeOverview()">×</button></div><div class="mbdy" id="of-body"></div><div class="mft" id="of-footer"></div></div></div>
 <div class="overlay" id="detail-modal"><div class="modal"><div class="mhd"><div><div class="mt" id="dm-n"></div><div class="msb" id="dm-s"></div></div><button class="mc" onclick="CM('detail-modal')">×</button></div><div class="mbdy" id="dm-b"></div><div class="mft" id="dm-f"></div></div></div>
-<div class="overlay" id="quot-modal"><div class="modal mlg"><div class="mhd"><div><div class="mt">Quotation</div><div class="msb" id="qm-s"></div></div><button class="mc" onclick="CM('quot-modal')">×</button></div><div class="mbdy" id="qm-b" style="padding:14px"></div><div class="mft" id="qm-f"></div></div></div>
 <div class="overlay" id="doc-modal"><div class="modal mlg"><div class="mhd"><div><div class="mt" id="doc-t"></div></div><button class="mc" onclick="CM('doc-modal')">×</button></div><div class="mbdy" id="doc-b"></div><div class="mft" id="doc-f"></div></div></div>
 <div class="overlay" id="pdf-modal"><div class="modal mlg"><div class="mhd"><div><div class="mt" id="pdf-t">Document</div></div><button class="mc" onclick="CM('pdf-modal')">×</button></div><div class="mbdy" id="pdf-b"></div><div class="mft" id="pdf-f"></div></div></div>
 <div class="overlay" id="adv-modal"><div class="modal msm"><div class="mhd"><div><div class="mt">Convert to Invoice</div><div class="msb" id="adv-s"></div></div><button class="mc" onclick="CM('adv-modal')">×</button></div><div class="mbdy" id="adv-b"></div><div class="mft" id="adv-f"></div></div></div>
@@ -425,10 +424,6 @@ textarea{resize:vertical;min-height:80px}
 <div class="overlay" id="pay-modal"><div class="modal msm"><div class="mhd"><div><div class="mt">Add Payment</div><div class="msb" id="pay-s"></div></div><button class="mc" onclick="CM('pay-modal')">x</button></div><div class="mbdy" id="pay-b"></div><div class="mft" id="pay-f"></div></div></div>
 <div class="overlay" id="cust-modal"><div class="modal"><div class="mhd"><div><div class="mt" id="cm-t"></div><div class="msb" id="cm-s"></div></div><button class="mc" onclick="CM('cust-modal')">×</button></div><div class="mbdy" id="cm-b"></div><div class="mft" id="cm-f"></div></div></div>
 <div class="overlay" id="ncust-modal" style="display:none"><!-- replaced by overview form --></div>
-<div class="sov" id="svc-ov" onclick="CS('svc')"></div><div class="sheet" id="svc-sheet"><div class="shdl"></div><div class="shd"><div class="sht">Add Service</div><button class="shc" onclick="CS('svc')">×</button></div><div class="ssw"><span class="ssi">⌕</span><input class="shs" type="text" id="svc-q" placeholder="Search services…" oninput="filterSvcs(this.value)" autocomplete="off"/></div><div class="shl" id="svc-list"></div></div>
-<div class="sov" id="thm-ov" onclick="CS('thm')"></div><div class="sheet" id="thm-sheet"><div class="shdl"></div><div class="shd"><div class="sht" id="thm-t">Select Theme</div><button class="shc" onclick="CS('thm')">×</button></div><div class="shl" id="thm-l"></div></div>
-<div class="sov" id="amt-ov" onclick="CS('amt')"></div><div class="sheet" id="amt-sheet" style="max-height:48vh"><div class="shdl"></div><div class="shd"><div class="sht" id="amt-t">Enter Amount</div><button class="shc" onclick="CS('amt')">×</button></div><div style="padding:18px"><div style="font-size:12px;color:var(--muted);margin-bottom:8px" id="amt-h"></div><input type="text" inputmode="numeric" id="amt-i" onblur="onMoneyBlur(this)" style="width:100%;padding:14px;font-size:22px;font-family:Inter,sans-serif;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);outline:none;text-align:right" placeholder="0"/><button onclick="confirmAmt()" style="width:100%;margin-top:12px;background:var(--navy);color:#fff;border:none;border-radius:8px;padding:13px;font-size:15px;font-family:Inter,sans-serif;font-weight:600;cursor:pointer">Add to Quote</button></div></div>
-<div class="sov" id="cst-ov" onclick="CS('cst')"></div><div class="sheet" id="cst-sheet"><div class="shdl"></div><div class="shd"><div class="sht">Select Customer</div><button class="shc" onclick="CS('cst')">×</button></div><div class="ssw"><span class="ssi">⌕</span><input class="shs" type="text" id="cst-q" placeholder="Search…" oninput="filterCusts(this.value)"/></div><div class="shl" id="cst-list"></div></div>
 <div class="overlay" id="cf-modal" style="z-index:3000"><div class="modal msm"><div class="mhd"><div><div class="mt" id="cf-title">Confirm</div><div class="msb" id="cf-sub" style="display:none"></div></div></div><div class="mbdy"><div id="cf-msg" style="font-size:14px;color:var(--text2);line-height:1.6"></div><div id="cf-input-wrap" style="margin-top:14px;display:none"><label id="cf-input-label" style="display:block;margin-bottom:6px">Amount</label><input type="number" id="cf-input" style="width:100%"/><input type="date" id="cf-input-date" style="width:100%;display:none"/><input type="time" id="cf-input-time" style="width:100%;display:none;margin-top:8px"/></div><div id="cf-note-wrap" style="margin-top:10px;display:none"><label style="display:block;margin-bottom:6px">Note (optional)</label><input type="text" id="cf-note" placeholder="Reason or comment"/></div></div><div class="mft"><button class="btn btn-ghost" onclick="cfNo()" id="cf-no">Cancel</button><button class="btn btn-primary" onclick="cfYes()" id="cf-yes">Confirm</button></div></div></div>
 <div class="overlay" id="disp-modal" style="z-index:2500"><div class="modal msm"><div class="mhd"><div style="flex:1"><div class="mt">Log Contact Attempt</div><div class="msb" id="disp-sub"></div></div><button class="mc" onclick="closeDisp()">×</button></div><div class="mbdy" id="disp-body"></div><div class="mft" id="disp-footer"></div></div></div>
 <div class="overlay" id="resched-modal" style="z-index:2500"><div class="modal msm"><div class="mhd"><div style="flex:1"><div class="mt">Reschedule Appointment</div><div class="msb" id="resched-sub"></div></div><button class="mc" onclick="closeResched()">×</button></div><div class="mbdy" id="resched-body"></div><div class="mft" id="resched-footer"></div></div></div>
@@ -516,12 +511,12 @@ const NAV=[
   {id:'schedule',lbl:'Schedule',ic:'<svg viewBox=\"0 0 24 24\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><line x1=\"3\" y1=\"10\" x2=\"21\" y2=\"10\"/><line x1=\"8\" y1=\"3\" x2=\"8\" y2=\"7\"/><line x1=\"16\" y1=\"3\" x2=\"16\" y2=\"7\"/></svg>',sec:'Schedule'},
   {id:'quotations',lbl:'Quotations',ic:'<svg viewBox=\"0 0 24 24\"><path d=\"M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z\"/><polyline points=\"14 3 14 9 20 9\"/><line x1=\"8\" y1=\"13\" x2=\"16\" y2=\"13\"/><line x1=\"8\" y1=\"17\" x2=\"13\" y2=\"17\"/></svg>',sec:'Finance'},
   {id:'invoices',lbl:'Invoices',ic:'<svg viewBox=\"0 0 24 24\"><path d=\"M19 4H5a1 1 0 0 0-1 1v16l3-2 2 2 3-2 3 2 2-2 3 2V5a1 1 0 0 0-1-1z\"/><line x1=\"8\" y1=\"10\" x2=\"16\" y2=\"10\"/><line x1=\"8\" y1=\"14\" x2=\"13\" y2=\"14\"/></svg>',sec:null},
+  {id:'messages',lbl:'Messages',ic:'<svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>',sec:null},
   {id:'finance',lbl:'Finance',ic:'<svg viewBox=\"0 0 24 24\"><line x1=\"12\" y1=\"2\" x2=\"12\" y2=\"22\"/><path d=\"M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6\"/></svg>',sec:null},
   {id:'settings',lbl:'Settings',ic:'<svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z\"/></svg>',sec:'Settings'}
 ];
-const TITLES={dailyBrief:'Daily Brief',pipeline:'Lead Pipeline',analytics:'Analytics',clients:'Confirmed Clients',customers:'Customer Profiles',schedule:'Schedule',quotations:'Quotations',invoices:'Invoices',finance:'Finance',settings:'Settings'};
+const TITLES={dailyBrief:'Daily Brief',pipeline:'Lead Pipeline',analytics:'Analytics',clients:'Confirmed Clients',customers:'Customer Profiles',schedule:'Schedule',quotations:'Quotations',invoices:'Invoices',finance:'Finance',settings:'Settings',messages:'Messages'};
 let leads={},custs={},view='dailyBrief',q='';
-let QB={lid:null,cid:null,items:[],notes:'',psvc:null,editId:null};
 let _cb=null;
 async function fbG(p){
   var tok=await authToken();
@@ -858,7 +853,7 @@ function buildNav(){
     h+='<div class="nav-item'+(view===n.id?' active':'')+'" onclick="sv(\''+n.id+'\');closeSB()">'+n.lbl+'</div>';
   });
   document.getElementById('SN').innerHTML=h;
-  var mob=['dailyBrief','pipeline','schedule','quotations','invoices'].filter(canViewPage);
+  var mob=['dailyBrief','pipeline','schedule','messages','invoices'].filter(canViewPage);
   document.getElementById('MN').innerHTML=mob.map(function(id){
     var n=NAV.find(function(x){return x.id===id;});
     return '<div class="mn'+(view===id?' active':'')+'" onclick="sv(\''+id+'\')">'+'<span class="mnic">'+n.ic+'</span>'+n.lbl+'</div>';
@@ -885,6 +880,7 @@ function openSB(){document.getElementById('SB').classList.add('open');document.g
 function closeSB(){document.getElementById('SB').classList.remove('open');document.getElementById('MOV').classList.remove('open');}
 function toggleMSB(){var b=document.getElementById('MSBar');var v=b.style.display==='none';b.style.display=v?'block':'none';if(v)document.getElementById('MSI').focus();}
 function handleAdd(){
+  if(view==='messages'){notif('WhatsApp inbox is coming soon.');return;}
   if(view==='customers'){openOverviewForm(null,{intent:'lead'});}
   else if(view==='quotations'){openOverviewForm(null,{intent:'quote'});}
   else if(view==='invoices'){openOverviewForm(null,{intent:'invoice'});}
@@ -893,7 +889,7 @@ function handleAdd(){
 function render(){
   // Defensive: if current view became restricted (e.g. role changed mid-session), bounce to brief
   if(!canViewPage(view)){view='dailyBrief';buildNav();document.getElementById('PT').textContent=TITLES[view]||view;}
-  var fn={dailyBrief:rDailyBrief,pipeline:rPipeline,analytics:rAnalytics,clients:rClients,customers:rCustomers,schedule:rSchedule,quotations:rQuotations,invoices:rInvoices,finance:rFinance,settings:rSettings};
+  var fn={dailyBrief:rDailyBrief,pipeline:rPipeline,analytics:rAnalytics,clients:rClients,customers:rCustomers,schedule:rSchedule,quotations:rQuotations,invoices:rInvoices,finance:rFinance,settings:rSettings,messages:rMessages};
   if(fn[view])fn[view]();
 }
 
@@ -1233,11 +1229,6 @@ document.addEventListener('click',function(e){
     showConfirm({title:'Discard reschedule?',msg:'Close without rescheduling?',yesText:'Discard',dangerous:true}).then(function(r){if(r.ok)closeResched();});
     return;
   }
-  // Quotation builder: warn if there are unsaved line items
-  if(id==='quot-modal'&&typeof QB!=='undefined'&&QB.items&&QB.items.length>0){
-    showConfirm({title:'Discard quotation?',msg:'You have unsaved line items. Discard them?',yesText:'Discard',dangerous:true}).then(function(r){if(r.ok)CM('quot-modal');});
-    return;
-  }
   // Add Payment: warn if user typed an amount
   if(id==='pay-modal'){
     var amtEl=document.getElementById('pay-amt');
@@ -1459,22 +1450,6 @@ function defNotes(){return gSet().defaultNotes||'An additional Venue Dressing Fe
 function getCustomSvcs(){var c=gSet().customServices;return Array.isArray(c)?c:[];}
 function allSvcs(){return SVCS.concat(getCustomSvcs().map(function(cs){return {c:cs.c||'Custom',d:cs.d,b:Number(cs.b)||0,aT:false,aA:false,custom:true};}));}
 function svcP(desc){var lp=gSet().linePrices||{};if(lp[desc]>0)return lp[desc];var s=allSvcs().find(function(x){return x.d===desc;});return s?s.b:0;}
-function smartP(desc){
-  var sp=svcP(desc);if(sp>0)return sp;
-  var hB=QB.items.some(function(i){return i.cat==='Bridal';});
-  var hH=QB.items.some(function(i){return i.cat==='Homecoming';});
-  var bmC=QB.items.filter(function(i){return i.desc==='Bridesmaid';}).reduce(function(s,i){return s+(i.qty||1);},0);
-  if(desc==='Homecoming')return hB?95000:125000;
-  if(desc==='Going Away')return(hB&&hH&&bmC>=2)?60000:65000;
-  if(desc==='Bridesmaid')return(hB&&hH)?35000:38000;
-  var s=allSvcs().find(function(x){return x.d===desc;});return s?s.b:0;
-}
-function applyDisc(){
-  QB.items=QB.items.filter(function(i){return !i.auto;});
-  var hB=QB.items.some(function(i){return i.cat==='Bridal';});
-  var hH=QB.items.some(function(i){return i.cat==='Homecoming';});
-  if(hB&&hH)QB.items.push({desc:'Homecoming Package Discount',unit:-30000,qty:1,disc:0,cat:'Discount',auto:true,key:'disc-hc'});
-}
 function rPipeline(){
   var all=lA();
   var pl=all.filter(function(l){return !l.confirmed&&!l.lost&&(q?l.name.toLowerCase().includes(q):true);});
@@ -2062,6 +2037,14 @@ function setSchedMode(m){
   rSchedule();
 }
 
+function rMessages(){
+  document.getElementById('MC').innerHTML=
+    '<div class="card" style="padding:48px 24px;text-align:center">'
+    +'<div style="width:64px;height:64px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;margin:0 auto 18px"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="var(--gold)" stroke-width="1.6"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>'
+    +'<div style="font-family:Cinzel,serif;font-size:18px;color:var(--navy);font-weight:600;margin-bottom:8px">WhatsApp Inbox</div>'
+    +'<div style="font-size:13px;color:var(--muted);line-height:1.6;max-width:300px;margin:0 auto">Coming soon \u2014 two-way WhatsApp messaging with your brides, right here in the CRM. We\u2019re building it now.</div>'
+    +'</div>';
+}
 function rQuotations(){
   var allQ=[];
   // Read from brides directly to avoid double-counting (leads+custs are derived views of same data)
@@ -2569,195 +2552,9 @@ function buildReceipt(l,inv,pay){
     +'<button class="btn btn-gold" onclick="sendWA(\''+escAttr(l.phone)+'\',\''+escAttr(l.name)+'\',\'Receipt\',\''+rno+'\','+Number(pay.amount)+')">WhatsApp</button>';
   OM('pdf-modal');
 }
-function openQM(lid,cid){
-  QB={lid:lid,cid:cid,items:[],notes:defNotes(),psvc:null,editId:null};
-  if(lid&&leads[lid]){var l=leads[lid];var ex=cA().find(function(c){return c.phone&&c.phone===l.phone;});if(ex)QB.cid=ex.id;}
-  document.getElementById('qm-s').textContent=lid&&leads[lid]?'For: '+leads[lid].name:'New Quotation';
-  renderQB();
-  document.getElementById('qm-f').innerHTML='<button class="btn btn-ghost" onclick="CM(\'quot-modal\')">Cancel</button><button class="btn btn-outline" onclick="prevQB()">Preview</button><button class="btn btn-primary" onclick="saveQB()">Save</button>';
-  OM('quot-modal');
-}
 function editQ(src,sId,qId){
-  var obj=src==='lead'?leads[sId]:custs[sId];if(!obj)return;
-  var qt=src==='lead'?(obj.quotations||{})[qId]:(obj.quotes||{})[qId];if(!qt)return;
-  QB={lid:src==='lead'?sId:null,cid:null,items:Object.values(qt.items||{}),notes:qt.notes||'',psvc:null,editId:{src:src,sId:sId,qId:qId}};
-  var ex=cA().find(function(c){return c.phone&&c.phone===obj.phone;});
-  if(ex)QB.cid=ex.id;else if(src==='cust')QB.cid=sId;
-  document.getElementById('qm-s').textContent='Editing: '+obj.name;
-  renderQB();
-  document.getElementById('qm-f').innerHTML='<button class="btn btn-ghost" onclick="CM(\'quot-modal\')">Cancel</button><button class="btn btn-outline" onclick="prevQB()">Preview</button><button class="btn btn-primary" onclick="updQB()">Update</button>';
-  CM('doc-modal');OM('quot-modal');
-}
-function renderQB(){
-  var cust=QB.cid?custs[QB.cid]:null;
-  var tot=QB.items.reduce(function(s,it){return s+cLine(it);},0);
-  var ch=cust
-    ?'<div class="qcsel"><div class="qav">'+escHtml(inits(cust.name))+'</div><div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--navy)">'+escHtml(cust.name)+'</div><div style="font-size:12px;color:var(--muted)">'+escHtml(cust.phone||'')+'</div></div><button class="btn btn-ghost btn-xs" onclick="OS(\'cst\')">Change</button></div>'
-    :'<div class="qrow" onclick="OS(\'cst\')"><div class="qrl">Select Customer</div><div class="qrv m">Tap to select</div><div style="color:var(--muted);margin-left:8px">›</div></div>';
-  var lh='';
-  QB.items.forEach(function(it,i){
-    var line=cLine(it);
-    var rb=it.auto
-      ?'<span style="font-size:11px;color:var(--muted);align-self:flex-end;padding-bottom:8px">auto</span>'
-      :'<button class="qdel" onclick="delQBI(\''+( it.key||String(i) )+'\')" >x</button>';
-    lh+='<div class="ql"><div class="qln">'+escHtml(it.desc)+'</div><div class="qls">'+escHtml(it.cat||'Custom')+(it.theme?' · '+escHtml(it.theme):'')+'</div>'
-      +'<div class="qli">'
-      +'<div class="qcl"><span class="qcll">Qty</span><input class="qi" type="number" value="'+(it.qty||1)+'" min="1" style="width:58px;text-align:center" oninput="QB.items['+i+'].qty=parseFloat(this.value)||1;updQBT()"/></div>'
-      +'<div class="qcl"><span class="qcll">Unit Rs</span><input class="qi" type="number" value="'+(it.unit||0)+'" style="width:98px;text-align:right" oninput="QB.items['+i+'].unit=parseFloat(this.value)||0;updQBT()"/></div>'
-      +'<div class="qcl"><span class="qcll">Disc %</span><input class="qi" type="number" value="'+(it.disc||0)+'" min="0" max="100" style="width:58px;text-align:center" oninput="QB.items['+i+'].disc=parseFloat(this.value)||0;updQBT()"/></div>'
-      +'<div class="qla" id="qa-'+i+'">'+fR(line)+'</div>'+rb
-      +'</div></div>';
-  });
-  document.getElementById('qm-b').innerHTML=
-    '<div style="max-width:580px;margin:0 auto">'
-    +'<div class="qs"><div class="qsh"><div class="qst">Customer</div></div>'+ch+'</div>'
-    +'<div class="qs"><div class="qsh"><div class="qst">Services</div>'+(QB.items.length?'<div style="font-size:12px;color:var(--muted)">'+QB.items.length+' item'+(QB.items.length!==1?'s':'')+'</div>':'')+'</div>'
-    +lh+'<div class="qadd" onclick="OS(\'svc\')"><div class="qac">+</div><div style="font-size:13px;font-weight:600;color:var(--navy)">Add new line</div></div></div>'
-    +(QB.items.length?'<div class="qs"><div class="qsh" style="justify-content:flex-end"><div class="qgt" id="qb-g">'+fR(tot)+'</div></div></div>':'')
-    +'<div class="qs"><div style="padding:13px 18px"><textarea id="qb-n" style="width:100%;min-height:68px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:Inter,sans-serif;color:var(--text);outline:none;resize:vertical">'+escHtml(QB.notes||defNotes())+'</textarea></div></div>'
-    +'</div>';
-}
-function updQBT(){
-  QB.items.forEach(function(it,i){var el=document.getElementById('qa-'+i);if(el)el.textContent=fR(cLine(it));});
-  var g=document.getElementById('qb-g');if(g)g.textContent=fR(QB.items.reduce(function(s,it){return s+cLine(it);},0));
-}
-function delQBI(key){
-  // Support deletion by key OR by index (when item has no key, button passes String(index))
-  QB.items=QB.items.filter(function(it,i){
-    if(it.auto)return true; // never auto-delete auto-items
-    var itKey=it.key||String(i);
-    return itKey!==key;
-  });
-  applyDisc();renderQB();
-}
-function OS(t){
-  var n=document.getElementById('qb-n');if(n)QB.notes=n.value;
-  document.getElementById(t+'-ov').classList.add('open');
-  document.getElementById(t+'-sheet').classList.add('open');
-  if(t==='svc'){document.getElementById('svc-q').value='';filterSvcs('');setTimeout(function(){document.getElementById('svc-q').focus();},300);}
-  if(t==='cst'){document.getElementById('cst-q').value='';filterCusts('');setTimeout(function(){document.getElementById('cst-q').focus();},300);}
-  if(t==='amt')setTimeout(function(){document.getElementById('amt-i').focus();},300);
-}
-function CS(t){document.getElementById(t+'-ov').classList.remove('open');document.getElementById(t+'-sheet').classList.remove('open');}
-function filterSvcs(sq){
-  var s=sq.toLowerCase().trim();
-  var src=allSvcs();
-  var f=s?src.filter(function(sv){return sv.d.toLowerCase().includes(s)||sv.c.toLowerCase().includes(s);}):src;
-  var h='';
-  f.forEach(function(sv){
-    var lp=svcP(sv.d);
-    var pl=(sv.aA&&lp===sv.b)?'From '+fR(sv.b):fR(lp||sv.b);
-    h+='<div class="shi" onclick="selSvc(\''+sv.d.replace(/\'/g,"\\'")+'\',' +sv.b+',\''+sv.c+'\','+sv.aT+','+sv.aA+')" ><div><div class="sin">'+sv.d+'</div><div class="sim">'+sv.c+'</div></div><div class="sip">'+pl+'</div></div>';
-  });
-  h+='<div class="sadd" onclick="addCustom(\''+escAttr(sq)+'\')"><span style="color:var(--gold);font-weight:600;font-size:13px">+ Add custom line</span></div>';
-  document.getElementById('svc-list').innerHTML=h;
-}
-function selSvc(desc,base,cat,aT,aA){
-  CS('svc');
-  var price=svcP(desc);var sp=smartP(desc);
-  if(aA&&price===base){
-    QB.psvc={desc:desc,unit:base,cat:cat,aT:aT};
-    document.getElementById('amt-t').textContent=desc;
-    document.getElementById('amt-h').textContent='Starting from '+fR(base);
-    document.getElementById('amt-i').value=base;
-    setTimeout(function(){OS('amt');},200);return;
-  }
-  var fu=price>0?price:sp;
-  if(aT){
-    QB.psvc={desc:desc,unit:fu,cat:cat};
-    document.getElementById('thm-t').textContent='Theme for '+cat;
-    document.getElementById('thm-l').innerHTML=THEMES.map(function(t){return '<div class="to" onclick="selTheme(\''+t+'\')" ><div class="tr2"></div><div class="tl">'+t+'</div></div>';}).join('');
-    setTimeout(function(){OS('thm');},200);
-  }else{
-    QB.items.push({desc:desc,unit:fu,qty:1,disc:0,cat:cat,key:uid()});applyDisc();renderQB();
-  }
-}
-function confirmAmt(){
-  var amt=parseMoney(document.getElementById('amt-i').value);
-  if(amt<=0){notif('Please enter an amount.');return;}
-  CS('amt');var s=QB.psvc;if(!s)return;s.unit=amt;
-  if(s.aT){
-    document.getElementById('thm-t').textContent='Theme for '+s.cat;
-    document.getElementById('thm-l').innerHTML=THEMES.map(function(t){return '<div class="to" onclick="selTheme(\''+t+'\')" ><div class="tr2"></div><div class="tl">'+t+'</div></div>';}).join('');
-    setTimeout(function(){OS('thm');},200);
-  }else{
-    QB.items.push({desc:s.desc,unit:s.unit,qty:1,disc:0,cat:s.cat,key:uid()});
-    QB.psvc=null;applyDisc();renderQB();
-  }
-}
-function selTheme(t){
-  CS('thm');var s=QB.psvc;if(!s)return;
-  QB.items.push({desc:s.desc+' - '+t,unit:s.unit,qty:1,disc:0,cat:s.cat,theme:t,key:uid()});
-  QB.psvc=null;applyDisc();renderQB();
-}
-function addCustom(raw){CS('svc');QB.items.push({desc:raw||'Custom service',unit:0,qty:1,disc:0,cat:'Custom',key:uid()});renderQB();}
-function filterCusts(sq){
-  var s=sq.toLowerCase();
-  var all=cA().filter(function(c){return !s||c.name.toLowerCase().includes(s)||(c.phone||'').includes(s);});
-  var h='';
-  all.forEach(function(c){h+='<div class="ci" onclick="selCust(\''+c.id+'\')" ><div class="qav" style="width:38px;height:38px;font-size:13px">'+escHtml(inits(c.name))+'</div><div><div style="font-size:13px;font-weight:600;color:var(--navy)">'+escHtml(c.name)+'</div><div style="font-size:11px;color:var(--muted)">'+escHtml(c.phone||'')+'</div></div></div>';});
-  h+='<div class="cn2" onclick="CS(\'cst\');_cb=function(c){QB.cid=c.id;renderQB();};openNC()"><div class="cni">+</div><div><div style="font-size:13px;font-weight:600;color:var(--gold)">New Customer</div><div style="font-size:11px;color:var(--muted)">Create profile</div></div></div>';
-  document.getElementById('cst-list').innerHTML=h;
-}
-function selCust(id){CS('cst');QB.cid=id;var n=document.getElementById('qb-n');if(n)QB.notes=n.value;renderQB();}
-function prevQB(){
-  var n=document.getElementById('qb-n');if(n)QB.notes=n.value;
-  var c=QB.cid?custs[QB.cid]:null;
-  var fl=c?{name:c.name,phone:c.phone||'',weddingDate:c.weddingDate||''}:{name:'Preview',phone:'',weddingDate:''};
-  var items={};QB.items.forEach(function(it){var k=it.key||uid();items[k]=Object.assign({},it,{key:k});});
-  buildPDF('Q',fl,{id:docDraft('quote'),date:new Date().toISOString().slice(0,10),expiry:expD(),items:items,notes:QB.notes});
-}
-async function saveQB(){
-  var n=document.getElementById('qb-n');if(n)QB.notes=n.value;
-  if(!QB.cid&&!QB.lid){notif('Please select a customer.');return;}
-  if(!QB.items.length){notif('Add at least one service.');return;}
-  var items={};QB.items.forEach(function(it){var k=it.key||uid();items[k]=Object.assign({},it,{key:k});});
-  var qtn=await mintDocNum('quote');
-  var qt={id:qtn,date:new Date().toISOString().slice(0,10),expiry:expD(),items:items,notes:QB.notes,convertedToInvoice:false,sent:false};
-  window._saving=true;
-  try{
-    if(QB.cid){await fbP('/customers/'+QB.cid+'/quotes',{[qt.id]:qt});if(!custs[QB.cid])custs[QB.cid]={};custs[QB.cid].quotes=custs[QB.cid].quotes||{};custs[QB.cid].quotes[qt.id]=qt;}
-    if(QB.lid){
-      await fbP('/leads/'+QB.lid+'/quotations',{[qt.id]:qt});
-      leads[QB.lid].quotations=leads[QB.lid].quotations||{};leads[QB.lid].quotations[qt.id]=qt;
-      if((leads[QB.lid].stage||0)<3){await fbP('/leads/'+QB.lid,{stage:3});leads[QB.lid].stage=3;}
-    }else if(QB.cid){
-      var cc=custs[QB.cid];
-      if(!cc){notif('Warning: customer not found.');}
-      else{
-        var ex=lA().find(function(l){return l.phone&&l.phone===cc.phone&&!l.confirmed;});
-        if(ex){
-          await fbP('/leads/'+ex.id+'/quotations',{[qt.id]:qt});
-          ex.quotations=ex.quotations||{};ex.quotations[qt.id]=qt;
-          if((ex.stage||0)<3){await fbP('/leads/'+ex.id,{stage:3});ex.stage=3;}
-        }else{
-          var nid=uid();
-          var nl={id:nid,name:cc.name,phone:cc.phone||'',email:cc.email||'',source:'walk-in',stage:3,weddingDate:cc.weddingDate||'',package:'Custom',notes:'Auto from quote '+qt.id,bridesmaids:cc.bridesmaids||0,createdAt:new Date().toISOString(),confirmed:false,advance:0,balance:0,venue:cc.venue||'',appointments:{},quotations:{}};
-          nl.quotations[qt.id]=qt;
-          try{
-            await fbS('/leads/'+nid,nl);
-            leads[nid]=nl;
-            notif('Lead auto-created for '+cc.name);
-          }catch(err){notif('Lead creation failed: '+err.message);}
-        }
-      }
-    }
-    CM('quot-modal');notif('Quotation saved!');if(QB.lid)openDetail(QB.lid);render();
-  }catch(e){notif('Error: '+e.message);
-  }finally{window._saving=false;}
-}
-async function updQB(){
-  var n=document.getElementById('qb-n');if(n)QB.notes=n.value;
-  if(!QB.items.length){notif('Add at least one service.');return;}
-  var src=QB.editId.src;var sId=QB.editId.sId;var qId=QB.editId.qId;
-  var items={};QB.items.forEach(function(it){var k=it.key||uid();items[k]=Object.assign({},it,{key:k});});
-  var path=src==='lead'?'/leads/'+sId+'/quotations/'+qId:'/customers/'+sId+'/quotes/'+qId;
-  try{
-    await fbP(path,{items:items,notes:QB.notes});
-    var obj=src==='lead'?leads[sId]:custs[sId];
-    if(obj){var q=src==='lead'?(obj.quotations||{})[qId]:(obj.quotes||{})[qId];if(q){q.items=items;q.notes=QB.notes;}}
-    CM('quot-modal');notif('Quotation updated!');render();
-  }catch(e){notif('Error: '+e.message);}
+  CM('doc-modal');
+  openOverviewForm(sId,{intent:'quote',quoteId:qId});
 }
 function openDetail(id){
   var l=leads[id];if(!l)return;
@@ -3777,13 +3574,17 @@ function openOverviewForm(brideId, opts){
     var match = COUNTRIES.find(function(x){return pAll.indexOf(x.c)===0;});
     OF.countryCode = match ? match.c : '94';
     
-    // Load latest unsent draft quote items, if any
+    // Load a specific quote (opts.quoteId) or the latest unsent draft, if any
     OF.draft.quoteItems = {};
     var draftQuote = null;
     var quotes = OF.draft.quotes || {};
-    Object.values(quotes).forEach(function(qt){
-      if(!qt.sent && !qt.convertedToInvoice && !draftQuote)draftQuote = qt;
-    });
+    if(opts.quoteId && quotes[opts.quoteId]){
+      draftQuote = quotes[opts.quoteId];
+    } else {
+      Object.values(quotes).forEach(function(qt){
+        if(!qt.sent && !qt.convertedToInvoice && !draftQuote)draftQuote = qt;
+      });
+    }
     if(draftQuote && draftQuote.items){
       Object.values(draftQuote.items).forEach(function(it){
         var k = it.key || ('L-'+Math.random().toString(36).slice(2,9));
