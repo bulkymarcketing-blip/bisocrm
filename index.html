@@ -4820,13 +4820,15 @@ function rFinance(){
     html += '<div style="padding:30px 0;text-align:center;color:var(--muted);font-size:12px;font-style:italic">No invoices yet</div>';
   } else {
     allI.forEach(function(inv, idx){
+      var cancelled = !!(brides[inv.brideId] && brides[inv.brideId].cancelled);
       var t = qTot(inv.items);
       var adv = parseFloat(inv.advance||0)||0;
       var paid = invPaid(inv);
-      var bal = Math.max(0, t-paid);
+      var bal = cancelled ? 0 : Math.max(0, t-paid); // a cancelled booking owes nothing
       var pct = t > 0 ? Math.round((paid/t)*100) : 0;
       var statusColor, statusLabel;
-      if(pct >= 100){ statusColor = 'var(--success)'; statusLabel = 'PAID'; }
+      if(cancelled){ statusColor = 'var(--muted)'; statusLabel = 'CANCELLED'; }
+      else if(pct >= 100){ statusColor = 'var(--success)'; statusLabel = 'PAID'; }
       else if(pct > 0){ statusColor = 'var(--warn)'; statusLabel = 'PARTIAL'; }
       else { statusColor = 'var(--danger)'; statusLabel = 'UNPAID'; }
       var mb = idx < allI.length-1 ? 'margin-bottom:10px' : '';
@@ -4834,7 +4836,7 @@ function rFinance(){
       html += '<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;'+mb+'" onclick="openDetail(\''+inv.brideId+'\')">';
       // Header: name + total
       html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:4px">';
-      html += '<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;color:var(--navy)">'+escHtml(inv.cn)+'</div></div>';
+      html += '<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;color:var(--navy)">'+escHtml(inv.cn)+(cancelled?' <span style="font-size:9px;font-weight:700;letter-spacing:.5px;color:var(--muted);background:var(--surf);border:1px solid var(--border);border-radius:4px;padding:1px 6px;vertical-align:middle">CANCELLED</span>':'')+'</div></div>';
       html += '<div style="text-align:right;flex-shrink:0"><div style="font-family:Cinzel,serif;font-size:16px;color:var(--gold);font-weight:600">'+fRshort(t)+'</div></div>';
       html += '</div>';
       // Subheader: date + ID
@@ -4847,8 +4849,13 @@ function rFinance(){
       html += '</div>';
       // Progress bar + status
       html += '<div style="display:flex;align-items:center;gap:10px">';
-      html += '<div style="flex:1;height:5px;background:var(--surf);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+statusColor+';border-radius:3px;transition:width .3s"></div></div>';
-      html += '<div style="font-size:9px;font-weight:700;letter-spacing:.5px;color:'+statusColor+';white-space:nowrap">'+statusLabel+' · '+pct+'%</div>';
+      if(cancelled){
+        html += '<div style="flex:1"></div>';
+        html += '<div style="font-size:9px;font-weight:700;letter-spacing:.5px;color:var(--muted);white-space:nowrap">CANCELLED</div>';
+      } else {
+        html += '<div style="flex:1;height:5px;background:var(--surf);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+statusColor+';border-radius:3px;transition:width .3s"></div></div>';
+        html += '<div style="font-size:9px;font-weight:700;letter-spacing:.5px;color:'+statusColor+';white-space:nowrap">'+statusLabel+' · '+pct+'%</div>';
+      }
       html += '</div>';
       html += '</div>';
     });
