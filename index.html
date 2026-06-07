@@ -1182,10 +1182,30 @@ function invOutstanding(b,inv){
   if(b&&b.cancelled)return 0; // cancelled bookings owe nothing
   return Math.max(0,qTot(inv.items)-invPaid(inv));
 }
+// P0-2: bride-level rollups across all invoices (cancelled-aware). Resolve the canonical
+// bride via brides[] so a lead/customer projection (or a raw bride) all yield correct
+// cancelled-aware figures. These REPLACE the denormalized b.advance/b.balance for DISPLAY.
+function _canon(o){return (o&&o.id&&brides[o.id])?brides[o.id]:o;}
+function brideTotal(o){var b=_canon(o);return Object.values((b&&b.invoices)||{}).reduce(function(s,inv){return s+invInvoiced(b,inv);},0);}
+function brideCollected(o){var b=_canon(o);return Object.values((b&&b.invoices)||{}).reduce(function(s,inv){return s+invCollected(b,inv);},0);}
+function brideOutstanding(o){var b=_canon(o);return Object.values((b&&b.invoices)||{}).reduce(function(s,inv){return s+invOutstanding(b,inv);},0);}
 function inits(n){return(n||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();}
 function expD(){var d=new Date();d.setMonth(11);d.setDate(31);return d.toISOString().slice(0,10);}
-function qNum(){var d=new Date();return 'BQ-'+String(d.getFullYear()).slice(-2)+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'-'+Math.floor(Math.random()*90+10);}
-function iNum(){var d=new Date();return 'BI-'+String(d.getFullYear()).slice(-2)+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'-'+Math.floor(Math.random()*90+10);}
+// P0-1: sequential document numbering. Counters at /counters/invoiceSeq + /counters/quoteSeq
+// climb continuously and never reset; the year in the prefix only marks WHEN issued, so no
+// single number reveals how many have been issued. Real numbers are minted at SAVE (inside the
+// save lock); previews show a DRAFT placeholder so cancelled previews never burn a number.
+var _INV_SEED=1247,_QUOTE_SEED=3061;
+function docDraft(kind){return (kind==='invoice'?'BI':'BQ')+'-'+(new Date().getFullYear())+'-DRAFT';}
+function docFmt(kind,n){return (kind==='invoice'?'BI':'BQ')+'-'+(new Date().getFullYear())+'-'+String(n).padStart(4,'0');}
+async function mintDocNum(kind){
+  var path=kind==='invoice'?'/counters/invoiceSeq':'/counters/quoteSeq';
+  var seed=kind==='invoice'?_INV_SEED:_QUOTE_SEED;
+  var cur=await fbG(path);
+  var n=(typeof cur==='number'&&cur>=seed)?cur+1:seed;
+  await fbS(path,n);
+  return docFmt(kind,n);
+}
 function lA(){return Object.values(leads);}
 function cA(){return Object.values(custs);}
 
@@ -1728,8 +1748,8 @@ function rClients(){
   var rows='';
   cl.forEach(function(l){
     var d=dU(l.weddingDate);
-    var tot=(l.advance||0)+(l.balance||0);
-    var pct=tot>0?Math.round(((l.advance||0)/tot)*100):0;
+    var tot=brideTotal(l);
+    var pct=tot>0?Math.round((brideCollected(l)/tot)*100):0;
     var bc=tot===0?'bu':pct>=100?'bp':pct>0?'bpa':'bu';
     var bl=tot===0?'—':pct>=100?'Paid':pct>0?pct+'%':'Pending';
     rows+='<tr onclick="openDetail(\''+l.id+'\')">'
@@ -2306,7 +2326,7 @@ function prevAdv(src,sId,qId){
   var qt=src==='lead'?(obj.quotations||{})[qId]:(obj.quotes||{})[qId];if(!qt)return;
   var bp=parseFloat((document.getElementById('adv-amt')||{}).value)||0;
   var notes=(document.getElementById('adv-notes')||{}).value||'';
-  buildPDF('I',{name:obj.name,phone:obj.phone||'',weddingDate:obj.weddingDate||''},{id:iNum(),date:new Date().toISOString().slice(0,10),items:qt.items,advance:bp,notes:notes});
+  buildPDF('I',{name:obj.name,phone:obj.phone||'',weddingDate:obj.weddingDate||''},{id:docDraft('invoice'),date:new Date().toISOString().slice(0,10),items:qt.items,advance:bp,notes:notes});
 }
 async function convInv(src,sId,qId){
   var obj=src==='lead'?leads[sId]:custs[sId];if(!obj)return;
@@ -2317,7 +2337,7 @@ async function convInv(src,sId,qId){
   var notes=(document.getElementById('adv-notes')||{}).value||'';
   var date=(document.getElementById('adv-date')||{}).value||new Date().toISOString().slice(0,10);
   var items=Object.assign({},qt.items);var tot=qTot(items);
-  var inv={id:iNum(),date:date,items:items,advance:bp,notes:notes};
+  var inv={id:await mintDocNum('invoice'),date:date,items:items,advance:bp,notes:notes};
   window._saving=true;
   try{
     if(src==='lead'){
@@ -2608,14 +2628,15 @@ function prevQB(){
   var c=QB.cid?custs[QB.cid]:null;
   var fl=c?{name:c.name,phone:c.phone||'',weddingDate:c.weddingDate||''}:{name:'Preview',phone:'',weddingDate:''};
   var items={};QB.items.forEach(function(it){var k=it.key||uid();items[k]=Object.assign({},it,{key:k});});
-  buildPDF('Q',fl,{id:qNum(),date:new Date().toISOString().slice(0,10),expiry:expD(),items:items,notes:QB.notes});
+  buildPDF('Q',fl,{id:docDraft('quote'),date:new Date().toISOString().slice(0,10),expiry:expD(),items:items,notes:QB.notes});
 }
 async function saveQB(){
   var n=document.getElementById('qb-n');if(n)QB.notes=n.value;
   if(!QB.cid&&!QB.lid){notif('Please select a customer.');return;}
   if(!QB.items.length){notif('Add at least one service.');return;}
   var items={};QB.items.forEach(function(it){var k=it.key||uid();items[k]=Object.assign({},it,{key:k});});
-  var qt={id:qNum(),date:new Date().toISOString().slice(0,10),expiry:expD(),items:items,notes:QB.notes,convertedToInvoice:false,sent:false};
+  var qtn=await mintDocNum('quote');
+  var qt={id:qtn,date:new Date().toISOString().slice(0,10),expiry:expD(),items:items,notes:QB.notes,convertedToInvoice:false,sent:false};
   window._saving=true;
   try{
     if(QB.cid){await fbP('/customers/'+QB.cid+'/quotes',{[qt.id]:qt});if(!custs[QB.cid])custs[QB.cid]={};custs[QB.cid].quotes=custs[QB.cid].quotes||{};custs[QB.cid].quotes[qt.id]=qt;}
@@ -2673,8 +2694,8 @@ function openDetail(id){
   else{var nxt=nextActionLabel(l);subText=nxt;}
   document.getElementById('dm-s').textContent=subText;
   // Compute totals
-  var tot=(l.advance||0)+(l.balance||0);
-  var pct=tot>0?Math.round(((l.advance||0)/tot)*100):0;
+  var tot=brideTotal(l);
+  var pct=tot>0?Math.round((brideCollected(l)/tot)*100):0;
   var quots=Object.values(l.quotations||{});
   var invs=Object.values(l.invoices||{});
   var appts=Object.values(l.appointments||{});
@@ -2785,7 +2806,7 @@ function buildPaymentTab(id,l,cancelled,quots,invs){
   // Find final trial appointment
   var appts=Object.values(l.appointments||{}).filter(function(a){return !a.cancelled;});
   var ft=appts.find(function(a){return a.reason==='Final Trial';});
-  var balance=l.balance||0;
+  var balance=brideOutstanding(l);
   var dToWed=dU(l.weddingDate);
   // Final payment red card: 14 days before wedding date OR if balance > 0 and ft is scheduled within 14 days
   if(!cancelled&&balance>0&&dToWed!==null&&dToWed<=14){
@@ -2800,9 +2821,11 @@ function buildPaymentTab(id,l,cancelled,quots,invs){
     }
   }
   // Payment summary
-  var tot=(l.advance||0)+(l.balance||0);
-  var pct=tot>0?Math.round(((l.advance||0)/tot)*100):0;
-  var summary='<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><div><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase">Total</div><div style="font-size:18px;font-weight:700;color:var(--navy)">'+fR(tot)+'</div></div><div style="text-align:right"><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase">Balance</div><div style="font-size:18px;font-weight:700;color:'+((l.balance||0)>0?'var(--warn)':'var(--success)')+'">'+fR(l.balance||0)+'</div></div></div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--muted)">Paid '+pct+'%</span><span style="color:var(--success);font-weight:600">'+fR(l.advance||0)+' collected</span></div><div class="pb"><div class="pf" style="width:'+pct+'%"></div></div></div>';
+  var tot=brideTotal(l);
+  var coll=brideCollected(l);
+  var bal=brideOutstanding(l);
+  var pct=tot>0?Math.round((coll/tot)*100):0;
+  var summary='<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><div><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase">Total</div><div style="font-size:18px;font-weight:700;color:var(--navy)">'+fR(tot)+'</div></div><div style="text-align:right"><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase">Balance</div><div style="font-size:18px;font-weight:700;color:'+(bal>0?'var(--warn)':'var(--success)')+'">'+fR(bal)+'</div></div></div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--muted)">Paid '+pct+'%</span><span style="color:var(--success);font-weight:600">'+fR(coll)+' collected</span></div><div class="pb"><div class="pf" style="width:'+pct+'%"></div></div></div>';
   // Quotation & Invoice section (moved here from Documents)
   var qiHtml='<div class="stitle">Quotation & Invoice</div>';
   var qRows='';
@@ -4217,7 +4240,7 @@ async function ofSave(){
     var saveQuote = shouldShowQuoteSection() && Object.keys(quoteItems).length > 0;
     var savedQuoteId = null;
     if(saveQuote){
-      var quoteId = OF.existingQuoteId || qNum();
+      var quoteId = OF.existingQuoteId || (await mintDocNum('quote'));
       savedQuoteId = quoteId;
       var items = {};
       Object.values(quoteItems).forEach(function(it){
@@ -4260,7 +4283,7 @@ async function ofSave(){
         invItems[k] = Object.assign({}, it, {key:k});
       });
       var inv = {
-        id: 'INV-'+savedQuoteId,
+        id: await mintDocNum('invoice'),
         date: new Date().toISOString().slice(0,10),
         items: invItems,
         advance: 0,
