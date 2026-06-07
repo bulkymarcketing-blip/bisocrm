@@ -427,7 +427,7 @@ textarea{resize:vertical;min-height:80px}
 <div class="overlay" id="ncust-modal" style="display:none"><!-- replaced by overview form --></div>
 <div class="sov" id="svc-ov" onclick="CS('svc')"></div><div class="sheet" id="svc-sheet"><div class="shdl"></div><div class="shd"><div class="sht">Add Service</div><button class="shc" onclick="CS('svc')">×</button></div><div class="ssw"><span class="ssi">⌕</span><input class="shs" type="text" id="svc-q" placeholder="Search services…" oninput="filterSvcs(this.value)" autocomplete="off"/></div><div class="shl" id="svc-list"></div></div>
 <div class="sov" id="thm-ov" onclick="CS('thm')"></div><div class="sheet" id="thm-sheet"><div class="shdl"></div><div class="shd"><div class="sht" id="thm-t">Select Theme</div><button class="shc" onclick="CS('thm')">×</button></div><div class="shl" id="thm-l"></div></div>
-<div class="sov" id="amt-ov" onclick="CS('amt')"></div><div class="sheet" id="amt-sheet" style="max-height:48vh"><div class="shdl"></div><div class="shd"><div class="sht" id="amt-t">Enter Amount</div><button class="shc" onclick="CS('amt')">×</button></div><div style="padding:18px"><div style="font-size:12px;color:var(--muted);margin-bottom:8px" id="amt-h"></div><input type="number" id="amt-i" style="width:100%;padding:14px;font-size:22px;font-family:Inter,sans-serif;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);outline:none;text-align:right" placeholder="0"/><button onclick="confirmAmt()" style="width:100%;margin-top:12px;background:var(--navy);color:#fff;border:none;border-radius:8px;padding:13px;font-size:15px;font-family:Inter,sans-serif;font-weight:600;cursor:pointer">Add to Quote</button></div></div>
+<div class="sov" id="amt-ov" onclick="CS('amt')"></div><div class="sheet" id="amt-sheet" style="max-height:48vh"><div class="shdl"></div><div class="shd"><div class="sht" id="amt-t">Enter Amount</div><button class="shc" onclick="CS('amt')">×</button></div><div style="padding:18px"><div style="font-size:12px;color:var(--muted);margin-bottom:8px" id="amt-h"></div><input type="text" inputmode="numeric" id="amt-i" onblur="onMoneyBlur(this)" style="width:100%;padding:14px;font-size:22px;font-family:Inter,sans-serif;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);outline:none;text-align:right" placeholder="0"/><button onclick="confirmAmt()" style="width:100%;margin-top:12px;background:var(--navy);color:#fff;border:none;border-radius:8px;padding:13px;font-size:15px;font-family:Inter,sans-serif;font-weight:600;cursor:pointer">Add to Quote</button></div></div>
 <div class="sov" id="cst-ov" onclick="CS('cst')"></div><div class="sheet" id="cst-sheet"><div class="shdl"></div><div class="shd"><div class="sht">Select Customer</div><button class="shc" onclick="CS('cst')">×</button></div><div class="ssw"><span class="ssi">⌕</span><input class="shs" type="text" id="cst-q" placeholder="Search…" oninput="filterCusts(this.value)"/></div><div class="shl" id="cst-list"></div></div>
 <div class="overlay" id="cf-modal" style="z-index:3000"><div class="modal msm"><div class="mhd"><div><div class="mt" id="cf-title">Confirm</div><div class="msb" id="cf-sub" style="display:none"></div></div></div><div class="mbdy"><div id="cf-msg" style="font-size:14px;color:var(--text2);line-height:1.6"></div><div id="cf-input-wrap" style="margin-top:14px;display:none"><label id="cf-input-label" style="display:block;margin-bottom:6px">Amount</label><input type="number" id="cf-input" style="width:100%"/><input type="date" id="cf-input-date" style="width:100%;display:none"/><input type="time" id="cf-input-time" style="width:100%;display:none;margin-top:8px"/></div><div id="cf-note-wrap" style="margin-top:10px;display:none"><label style="display:block;margin-bottom:6px">Note (optional)</label><input type="text" id="cf-note" placeholder="Reason or comment"/></div></div><div class="mft"><button class="btn btn-ghost" onclick="cfNo()" id="cf-no">Cancel</button><button class="btn btn-primary" onclick="cfYes()" id="cf-yes">Confirm</button></div></div></div>
 <div class="overlay" id="disp-modal" style="z-index:2500"><div class="modal msm"><div class="mhd"><div style="flex:1"><div class="mt">Log Contact Attempt</div><div class="msb" id="disp-sub"></div></div><button class="mc" onclick="closeDisp()">×</button></div><div class="mbdy" id="disp-body"></div><div class="mft" id="disp-footer"></div></div></div>
@@ -1148,6 +1148,9 @@ function describeRequest(req){
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function fmt(s){if(!s)return '—';return new Date(s).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}
 function fR(n){return 'Rs '+Number(n||0).toLocaleString();}
+function parseMoney(v){var n=parseFloat(String(v==null?'':v).replace(/[^0-9.\-]/g,''));return isNaN(n)?0:n;}
+function groupMoney(v){if(v===''||v==null)return '';var n=parseMoney(v);if(!isFinite(n))return '';var neg=n<0;n=Math.abs(n);var p=String(n).split('.');p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');return (neg?'-':'')+p.join('.');}
+function onMoneyBlur(el){if(el)el.value=groupMoney(el.value);}
 function dU(s){if(!s)return null;var t=new Date(s);t.setHours(0,0,0,0);var n=new Date();n.setHours(0,0,0,0);return Math.round((t-n)/86400000);}
 function dS(s){if(!s)return 0;var t=new Date(s);t.setHours(0,0,0,0);var n=new Date();n.setHours(0,0,0,0);return Math.round((n-t)/86400000);}
 function qTot(items){return Object.values(items||{}).reduce(function(s,it){return s+cLine(it);},0);}
@@ -1266,6 +1269,7 @@ function showConfirm(opts){
     var inpTime = document.getElementById('cf-input-time');
     // Reset all input visibility
     inpNum.style.display='none';
+    inpNum.removeAttribute('data-money');inpNum.onblur=null;
     inpDate.style.display='none';
     inpTime.style.display='none';
     if(opts.input){
@@ -1283,6 +1287,11 @@ function showConfirm(opts){
         inpNum.type='text';
         inpNum.style.display='';
         inpNum.value = opts.inputDefault!==undefined ? opts.inputDefault : '';
+      } else if(opts.money){
+        inpNum.type='text';inpNum.inputMode='numeric';inpNum.setAttribute('data-money','1');
+        inpNum.onblur=function(){onMoneyBlur(this);};
+        inpNum.style.display='';
+        inpNum.value = opts.inputDefault!==undefined ? groupMoney(opts.inputDefault) : '';
       } else {
         inpNum.type='number';
         inpNum.style.display='';
@@ -1317,7 +1326,7 @@ function cfYes(){
       res.value = inpDate.value;
       if(inpTime.style.display !== 'none')res.time = inpTime.value;
     } else {
-      res.value = inpNum.value;
+      res.value = inpNum.getAttribute('data-money') ? parseMoney(inpNum.value) : inpNum.value;
     }
   }
   var nw = document.getElementById('cf-note-wrap');
@@ -1353,6 +1362,7 @@ async function showRequestApprovalConfirm(opts){
       cfOpts.inputType=opts.inputType||'number';
       cfOpts.inputLabel=opts.inputLabel||'Value';
       cfOpts.inputDefault=opts.inputDefault!==undefined?opts.inputDefault:'';
+      if(opts.money)cfOpts.money=true;
     }
     var r=await showConfirm(cfOpts);
     if(!r.ok)return r;
@@ -1626,7 +1636,7 @@ function fRshort(n){
   n = Number(n||0);
   if(n>=1000000) return 'Rs '+(n/1000000).toFixed(1)+'M';
   if(n>=1000) return 'Rs '+(n/1000).toFixed(0)+'k';
-  return 'Rs '+n;
+  return 'Rs '+Number(n).toLocaleString();
 }
 
 function sCard(lbl,val,sub,cls,onclick){var op=onclick?' onclick="'+onclick+'" style="cursor:pointer"':'';return '<div class="sc"'+op+'><div class="sc-top"><div><div class="sl">'+lbl+'</div><div class="sv">'+val+'</div></div><div class="si '+cls+'">&nbsp;</div></div><div class="ss">'+sub+'</div></div>';}
@@ -2197,7 +2207,7 @@ function openAddPay(src,sId,iId){
   document.getElementById('pay-s').textContent=obj.name+' · '+iId;
   document.getElementById('pay-b').innerHTML=
     '<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;display:flex;justify-content:space-between"><div><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:3px">Balance Due</div><div style="font-size:22px;font-weight:700;color:var(--warn)">'+fR(bal)+'</div></div><div style="text-align:right;font-size:11px;color:var(--muted);align-self:flex-end">Total '+fR(tot)+'<br/>Paid '+fR(paid)+'</div></div>'
-    +'<div class="fg"><div class="fi"><label>Amount (Rs) *</label><input type="number" id="pay-amt" min="1" value="'+bal+'"/></div><div class="fi"><label>Date</label><input type="date" id="pay-date" value="'+(new Date().toISOString().slice(0,10))+'"/></div><div class="fi s2"><label>Method</label><select id="pay-method"><option value="">— Select —</option><option>Cash</option><option>Bank Transfer</option><option>Card</option><option>Cheque</option><option>Other</option></select></div><div class="fi s2"><label>Note (optional)</label><input type="text" id="pay-note" placeholder="Reference, comments…"/></div></div>';
+    +'<div class="fg"><div class="fi"><label>Amount (Rs) *</label><input type="text" inputmode="numeric" id="pay-amt" value="'+groupMoney(bal)+'" onblur="onMoneyBlur(this)"/></div><div class="fi"><label>Date</label><input type="date" id="pay-date" value="'+(new Date().toISOString().slice(0,10))+'"/></div><div class="fi s2"><label>Method</label><select id="pay-method"><option value="">— Select —</option><option>Cash</option><option>Bank Transfer</option><option>Card</option><option>Cheque</option><option>Other</option></select></div><div class="fi s2"><label>Note (optional)</label><input type="text" id="pay-note" placeholder="Reference, comments…"/></div></div>';
   document.getElementById('pay-f').innerHTML='<button class="btn btn-ghost" onclick="CM(\'pay-modal\')">Cancel</button><button class="btn btn-primary" onclick="addPay(\''+src+'\',\''+sId+'\',\''+iId+'\')" >Record Payment</button>';
   CM('doc-modal');OM('pay-modal');
 }
@@ -2206,7 +2216,7 @@ async function addPay(src,sId,iId){
   try{
   var objC=src==='lead'?leads[sId]:custs[sId];
   if(objC&&objC.cancelled){notif('This booking is cancelled. No payments or refunds can be added \u2014 the refund was set during cancellation.');return;}
-  var amt=parseFloat((document.getElementById('pay-amt')||{}).value)||0;
+  var amt=parseMoney((document.getElementById('pay-amt')||{}).value);
   if(amt<=0){notif('Enter a valid amount.');return;}
   // C3: warn if payment exceeds remaining balance
   var obj0=src==='lead'?leads[sId]:custs[sId];
@@ -2324,16 +2334,16 @@ function openAdv(src,sId,qId){
   document.getElementById('adv-s').textContent=obj.name;
   document.getElementById('adv-b').innerHTML=
     '<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:13px;margin-bottom:14px;display:flex;justify-content:space-between"><div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600;margin-bottom:2px">Quote Total</div><div style="font-size:20px;font-weight:700;color:var(--gold)">'+fR(tot)+'</div></div><div style="font-size:11px;color:var(--muted);align-self:flex-end">'+qt.id+'</div></div>'
-    +'<div class="fg"><div class="fi"><label>Bespeaking Fee (Rs)</label><input type="number" id="adv-amt" min="0" value="'+_defBesp+'"/></div><div class="fi"><label>Invoice Date</label><input type="date" id="adv-date" value="'+(new Date().toISOString().slice(0,10))+'"/></div><div class="fi s2"><label>Notes</label><textarea id="adv-notes">'+defNotes()+'</textarea></div></div>'
+    +'<div class="fg"><div class="fi"><label>Bespeaking Fee (Rs)</label><input type="text" inputmode="numeric" id="adv-amt" value="'+groupMoney(_defBesp)+'" onblur="onMoneyBlur(this)"/></div><div class="fi"><label>Invoice Date</label><input type="date" id="adv-date" value="'+(new Date().toISOString().slice(0,10))+'"/></div><div class="fi s2"><label>Notes</label><textarea id="adv-notes">'+defNotes()+'</textarea></div></div>'
     +'<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--muted);margin-top:8px">Balance: <strong id="adv-bal" style="color:var(--navy)">'+fR(tot-_defBesp)+'</strong></div>';
   document.getElementById('adv-f').innerHTML='<button class="btn btn-ghost" onclick="CM(\'adv-modal\')">Cancel</button><button class="btn btn-outline" onclick="prevAdv(\''+src+'\',\''+sId+'\',\''+qId+'\')" >Preview</button><button class="btn btn-primary" onclick="convInv(\''+src+'\',\''+sId+'\',\''+qId+'\')" >Save Invoice</button>';
-  setTimeout(function(){var el=document.getElementById('adv-amt');if(el)el.oninput=function(){var b=document.getElementById('adv-bal');if(b)b.textContent=fR(tot-(parseFloat(this.value)||0));};},100);
+  setTimeout(function(){var el=document.getElementById('adv-amt');if(el)el.oninput=function(){var b=document.getElementById('adv-bal');if(b)b.textContent=fR(tot-parseMoney(this.value));};},100);
   CM('doc-modal');OM('adv-modal');
 }
 function prevAdv(src,sId,qId){
   var obj=src==='lead'?leads[sId]:custs[sId];if(!obj)return;
   var qt=src==='lead'?(obj.quotations||{})[qId]:(obj.quotes||{})[qId];if(!qt)return;
-  var bp=parseFloat((document.getElementById('adv-amt')||{}).value)||0;
+  var bp=parseMoney((document.getElementById('adv-amt')||{}).value);
   var notes=(document.getElementById('adv-notes')||{}).value||'';
   buildPDF('I',{name:obj.name,phone:obj.phone||'',weddingDate:obj.weddingDate||''},{id:docDraft('invoice'),date:new Date().toISOString().slice(0,10),items:qt.items,advance:bp,notes:notes});
 }
@@ -2342,7 +2352,7 @@ async function convInv(src,sId,qId){
   var qt=src==='lead'?(obj.quotations||{})[qId]:(obj.quotes||{})[qId];if(!qt)return;
   if(window._busy)return; window._busy=true;
   try{
-  var bp=parseFloat((document.getElementById('adv-amt')||{}).value)||0;
+  var bp=parseMoney((document.getElementById('adv-amt')||{}).value);
   var notes=(document.getElementById('adv-notes')||{}).value||'';
   var date=(document.getElementById('adv-date')||{}).value||new Date().toISOString().slice(0,10);
   var items=Object.assign({},qt.items);var tot=qTot(items);
@@ -2663,7 +2673,7 @@ function selSvc(desc,base,cat,aT,aA){
   }
 }
 function confirmAmt(){
-  var amt=parseFloat(document.getElementById('amt-i').value)||0;
+  var amt=parseMoney(document.getElementById('amt-i').value);
   if(amt<=0){notif('Please enter an amount.');return;}
   CS('amt');var s=QB.psvc;if(!s)return;s.unit=amt;
   if(s.aT){
@@ -3480,6 +3490,7 @@ async function openCancelBooking(id){
       input:true,
       inputType:'number',
       inputLabel:'Refund amount (Rs)',
+      money:true,
       inputDefault:'0'
     });
     if(!rr.ok)return;
@@ -3523,6 +3534,7 @@ async function openCancelBooking(id){
     input:true,
     inputType:'number',
     inputLabel:'Refund amount (Rs)',
+    money:true,
     inputDefault:'0'
   });
   if(!r2.ok)return;
@@ -4561,7 +4573,7 @@ function buildQuoteSection(){
     rowsHtml += '</div>';
     rowsHtml += '<div style="display:flex;gap:6px;align-items:flex-end">';
     rowsHtml += '<div style="flex:1"><label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:2px">Qty</label><input type="number" value="'+(it.qty||1)+'" min="1" onchange="qiUpdate(\''+k+'\',\'qty\',parseFloat(this.value)||1)" style="width:100%;padding:6px 8px;font-size:13px;text-align:center;border:1.5px solid var(--border);border-radius:6px"/></div>';
-    rowsHtml += '<div style="flex:2"><label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:2px">Unit Rs</label><input type="number" value="'+(it.unit||0)+'" onchange="qiUpdate(\''+k+'\',\'unit\',parseFloat(this.value)||0)" style="width:100%;padding:6px 8px;font-size:13px;text-align:right;border:1.5px solid var(--border);border-radius:6px"/></div>';
+    rowsHtml += '<div style="flex:2"><label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:2px">Unit Rs</label><input type="text" inputmode="numeric" value="'+groupMoney(it.unit||0)+'" onchange="qiUpdate(\''+k+'\',\'unit\',parseMoney(this.value))" style="width:100%;padding:6px 8px;font-size:13px;text-align:right;border:1.5px solid var(--border);border-radius:6px"/></div>';
     rowsHtml += '<div style="flex:1"><label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:2px">Disc %</label><input type="number" value="'+(it.disc||0)+'" min="0" max="100" onchange="qiUpdate(\''+k+'\',\'disc\',parseFloat(this.value)||0)" style="width:100%;padding:6px 8px;font-size:13px;text-align:center;border:1.5px solid var(--border);border-radius:6px"/></div>';
     rowsHtml += '<div style="flex:1;text-align:right;font-size:13px;font-weight:700;color:'+(line<0?'var(--gold)':'var(--navy)')+';padding-bottom:6px">'+(line<0?'-':'')+'Rs '+Math.abs(Math.round(line)).toLocaleString()+'</div>';
     rowsHtml += '</div></div>';
@@ -4589,7 +4601,7 @@ function buildQuoteSection(){
       +'<button type="button" onclick="ofSetDisc(\'discType\',\'rs\')" style="padding:7px 14px;font-size:13px;font-weight:700;border:none;background:'+rsBg+';color:'+rsCol+'">Rs</button>'
       +'<button type="button" onclick="ofSetDisc(\'discType\',\'pct\')" style="padding:7px 14px;font-size:13px;font-weight:700;border:none;background:'+pcBg+';color:'+pcCol+'">%</button>'
       +'</div>'
-      +'<input type="number" value="'+dVal+'" min="0" placeholder="0" onchange="ofSetDisc(\'discValue\',parseFloat(this.value)||0)" style="flex:1;min-width:0;padding:7px 9px;font-size:13px;text-align:right;border:1.5px solid var(--border);border-radius:6px"/>'
+      +'<input type="text" inputmode="numeric" value="'+groupMoney(dVal)+'" placeholder="0" onchange="ofSetDisc(\'discValue\',parseMoney(this.value))" style="flex:1;min-width:0;padding:7px 9px;font-size:13px;text-align:right;border:1.5px solid var(--border);border-radius:6px"/>'
       +'</div></div>';
     var rows2 = '<div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text2);padding:2px 0"><span>Subtotal</span><span>Rs '+Math.round(subtotal).toLocaleString()+'</span></div>';
     if(dAmt>0){
@@ -5275,9 +5287,9 @@ function rSettings(tab){
   var pi='';
   SVCS.filter(function(sv){return sv.aA||sv.b>0;}).forEach(function(sv){
     var pid='p-'+sv.d.replace(/[^a-z0-9]/gi,'_');
-    pi+='<div style="display:flex;align-items:center;gap:10px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 13px"><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+sv.d+'</div><div style="font-size:11px;color:var(--muted)">'+sv.c+' · Default Rs '+sv.b.toLocaleString()+'</div></div><input type="number" id="'+pid+'" value="'+(lp[sv.d]||'')+'" placeholder="'+sv.b+'" style="width:110px;text-align:right;background:#fff;border:1.5px solid var(--border);border-radius:6px;padding:6px 9px;font-size:13px;font-family:Inter,sans-serif;color:var(--text);outline:none"/></div>';
+    pi+='<div style="display:flex;align-items:center;gap:10px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 13px"><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+sv.d+'</div><div style="font-size:11px;color:var(--muted)">'+sv.c+' · Default Rs '+sv.b.toLocaleString()+'</div></div><input type="text" inputmode="numeric" id="'+pid+'" value="'+groupMoney(lp[sv.d]||'')+'" placeholder="'+sv.b+'" onblur="onMoneyBlur(this)" style="width:110px;text-align:right;background:#fff;border:1.5px solid var(--border);border-radius:6px;padding:6px 9px;font-size:13px;font-family:Inter,sans-serif;color:var(--text);outline:none"/></div>';
   });
-  var it='<div class="fi" style="margin-bottom:18px"><label>Default Notes / Terms</label><textarea id="s-notes" style="min-height:130px">'+escHtml(s.defaultNotes||defNotes())+'</textarea></div><div class="fi" style="margin-bottom:18px"><label>Default Bespeaking Fee (Rs)</label><input type="number" id="s-besp" min="0" value="'+(parseFloat(s.defaultBespeaking)||50000)+'"/></div><div class="fi" style="margin-bottom:18px"><label>Company Logo URL</label><input type="text" id="s-logo" value="'+escHtml(s.logoUrl||'')+'" placeholder="https://... image URL"/></div><button class="btn btn-primary" onclick="saveInvS()">Save Invoice Settings</button>';
+  var it='<div class="fi" style="margin-bottom:18px"><label>Default Notes / Terms</label><textarea id="s-notes" style="min-height:130px">'+escHtml(s.defaultNotes||defNotes())+'</textarea></div><div class="fi" style="margin-bottom:18px"><label>Default Bespeaking Fee (Rs)</label><input type="text" inputmode="numeric" id="s-besp" value="'+groupMoney(parseFloat(s.defaultBespeaking)||50000)+'" onblur="onMoneyBlur(this)"/></div><div class="fi" style="margin-bottom:18px"><label>Company Logo URL</label><input type="text" id="s-logo" value="'+escHtml(s.logoUrl||'')+'" placeholder="https://... image URL"/></div><button class="btn btn-primary" onclick="saveInvS()">Save Invoice Settings</button>';
   var pt='<div style="margin-bottom:12px;font-size:13px;color:var(--muted)">Override defaults. Leave blank to use default.</div><div style="display:flex;flex-direction:column;gap:8px">'+pi+'</div><button class="btn btn-primary" style="margin-top:14px" onclick="savePriceS()">Save Prices</button>';
   // Custom services (name + price), added by the owner
   var csList=getCustomSvcs();
@@ -5292,7 +5304,7 @@ function rSettings(tab){
   pt+='<div style="margin-top:26px;border-top:1px solid var(--border);padding-top:18px"><div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:4px">Your Custom Services</div>'
     +'<div style="font-size:12px;color:var(--muted);margin-bottom:12px">Extra services you offer. These become searchable line items when building quotes and invoices.</div>'
     +(csRows||'<div style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:8px">No custom services yet.</div>')
-    +'<div style="display:flex;gap:8px;margin-top:10px"><input type="text" id="newCsName" placeholder="New service name" style="flex:1;min-width:0"/><input type="number" id="newCsPrice" placeholder="Rs" style="width:100px;text-align:right"/><button class="btn btn-outline btn-sm" onclick="addCustomSvc()">+ Add</button></div>'
+    +'<div style="display:flex;gap:8px;margin-top:10px"><input type="text" id="newCsName" placeholder="New service name" style="flex:1;min-width:0"/><input type="text" inputmode="numeric" id="newCsPrice" placeholder="Rs" onblur="onMoneyBlur(this)" style="width:100px;text-align:right"/><button class="btn btn-outline btn-sm" onclick="addCustomSvc()">+ Add</button></div>'
     +'<button class="btn btn-primary" style="margin-top:14px" onclick="saveCustomSvcs()">Save Custom Services</button></div>';
   var dt='<div style="background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:10px;padding:18px;margin-bottom:14px"><div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:7px">Backfill Missing Leads</div><div style="font-size:13px;color:var(--text2);margin-bottom:14px">Creates lead records for any customer who has quotes or invoices but no matching lead. Use this if customers have quotes but the pipeline shows empty.</div><button class="btn btn-primary" onclick="backfillLeads()">Backfill Leads from Customers</button></div>';
   // Sources tab
@@ -5319,8 +5331,8 @@ function rSettings(tab){
     +'<div class="card"><div class="mbdy">'+(at==='invoice'?it:at==='prices'?pt:at==='sources'?st:dt)+'</div></div>'
     +'</div>';
 }
-function saveInvS(){var notes=document.getElementById('s-notes')?document.getElementById('s-notes').value:'';var logo=document.getElementById('s-logo')?document.getElementById('s-logo').value:'';var besp=document.getElementById('s-besp')?(parseFloat(document.getElementById('s-besp').value)||0):0;sSet(Object.assign({},gSet(),{defaultNotes:notes,logoUrl:logo,defaultBespeaking:besp}));notif('Saved!');}
-function savePriceS(){var s=gSet();var lp=s.linePrices||{};SVCS.filter(function(sv){return sv.aA||sv.b>0;}).forEach(function(sv){var pid='p-'+sv.d.replace(/[^a-z0-9]/gi,'_');var el=document.getElementById(pid);if(el&&el.value&&parseFloat(el.value)>0)lp[sv.d]=parseFloat(el.value);else delete lp[sv.d];});sSet(Object.assign({},s,{linePrices:lp}));notif('Prices saved!');}
+function saveInvS(){var notes=document.getElementById('s-notes')?document.getElementById('s-notes').value:'';var logo=document.getElementById('s-logo')?document.getElementById('s-logo').value:'';var besp=document.getElementById('s-besp')?parseMoney(document.getElementById('s-besp').value):0;sSet(Object.assign({},gSet(),{defaultNotes:notes,logoUrl:logo,defaultBespeaking:besp}));notif('Saved!');}
+function savePriceS(){var s=gSet();var lp=s.linePrices||{};SVCS.filter(function(sv){return sv.aA||sv.b>0;}).forEach(function(sv){var pid='p-'+sv.d.replace(/[^a-z0-9]/gi,'_');var el=document.getElementById(pid);var pv=el?parseMoney(el.value):0;if(pv>0)lp[sv.d]=pv;else delete lp[sv.d];});sSet(Object.assign({},s,{linePrices:lp}));notif('Prices saved!');}
 // --- Custom services (Prices tab) ---
 function readCustomSvcRows(){
   // Pull any in-progress edits from the rendered rows into the stored list
@@ -5340,7 +5352,7 @@ function readCustomSvcRows(){
 function addCustomSvc(){
   var ni=document.getElementById('newCsName');var pi2=document.getElementById('newCsPrice');
   var name=(ni&&ni.value||'').trim();
-  var price=parseFloat(pi2&&pi2.value)||0;
+  var price=parseMoney(pi2&&pi2.value);
   if(!name){notif('Enter a service name.');return;}
   if(price<=0){notif('Enter a price greater than 0.');return;}
   var list=readCustomSvcRows();
