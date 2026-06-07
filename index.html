@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="Biso CRM"/>
 <!-- Build: 2026-05-25 09:14 v10.4 - if you see old UI, hard refresh (settings > clear browser data) -->
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/css/intlTelInput.min.css">
 <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/intlTelInput.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/utils.js"></script>
@@ -2427,63 +2427,163 @@ function viewPDF(type,src,sId,dId){
   var doc=type==='Q'?(src==='lead'?(obj.quotations||{})[dId]:(obj.quotes||{})[dId]):(obj.invoices||{})[dId];if(!doc)return;
   buildPDF(type,{name:obj.name,phone:obj.phone||'',weddingDate:obj.weddingDate||''},doc);
 }
-function buildPDF(type,l,doc){
-  var items=Object.values(doc.items||{});var tot=qTot(doc.items);
-  var isI=type==='I';var paidI=isI?invPaid(doc):0;var bal=isI?(tot-paidI):null;
-  var s=gSet();
-  var logo=s.logoUrl?'<img src="'+s.logoUrl+'" style="height:56px;object-fit:contain" alt="Biso"/>'
-    :'<div style="font-weight:700;font-size:15px;color:#1B2B4B;letter-spacing:2px">BISO</div>';
-  var ir='';
-  items.forEach(function(it,i){
-    var line=cLine(it);var isD=it.auto||line<0;
-    var rv=isD?'—':Number(it.unit).toLocaleString()+'.00';
-    var as=isD?'color:#e53e3e':'color:#1B2B4B';
-    var av=isD?'('+Number(Math.abs(line)).toLocaleString()+'.00)':Number(line).toLocaleString()+'.00';
-    ir+='<tr style="border-bottom:1px solid #f0f2f8"><td style="padding:11px 8px;font-size:12px;color:#aaa">'+(i+1)+'</td><td style="padding:11px 8px"><div style="font-size:13px;color:#1B2B4B;font-weight:500">'+escHtml(it.desc)+'</div></td><td style="padding:11px 8px;text-align:center;font-size:13px;color:#555">'+it.qty+'</td><td style="padding:11px 8px;text-align:right;font-size:13px;color:#555">'+rv+'</td><td style="padding:11px 8px;text-align:right;font-size:13px;font-weight:600;'+as+'">'+av+'</td></tr>';
+function dMoney(n){return 'Rs '+Math.round(Number(n)||0).toLocaleString();}
+var _CEREMONY_LABELS={wedding:'Wedding Day',homecoming:'Homecoming',goingAway:'Going Away',engagement:'Engagement'};
+var _CEREMONY_ORDER=['wedding','homecoming','goingAway','engagement','additional'];
+function docSectionFor(it){
+  var lt=it.linkedTo;
+  if(lt==='wedding'||lt==='bridesmaids'||lt==='flowerGirls'||lt==='littleMaids')return 'wedding';
+  if(lt==='homecoming')return 'homecoming';
+  if(lt==='goingAway')return 'goingAway';
+  if(lt==='engagement')return 'engagement';
+  return 'additional';
+}
+function docSections(itemsObj){
+  var items=Object.values(itemsObj||{});
+  var groups={};var discountAmt=0;
+  items.forEach(function(it){
+    var line=cLine(it);
+    if(it.linkedTo==='discount'||it.auto||line<0){discountAmt+=Math.abs(line);return;}
+    var sec=docSectionFor(it);(groups[sec]=groups[sec]||[]).push(it);
   });
-  var th='<div style="display:flex;justify-content:space-between;padding:7px 8px;border-bottom:1px solid #f0f2f8;font-size:13px;color:#555"><span>Sub Total</span><span>'+Number(tot).toLocaleString()+'.00</span></div>';
-  if(isI&&paidI>0)th+='<div style="display:flex;justify-content:space-between;padding:7px 8px;border-bottom:1px solid #f0f2f8;font-size:13px"><span style="color:#555">Paid</span><span style="color:#38A169">('+Number(paidI).toLocaleString()+'.00)</span></div>';
-  th+='<div style="display:flex;justify-content:space-between;padding:9px 8px;font-size:14px;font-weight:700;border-top:2px solid #1B2B4B"><span>'+(isI?'Balance Due':'Total')+'</span><span>LKR '+Number(isI?Math.max(0,bal):tot).toLocaleString()+'.00</span></div>';
-  var nh=doc.notes?'<div style="margin-bottom:18px"><div style="font-size:12px;font-weight:600;color:#555;margin-bottom:7px;border-bottom:1px solid #eee;padding-bottom:5px">Notes</div><div style="font-size:12px;color:#666;line-height:1.8">'+escHtmlMultiline(doc.notes)+'</div></div>':'';
-  var exp=!isI?'<div style="font-size:11px;color:#e74c3c">Expiry: '+fmt(doc.expiry)+'</div>':'';
-  var html=
-    '<div id="print-area" style="background:#fff;font-family:Inter,Arial,sans-serif;font-size:13px;max-width:740px;margin:0 auto;padding:36px 44px">'
-    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:26px">'
-    +'<div>'+logo+'<div style="margin-top:10px;font-size:11px;color:#666;line-height:1.8">BISO (PVT) LTD<br/>79 Minuwangoda Road, Negombo<br/>bisostyling@gmail.com | +94 70 755 0221</div></div>'
-    +'<div style="text-align:right"><div style="font-size:30px;color:#1B2B4B;letter-spacing:3px;font-weight:300">'+(isI?'INVOICE':'QUOTE')+'</div>'
-    +'<div style="font-size:13px;font-weight:700;color:#1B2B4B;margin-top:5px"># '+doc.id+'</div>'
-    +'<div style="font-size:11px;color:#777;margin-top:2px">'+fmt(doc.date)+'</div>'+exp+'</div></div>'
-    +'<div style="height:1px;background:#e0e4ed;margin-bottom:18px"></div>'
-    +'<div style="display:flex;justify-content:space-between;margin-bottom:22px">'
-    +'<div><div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;font-weight:600">Bill To</div>'
-    +'<div style="font-weight:700;font-size:15px;color:#1B2B4B">'+escHtml(l.name)+'</div>'
-    +(l.phone?'<div style="font-size:12px;color:#555;margin-top:2px">'+escHtml(l.phone)+'</div>':'')+'</div>'
-    +'<div style="text-align:right;font-size:12px;color:#555">'+(isI?'Invoice Date':'Quote Date')+': <strong style="color:#1B2B4B">'+fmt(doc.date)+'</strong></div></div>'
-    +'<table style="width:100%;border-collapse:collapse;margin-bottom:0"><thead><tr style="border-bottom:2px solid #1B2B4B">'
-    +'<th style="padding:9px 8px;text-align:left;font-size:11px;text-transform:uppercase;color:#888;font-weight:600">#</th>'
-    +'<th style="padding:9px 8px;text-align:left;font-size:11px;text-transform:uppercase;color:#888;font-weight:600">Item</th>'
-    +'<th style="padding:9px 8px;text-align:center;font-size:11px;text-transform:uppercase;color:#888;font-weight:600">Qty</th>'
-    +'<th style="padding:9px 8px;text-align:right;font-size:11px;text-transform:uppercase;color:#888;font-weight:600">Rate</th>'
-    +'<th style="padding:9px 8px;text-align:right;font-size:11px;text-transform:uppercase;color:#888;font-weight:600">Amount</th>'
-    +'</tr></thead><tbody>'+ir+'</tbody></table>'
-    +'<div style="display:flex;justify-content:flex-end;margin-bottom:18px"><div style="width:270px">'+th+'</div></div>'
-    +nh
-    +'<div style="border-top:1px solid #e0e4ed;padding-top:10px;display:flex;justify-content:space-between;align-items:center">'
-    +'<div style="font-size:10px;color:#aaa">BISO (PVT) LTD · 79 Minuwangoda Road, Negombo</div>'
-    +'<div style="font-size:11px;color:#C9A84C;font-style:italic">Every queen deserves to be seen.</div></div>'
-    +'</div>';
+  var subtotal=0;var html='';
+  _CEREMONY_ORDER.forEach(function(sec){
+    var arr=groups[sec];if(!arr||!arr.length)return;
+    var label=sec==='additional'?'Additional Services':_CEREMONY_LABELS[sec];
+    var secTot=0;var rows='';
+    arr.forEach(function(it){
+      var line=cLine(it);secTot+=line;
+      var qty=Number(it.qty)||1;var unit=Number(it.unit)||0;
+      var sub=qty>1?'<span class="q">'+qty+' \u00d7 '+dMoney(unit)+' each</span>':'';
+      rows+='<div class="item"><div class="d">'+escHtml(it.desc||'')+sub+'</div><div class="a">'+dMoney(line)+'</div></div>';
+    });
+    subtotal+=secTot;
+    html+='<div class="sechead">'+escHtml(label)+'</div>'+rows+'<div class="subtot"><span class="lbl2">Subtotal</span><span>'+dMoney(secTot)+'</span></div>';
+  });
+  return {html:html,subtotal:subtotal,discountAmt:discountAmt};
+}
+function docTotals(subtotal,discountAmt,paid){
+  var grand=subtotal-discountAmt;
+  var h='<div class="totals"><div class="trow"><span>Subtotal</span><span>'+dMoney(subtotal)+'</span></div>';
+  if(discountAmt>0)h+='<div class="trow"><span>Package discount</span><span>\u2212 '+dMoney(discountAmt)+'</span></div>';
+  h+='<div class="trow grand"><span class="cz">Total</span><span class="cz">'+dMoney(grand)+'</span></div>';
+  if(paid!=null){
+    var p=Number(paid)||0;var bal=Math.max(0,grand-p);
+    h+='<div class="trow" style="margin-top:4px"><span>Paid to date</span><span style="color:#38A169">'+dMoney(p)+'</span></div>';
+    h+='<div class="trow"><span>Balance due</span><span style="color:#1B2B4B;font-weight:500">'+dMoney(bal)+'</span></div>';
+  }
+  h+='</div>';return h;
+}
+function docSchedule(total,deposit,weddingDate,paid){
+  var s=gSet();var offset=parseInt(s.balanceDueDays,10);if(isNaN(offset))offset=14;
+  deposit=Math.max(0,Number(deposit)||0);total=Number(total)||0;
+  var balance=Math.max(0,total-deposit);var dueDate='';
+  if(weddingDate){var wd=new Date(weddingDate);if(!isNaN(wd.getTime())){wd.setDate(wd.getDate()-offset);dueDate=wd.toISOString().slice(0,10);}}
+  var isInv=(paid!=null);var p=Number(paid)||0;var today=new Date().toISOString().slice(0,10);
+  function badge(t,c){return '<span class="pbadge" style="color:'+c+';border-color:'+c+'">'+t+'</span>';}
+  var depB=isInv?(p>=deposit&&deposit>0?badge('Paid','#38A169'):badge('Due','#A8862E')):'';
+  var rows='<div class="payrow"><div><div class="pl">Bespeaking fee'+(isInv?' '+depB:'')+'</div><div class="pd">'+(isInv?'Received on confirmation':'Due on confirmation')+' \u00b7 non-refundable, deducted from the final bill</div></div><div class="pa">'+dMoney(deposit)+'</div></div>';
+  var balB='',balDesc='';
+  if(isInv){
+    var rem=Math.max(0,total-p);
+    if(rem<=0){balB=badge('Paid','#38A169');balDesc='Settled in full';}
+    else{var od=dueDate&&today>dueDate;balB=od?badge('Overdue','#E53E3E'):badge('Due','#A8862E');balDesc=(dueDate?'Due by '+fmt(dueDate):'Due before the wedding')+(rem<balance?' \u00b7 '+dMoney(rem)+' remaining':'');}
+  }else{balDesc=dueDate?'Due '+offset+' days before \u2014 by '+fmt(dueDate):'Due before the wedding day';}
+  rows+='<div class="payrow"><div><div class="pl">Balance'+(isInv?' '+balB:'')+'</div><div class="pd">'+balDesc+'</div></div><div class="pa">'+dMoney(balance)+'</div></div>';
+  return '<div class="pay"><div class="payhead">Payment Schedule</div>'+rows+'</div>';
+}
+function docCSS(){return '<style>'
+  +'.bdoc{background:#FDFBF7;font-family:\'EB Garamond\',Georgia,serif;color:#1B2B4B;max-width:740px;margin:0 auto;padding:40px 44px;font-size:15px}'
+  +'.bdoc .cz{font-family:\'Cinzel\',serif}'
+  +'.bdoc .topline{height:2px;background:#C9A84C;opacity:.7;margin-bottom:28px}'
+  +'.bdoc .dhead{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}'
+  +'.bdoc .dname{font-family:\'Cinzel\',serif;font-size:30px;font-weight:600;letter-spacing:2px;color:#1B2B4B;line-height:1}'
+  +'.bdoc .dsub{font-family:\'Cinzel\',serif;font-size:10px;letter-spacing:6px;color:#A8862E;margin-top:7px}'
+  +'.bdoc .dbiz{margin-top:12px;font-size:12px;color:#5A6275;line-height:1.7}'
+  +'.bdoc .dmeta{text-align:right;flex-shrink:0}'
+  +'.bdoc .dt{font-family:\'Cinzel\',serif;font-size:17px;letter-spacing:4px;color:#1B2B4B;font-weight:500}'
+  +'.bdoc .dm{font-size:13px;color:#5A6275;margin-top:5px;line-height:1.55}'
+  +'.bdoc .rule{height:1px;background:#EAE3D3;margin:24px 0}'
+  +'.bdoc .parties{display:flex;justify-content:space-between;gap:22px}'
+  +'.bdoc .parties>div{min-width:0}.bdoc .pright{text-align:right}'
+  +'.bdoc .lbl{font-family:\'Cinzel\',serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#A8862E;margin-bottom:6px}'
+  +'.bdoc .pname{font-family:\'Cinzel\',serif;font-size:18px;color:#1B2B4B;font-weight:500}'
+  +'.bdoc .pinfo{font-size:14px;color:#5A6275;margin-top:3px}.bdoc .pinfo.big{font-size:15px;color:#1B2B4B}'
+  +'.bdoc .sechead{font-family:\'Cinzel\',serif;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#1B2B4B;padding-bottom:7px;border-bottom:1px solid #C9A84C;margin:24px 0 4px}'
+  +'.bdoc .item{display:flex;justify-content:space-between;gap:16px;padding:7px 2px}'
+  +'.bdoc .item .d{font-size:15px;color:#1B2B4B;line-height:1.35}'
+  +'.bdoc .item .q{display:block;font-size:12px;color:#9AA0AE;font-style:italic;margin-top:1px}'
+  +'.bdoc .item .a{font-size:15px;color:#1B2B4B;white-space:nowrap}'
+  +'.bdoc .subtot{display:flex;justify-content:space-between;padding:8px 2px 2px;border-top:1px solid #EAE3D3;margin-top:6px}'
+  +'.bdoc .subtot .lbl2{text-transform:uppercase;letter-spacing:2px;font-size:11px;color:#9AA0AE}'
+  +'.bdoc .subtot span:last-child{font-size:13px;color:#5A6275}'
+  +'.bdoc .totals{max-width:300px;margin:22px 0 0 auto}'
+  +'.bdoc .trow{display:flex;justify-content:space-between;font-size:15px;color:#5A6275;padding:6px 2px}'
+  +'.bdoc .trow.grand{border-top:2px solid #1B2B4B;margin-top:9px;padding-top:12px}'
+  +'.bdoc .trow.grand span{font-family:\'Cinzel\',serif;font-size:19px;color:#1B2B4B}'
+  +'.bdoc .pay{margin-top:28px;border:1px solid #EAE3D3;background:rgba(201,168,76,.055);padding:18px 20px}'
+  +'.bdoc .payhead{font-family:\'Cinzel\',serif;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#1B2B4B;margin-bottom:12px}'
+  +'.bdoc .payrow{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:9px 0;border-top:1px solid #EAE3D3}'
+  +'.bdoc .payrow:first-of-type{border-top:none}'
+  +'.bdoc .pl{font-size:15px;color:#1B2B4B}.bdoc .pd{font-size:12px;color:#9AA0AE;font-style:italic;margin-top:2px}'
+  +'.bdoc .pa{font-size:16px;color:#1B2B4B;white-space:nowrap}'
+  +'.bdoc .pbadge{font-family:\'Inter\',sans-serif;font-size:9px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;border:1px solid;border-radius:20px;padding:1px 7px;margin-left:7px;vertical-align:1px}'
+  +'.bdoc .amt{background:rgba(56,161,105,.07);border:1px solid #cfe9da;border-radius:10px;padding:18px 20px;margin:4px 0 18px;text-align:center}'
+  +'.bdoc .amt .al{font-family:\'Cinzel\',serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#2f7d56;margin-bottom:6px}'
+  +'.bdoc .amt .av{font-family:\'Cinzel\',serif;font-size:28px;color:#38A169}'
+  +'.bdoc .amt .am{font-size:13px;color:#5A6275;margin-top:6px}'
+  +'.bdoc .notes{margin-top:24px}.bdoc .nh{font-family:\'Cinzel\',serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#5A6275;margin-bottom:8px}'
+  +'.bdoc .nb{font-size:13px;color:#5A6275;line-height:1.7}'
+  +'.bdoc .goldrule{height:1px;background:#C9A84C;opacity:.5;margin:28px 0 12px}'
+  +'.bdoc .foot{text-align:center}.bdoc .fbiz{font-size:11px;color:#9AA0AE;letter-spacing:.3px}'
+  +'.bdoc .fbank{font-size:11.5px;color:#5A6275;margin-top:8px;line-height:1.6}'
+  +'.bdoc .ftag{font-family:\'EB Garamond\',serif;font-style:italic;font-size:14px;color:#A8862E;margin-top:8px}'
+  +'</style>';}
+function docLogo(){var s=gSet();return s.logoUrl?'<img src="'+escAttr(s.logoUrl)+'" style="height:54px;object-fit:contain" alt="Biso by Dinushi"/>':'<div class="dname">Biso</div><div class="dsub">BY DINUSHI</div>';}
+function docHeader(typeLabel,metaHtml){
+  return '<div class="topline"></div><div class="dhead"><div>'+docLogo()
+    +'<div class="dbiz">BISO (PVT) LTD<br/>79 Minuwangoda Road, Negombo<br/>bisostyling@gmail.com &middot; +94 70 755 0221</div></div>'
+    +'<div class="dmeta"><div class="dt">'+typeLabel+'</div><div class="dm">'+metaHtml+'</div></div></div>';
+}
+function docFooter(){var s=gSet();var bank=s.bankDetails?'<div class="fbank">'+escHtmlMultiline(s.bankDetails)+'</div>':'';
+  return '<div class="goldrule"></div><div class="foot">'+bank+'<div class="fbiz">BISO (PVT) LTD &middot; 79 Minuwangoda Road, Negombo &middot; bisostyling@gmail.com &middot; +94 70 755 0221</div><div class="ftag">Every queen deserves to be seen.</div></div>';
+}
+function docWrap(typeLabel,metaHtml,partiesHtml,bodyHtml){
+  return '<div id="print-area"><div class="bdoc">'+docCSS()+docHeader(typeLabel,metaHtml)+'<div class="rule"></div>'+partiesHtml+bodyHtml+docFooter()+'</div></div>';
+}
+
+function buildPDF(type,l,doc){
+  var isI=type==='I';
+  var sec=docSections(doc.items);
+  var grand=sec.subtotal-sec.discountAmt;
+  var paidI=isI?invPaid(doc):0;
+  var wDate=(l.events&&l.events.wedding&&l.events.wedding.date)||l.weddingDate||'';
+  var venue=(l.events&&l.events.wedding&&l.events.wedding.venue)||l.venue||'';
+  var deposit=isI?(Number(doc.advance)||0):(parseFloat(gSet().defaultBespeaking)||50000);
+  var meta;
+  if(isI){meta='No. '+escHtml(doc.id)+'<br>Issued '+fmt(doc.date);}
+  else{meta='No. '+escHtml(doc.id)+'<br>Issued '+fmt(doc.date)+(doc.expiry?'<br>Valid until '+fmt(doc.expiry):'');}
+  var celebRight='';
+  if(wDate)celebRight+='<div class="pinfo big">'+fmt(wDate)+'</div>';
+  if(venue)celebRight+='<div class="pinfo">'+escHtml(venue)+'</div>';
+  if(!celebRight)celebRight='<div class="pinfo">\u2014</div>';
+  var parties='<div class="parties"><div><div class="lbl">Prepared for</div><div class="pname">'+escHtml(l.name||'')+'</div>'+(l.phone?'<div class="pinfo">'+escHtml(l.phone)+'</div>':'')+'</div>'
+    +'<div class="pright"><div class="lbl">Celebration</div>'+celebRight+'</div></div>';
+  var body=sec.html+docTotals(sec.subtotal,sec.discountAmt,isI?paidI:null)+docSchedule(grand,deposit,wDate,isI?paidI:null);
+  if(doc.notes)body+='<div class="notes"><div class="nh">Terms</div><div class="nb">'+escHtmlMultiline(doc.notes)+'</div></div>';
+  var html=docWrap(isI?'INVOICE':'QUOTATION',meta,parties,body);
   document.getElementById('pdf-t').textContent=(isI?'Invoice':'Quote')+' - '+doc.id;
   document.getElementById('pdf-b').innerHTML=html;
   document.getElementById('pdf-f').innerHTML=
     '<button class="btn btn-ghost" onclick="CM(\'pdf-modal\')">Close</button>'
     +'<button class="btn btn-outline" onclick="printPDF()">Save as PDF</button>'
-    +'<button class="btn btn-gold" onclick="sendWA(\''+escAttr(l.phone)+'\',\''+escAttr(l.name)+'\',\''+(isI?'Invoice':'Quote')+'\',\''+doc.id+'\','+tot+')">WhatsApp</button>';
+    +'<button class="btn btn-gold" onclick="sendWA(\''+escAttr(l.phone)+'\',\''+escAttr(l.name)+'\',\''+(isI?'Invoice':'Quote')+'\',\''+doc.id+'\','+grand+')">WhatsApp</button>';
   OM('pdf-modal');
 }
 function printPDF(){
   var pa=document.getElementById('print-area');if(!pa)return;
   var title=document.getElementById('pdf-t')?document.getElementById('pdf-t').textContent:'Document';
-  var h='<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>'+title+'</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Inter,Arial,sans-serif}@page{size:A4;margin:12mm 15mm}</style></head><body>'+pa.innerHTML+'</body></html>';
+  var h='<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>'+title+'</title><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:\'EB Garamond\',Georgia,serif}@page{size:A4;margin:12mm 15mm}</style></head><body>'+pa.innerHTML+'</body></html>';
   var url=URL.createObjectURL(new Blob([h],{type:'text/html'}));
   var a=document.createElement('a');a.href=url;a.target='_blank';a.click();
   setTimeout(function(){URL.revokeObjectURL(url);},5000);
@@ -2510,40 +2610,16 @@ async function viewReceipt(src,sId,iId,pid){
   buildReceipt({name:obj.name,phone:obj.phone||''},inv,pay);
 }
 function buildReceipt(l,inv,pay){
-  var s=gSet();
-  var tot=qTot(inv.items);
-  var paid=invPaid(inv);
-  var bal=Math.max(0,tot-paid);
+  var tot=qTot(inv.items);var paid=invPaid(inv);var bal=Math.max(0,tot-paid);
   var rno=pay.receiptNo||docDraft('receipt');
-  var logo=s.logoUrl?'<img src="'+s.logoUrl+'" style="height:56px;object-fit:contain" alt="Biso"/>'
-    :'<div style="font-weight:700;font-size:15px;color:#1B2B4B;letter-spacing:2px">BISO</div>';
-  var trow=function(lbl,val,strong){return '<div style="display:flex;justify-content:space-between;padding:7px 8px;border-bottom:1px solid #f0f2f8;font-size:13px'+(strong?';font-weight:700;border-top:2px solid #1B2B4B':'')+'"><span style="color:'+(strong?'#1B2B4B':'#555')+'">'+lbl+'</span><span style="color:#1B2B4B">'+val+'</span></div>';};
-  var html=
-    '<div id="print-area" style="background:#fff;font-family:Inter,Arial,sans-serif;font-size:13px;max-width:740px;margin:0 auto;padding:36px 44px">'
-    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:26px">'
-    +'<div>'+logo+'<div style="margin-top:10px;font-size:11px;color:#666;line-height:1.8">BISO (PVT) LTD<br/>79 Minuwangoda Road, Negombo<br/>bisostyling@gmail.com | +94 70 755 0221</div></div>'
-    +'<div style="text-align:right"><div style="font-size:30px;color:#1B2B4B;letter-spacing:3px;font-weight:300">RECEIPT</div>'
-    +'<div style="font-size:13px;font-weight:700;color:#1B2B4B;margin-top:5px"># '+rno+'</div>'
-    +'<div style="font-size:11px;color:#777;margin-top:2px">'+fmt(pay.date)+'</div></div></div>'
-    +'<div style="height:1px;background:#e0e4ed;margin-bottom:18px"></div>'
-    +'<div style="display:flex;justify-content:space-between;margin-bottom:22px">'
-    +'<div><div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;font-weight:600">Received From</div>'
-    +'<div style="font-weight:700;font-size:15px;color:#1B2B4B">'+escHtml(l.name)+'</div>'
-    +(l.phone?'<div style="font-size:12px;color:#555;margin-top:2px">'+escHtml(l.phone)+'</div>':'')+'</div>'
-    +'<div style="text-align:right;font-size:12px;color:#555">Against Invoice<br/><strong style="color:#1B2B4B">'+inv.id+'</strong></div></div>'
-    +'<div style="background:#f7f9fc;border:1px solid #e0e4ed;border-radius:10px;padding:18px 20px;margin-bottom:18px;text-align:center">'
-    +'<div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:6px">Amount Received</div>'
-    +'<div style="font-size:30px;font-weight:700;color:#38A169">'+fR(pay.amount)+'</div>'
-    +(pay.method?'<div style="font-size:12px;color:#666;margin-top:6px">via '+escHtml(pay.method)+'</div>':'')+'</div>'
-    +'<div style="display:flex;justify-content:flex-end;margin-bottom:18px"><div style="width:270px">'
-    +trow('Invoice Total','LKR '+Number(tot).toLocaleString()+'.00')
-    +trow('Paid to Date','LKR '+Number(paid).toLocaleString()+'.00')
-    +trow('Balance Due','LKR '+Number(bal).toLocaleString()+'.00',true)
-    +'</div></div>'
-    +'<div style="border-top:1px solid #e0e4ed;padding-top:10px;display:flex;justify-content:space-between;align-items:center">'
-    +'<div style="font-size:10px;color:#aaa">BISO (PVT) LTD · 79 Minuwangoda Road, Negombo</div>'
-    +'<div style="font-size:11px;color:#C9A84C;font-style:italic">Every queen deserves to be seen.</div></div>'
-    +'</div>';
+  var meta='No. '+escHtml(rno)+'<br>'+fmt(pay.date);
+  var parties='<div class="parties"><div><div class="lbl">Received from</div><div class="pname">'+escHtml(l.name||'')+'</div>'+(l.phone?'<div class="pinfo">'+escHtml(l.phone)+'</div>':'')+'</div>'
+    +'<div class="pright"><div class="lbl">Against invoice</div><div class="pinfo big">'+escHtml(inv.id)+'</div></div></div>';
+  var body='<div class="amt"><div class="al">Amount received</div><div class="av">'+dMoney(pay.amount)+'</div>'+(pay.method?'<div class="am">via '+escHtml(pay.method)+'</div>':'')+'</div>'
+    +'<div class="totals"><div class="trow"><span>Invoice total</span><span>'+dMoney(tot)+'</span></div>'
+    +'<div class="trow"><span>Paid to date</span><span style="color:#38A169">'+dMoney(paid)+'</span></div>'
+    +'<div class="trow grand"><span class="cz">Balance</span><span class="cz">'+dMoney(bal)+'</span></div></div>';
+  var html=docWrap('RECEIPT',meta,parties,body);
   document.getElementById('pdf-t').textContent='Receipt - '+rno;
   document.getElementById('pdf-b').innerHTML=html;
   document.getElementById('pdf-f').innerHTML=
@@ -5083,43 +5159,6 @@ function rAnalytics(){
   document.getElementById('MC').innerHTML = html;
 }
 
-function runDataCheck(){
-  function normPh(p){var d=String(p||'').replace(/\D/g,'');if(!d)return '';if(d.charAt(0)==='0')d='94'+d.slice(1);else if(d.length===9)d='94'+d;return d;}
-  var bs=Object.values(brides||{});
-  var byPhone={};
-  bs.forEach(function(b){var ph=normPh(b.phone);if(!ph)return;(byPhone[ph]=byPhone[ph]||[]).push(b);});
-  var dupClusters=Object.keys(byPhone).filter(function(p){return byPhone[p].length>1;}).map(function(p){return {phone:p,brides:byPhone[p]};});
-  var invOwners={};
-  bs.forEach(function(b){Object.keys(b.invoices||{}).forEach(function(invId){(invOwners[invId]=invOwners[invId]||[]).push(b);});});
-  var dupInvs=Object.keys(invOwners).filter(function(i){return invOwners[i].length>1;});
-  var inflInv=0,inflColl=0;
-  dupInvs.forEach(function(invId){
-    var owners=invOwners[invId];
-    var invVals=owners.map(function(b){return invInvoiced(b,b.invoices[invId]);});
-    var collVals=owners.map(function(b){return invCollected(b,b.invoices[invId]);});
-    inflInv+=(invVals.reduce(function(s,x){return s+x;},0)-Math.max.apply(null,invVals));
-    inflColl+=(collVals.reduce(function(s,x){return s+x;},0)-Math.max.apply(null,collVals));
-  });
-  var h='';
-  if(dupInvs.length===0){
-    h+='<div style="background:#ECFDF5;border:1.5px solid #A7F3D0;border-radius:8px;padding:12px;font-size:13px;color:var(--navy)">No invoices are counted more than once \u2014 your finance totals are clean.</div>';
-  }else{
-    h+='<div style="background:#FFFBEB;border:1.5px solid #FDE68A;border-radius:8px;padding:12px;font-size:13px;color:var(--navy)"><b>'+dupInvs.length+'</b> invoice'+(dupInvs.length!==1?'s':'')+' counted more than once. Finance is over-counting by about <b>'+fR(inflColl)+'</b> collected ('+fR(inflInv)+' invoiced).</div>';
-  }
-  h+='<div style="margin-top:12px;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Duplicate bride records (same phone): '+dupClusters.length+'</div>';
-  dupClusters.forEach(function(c){
-    h+='<div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin-top:6px;font-size:12px"><b>'+c.brides.length+' records</b> \u00b7 phone '+escHtml(c.phone)+'<br>'+c.brides.map(function(b){return escHtml(b.name||'(no name)')+' <span style="color:var(--muted)">['+escHtml(b.id)+']</span>';}).join('<br>')+'</div>';
-  });
-  if(dupInvs.length){
-    h+='<div style="margin-top:12px;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Invoices on more than one record</div>';
-    dupInvs.forEach(function(invId){
-      var owners=invOwners[invId];
-      h+='<div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin-top:6px;font-size:12px"><b>'+escHtml(invId)+'</b> on '+owners.length+' records:<br>'+owners.map(function(b){return escHtml(b.name||'(no name)')+' <span style="color:var(--muted)">['+escHtml(b.id)+']</span>';}).join('<br>')+'</div>';
-    });
-  }
-  h+='<div style="margin-top:12px;font-size:11px;color:var(--muted)">Scanned '+bs.length+' bride records. Read-only \u2014 nothing was changed.</div>';
-  document.getElementById('dc-out').innerHTML=h;
-}
 function rSettings(tab){
   var s=gSet();var at=tab||window._settingsTab||'invoice';window._settingsTab=at;var lp=s.linePrices||{};
   var pi='';
@@ -5127,7 +5166,7 @@ function rSettings(tab){
     var pid='p-'+sv.d.replace(/[^a-z0-9]/gi,'_');
     pi+='<div style="display:flex;align-items:center;gap:10px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 13px"><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+sv.d+'</div><div style="font-size:11px;color:var(--muted)">'+sv.c+' · Default Rs '+sv.b.toLocaleString()+'</div></div><input type="text" inputmode="numeric" id="'+pid+'" value="'+groupMoney(lp[sv.d]||'')+'" placeholder="'+sv.b+'" onblur="onMoneyBlur(this)" style="width:110px;text-align:right;background:#fff;border:1.5px solid var(--border);border-radius:6px;padding:6px 9px;font-size:13px;font-family:Inter,sans-serif;color:var(--text);outline:none"/></div>';
   });
-  var it='<div class="fi" style="margin-bottom:18px"><label>Default Notes / Terms</label><textarea id="s-notes" style="min-height:130px">'+escHtml(s.defaultNotes||defNotes())+'</textarea></div><div class="fi" style="margin-bottom:18px"><label>Default Bespeaking Fee (Rs)</label><input type="text" inputmode="numeric" id="s-besp" value="'+groupMoney(parseFloat(s.defaultBespeaking)||50000)+'" onblur="onMoneyBlur(this)"/></div><div class="fi" style="margin-bottom:18px"><label>Company Logo URL</label><input type="text" id="s-logo" value="'+escHtml(s.logoUrl||'')+'" placeholder="https://... image URL"/></div><button class="btn btn-primary" onclick="saveInvS()">Save Invoice Settings</button>';
+  var it='<div class="fi" style="margin-bottom:18px"><label>Default Notes / Terms</label><textarea id="s-notes" style="min-height:130px">'+escHtml(s.defaultNotes||defNotes())+'</textarea></div><div class="fi" style="margin-bottom:18px"><label>Default Bespeaking Fee (Rs)</label><input type="text" inputmode="numeric" id="s-besp" value="'+groupMoney(parseFloat(s.defaultBespeaking)||50000)+'" onblur="onMoneyBlur(this)"/></div><div class="fi" style="margin-bottom:18px"><label>Company Logo URL</label><input type="text" id="s-logo" value="'+escHtml(s.logoUrl||'')+'" placeholder="https://... image URL"/></div><div class="fi" style="margin-bottom:18px"><label>Balance Due (days before wedding)</label><input type="text" inputmode="numeric" id="s-baldays" value="'+(parseInt(s.balanceDueDays,10)||14)+'"/></div><div class="fi" style="margin-bottom:18px"><label>Bank Details (shown on documents)</label><textarea id="s-bank" placeholder="Bank · Account name · Account no · Branch">'+escHtml(s.bankDetails||'')+'</textarea></div><button class="btn btn-primary" onclick="saveInvS()">Save Invoice Settings</button>';
   var pt='<div style="margin-bottom:12px;font-size:13px;color:var(--muted)">Override defaults. Leave blank to use default.</div><div style="display:flex;flex-direction:column;gap:8px">'+pi+'</div><button class="btn btn-primary" style="margin-top:14px" onclick="savePriceS()">Save Prices</button>';
   // Custom services (name + price), added by the owner
   var csList=getCustomSvcs();
@@ -5144,7 +5183,7 @@ function rSettings(tab){
     +(csRows||'<div style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:8px">No custom services yet.</div>')
     +'<div style="display:flex;gap:8px;margin-top:10px"><input type="text" id="newCsName" placeholder="New service name" style="flex:1;min-width:0"/><input type="text" inputmode="numeric" id="newCsPrice" placeholder="Rs" onblur="onMoneyBlur(this)" style="width:100px;text-align:right"/><button class="btn btn-outline btn-sm" onclick="addCustomSvc()">+ Add</button></div>'
     +'<button class="btn btn-primary" style="margin-top:14px" onclick="saveCustomSvcs()">Save Custom Services</button></div>';
-  var dt='<div style="background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:10px;padding:18px;margin-bottom:14px"><div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:7px">Backfill Missing Leads</div><div style="font-size:13px;color:var(--text2);margin-bottom:14px">Creates lead records for any customer who has quotes or invoices but no matching lead. Use this if customers have quotes but the pipeline shows empty.</div><button class="btn btn-primary" onclick="backfillLeads()">Backfill Leads from Customers</button></div>'+'<div style="background:#FFFBEB;border:1.5px solid #FDE68A;border-radius:10px;padding:18px;margin-bottom:14px"><div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:7px">Data Integrity Check (temporary)</div><div style="font-size:13px;color:var(--text2);margin-bottom:14px">Read-only scan for duplicate bride records and invoices counted more than once. Makes no changes.</div><button class="btn btn-primary" onclick="runDataCheck()">Run Data Check</button><div id="dc-out" style="margin-top:14px"></div></div>';
+  var dt='<div style="background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:10px;padding:18px;margin-bottom:14px"><div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:7px">Backfill Missing Leads</div><div style="font-size:13px;color:var(--text2);margin-bottom:14px">Creates lead records for any customer who has quotes or invoices but no matching lead. Use this if customers have quotes but the pipeline shows empty.</div><button class="btn btn-primary" onclick="backfillLeads()">Backfill Leads from Customers</button></div>';
   // Sources tab
   var srcs=getSources();
   var srcRows='';
@@ -5169,7 +5208,7 @@ function rSettings(tab){
     +'<div class="card"><div class="mbdy">'+(at==='invoice'?it:at==='prices'?pt:at==='sources'?st:dt)+'</div></div>'
     +'</div>';
 }
-function saveInvS(){var notes=document.getElementById('s-notes')?document.getElementById('s-notes').value:'';var logo=document.getElementById('s-logo')?document.getElementById('s-logo').value:'';var besp=document.getElementById('s-besp')?parseMoney(document.getElementById('s-besp').value):0;sSet(Object.assign({},gSet(),{defaultNotes:notes,logoUrl:logo,defaultBespeaking:besp}));notif('Saved!');}
+function saveInvS(){var notes=document.getElementById('s-notes')?document.getElementById('s-notes').value:'';var logo=document.getElementById('s-logo')?document.getElementById('s-logo').value:'';var besp=document.getElementById('s-besp')?parseMoney(document.getElementById('s-besp').value):0;var bd=document.getElementById('s-baldays')?parseInt(document.getElementById('s-baldays').value,10):14;if(isNaN(bd))bd=14;var bank=document.getElementById('s-bank')?document.getElementById('s-bank').value:'';sSet(Object.assign({},gSet(),{defaultNotes:notes,logoUrl:logo,defaultBespeaking:besp,balanceDueDays:bd,bankDetails:bank}));notif('Saved!');}
 function savePriceS(){var s=gSet();var lp=s.linePrices||{};SVCS.filter(function(sv){return sv.aA||sv.b>0;}).forEach(function(sv){var pid='p-'+sv.d.replace(/[^a-z0-9]/gi,'_');var el=document.getElementById(pid);var pv=el?parseMoney(el.value):0;if(pv>0)lp[sv.d]=pv;else delete lp[sv.d];});sSet(Object.assign({},s,{linePrices:lp}));notif('Prices saved!');}
 // --- Custom services (Prices tab) ---
 function readCustomSvcRows(){
