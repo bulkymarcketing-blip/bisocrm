@@ -394,7 +394,7 @@ textarea{resize:vertical;min-height:80px}
 <div id="APP" style="display:none"><div class="app">
 <aside class="sidebar" id="SB"><div class="brand"><img class="brand-logo" src="logo.png" alt="" onerror="this.style.display='none'"/><div><div class="brand-name">BISO</div><div class="brand-sub">Bridal CRM</div></div></div><nav class="nav" id="SN"></nav><div class="sidebar-foot"><div class="user-chip" id="UC"><span class="em" id="UC-em"></span><span class="rl" id="UC-rl"></span></div><div class="sync-badge"><div class="sync-dot"></div><div class="sync-txt" id="ST">Connecting…</div></div><button class="logout-btn" id="LO" onclick="doLogout()">Sign Out</button></div></aside>
 <div class="mov" id="MOV" onclick="closeSB()"></div>
-<div class="main"><div class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="hamburger" onclick="openSB()"><svg width="20" height="16" viewBox="0 0 20 16" fill="none"><rect width="20" height="2" rx="1" fill="currentColor"/><rect y="7" width="20" height="2" rx="1" fill="currentColor"/><rect y="14" width="20" height="2" rx="1" fill="currentColor"/></svg></button><div class="page-title" id="PT">Lead Pipeline</div></div><div class="topbar-right"><div class="swrap"><span class="sicon">⌕</span><input type="text" class="sbox" id="SI" placeholder="Search…" oninput="doSearch()"/></div><button id="MSB" style="display:none;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:8px;cursor:pointer" onclick="toggleMSB()">⌕</button><button class="nt-bell" id="NT-bell" onclick="toggleNotifPanel(event)" aria-label="Notifications"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="nt-dot" id="NT-dot"></span></button><button class="av-btn" id="AV" onclick="toggleAvMenu(event)" aria-label="Account"><span id="AV-in">··</span><span class="av-dot" id="AV-dot"></span></button><button class="btn btn-primary" id="AB" onclick="handleAdd()">+ Add</button></div></div>
+<div class="main"><div class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="hamburger" onclick="openSB()"><svg width="20" height="16" viewBox="0 0 20 16" fill="none"><rect width="20" height="2" rx="1" fill="currentColor"/><rect y="7" width="20" height="2" rx="1" fill="currentColor"/><rect y="14" width="20" height="2" rx="1" fill="currentColor"/></svg></button><div class="page-title" id="PT">Lead Pipeline</div></div><div class="topbar-right"><div class="swrap"><span class="sicon">⌕</span><input type="text" class="sbox" id="SI" placeholder="Search…" oninput="doSearch()"/></div><button id="MSB" style="display:none;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:8px;cursor:pointer" onclick="toggleMSB()">⌕</button><button class="nt-bell" id="NT-bell" onclick="toggleNotifPanel(event)" aria-label="Notifications"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="nt-dot" id="NT-dot"></span></button><button class="av-btn" id="AV" onclick="toggleAvMenu(event)" aria-label="Account"><span id="AV-in">··</span><span class="av-dot" id="AV-dot"></span></button><button class="btn btn-gold" id="AB" onclick="handleAdd()">+ Add</button></div></div>
 <div class="av-bkdrp" id="AV-bk" onclick="closeAvMenu()"></div>
 <div class="av-menu" id="AV-m" onclick="event.stopPropagation()">
   <div class="av-info"><div class="em" id="AV-em"></div><div class="rl" id="AV-rl"></div></div>
@@ -5566,138 +5566,211 @@ function _briefNeedsAttention(){
   return warnings;
 }
 
+// ============================================================
+// PHASE 4 — Today / Daily Brief, redesign list vocabulary.
+// These small helpers (_briefSection / _briefList / _briefRow /
+// _briefMain / _briefDot / _briefEmpty / _apptTypeDot /
+// _briefMatchesQ) are the shared component vocabulary reused by
+// Phases 5–6. Presentation only — all data still comes from the
+// untouched compute helpers (computeTodaysActions, _brief*).
+// ============================================================
+
+// Tabler-style line icons (replace the old emoji quick-actions)
+var _icoWA = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>';
+var _icoCall = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>';
+
+// Cool, non-gold, non-red dot colour for an appointment's event type.
+function _apptTypeDot(reason){
+  var r = String(reason||'').toLowerCase();
+  if(r.indexOf('consult') >= 0) return '#5B7FA6';        // cool blue
+  if(r.indexOf('trial') >= 0) return '#3E8E8A';          // teal
+  if(r.indexOf('pickup') >= 0 || r.indexOf('pick-up') >= 0 || r.indexOf('pick up') >= 0) return '#7A6E8E'; // slate
+  return 'var(--muted)';
+}
+
+// Brief-scoped name search. q is the global lowercased search term.
+function _briefMatchesQ(name){
+  if(!q) return true;
+  return String(name||'').toLowerCase().indexOf(q) >= 0;
+}
+
+// Section header (sentence-case Inter title + muted tabular count + optional right meta) + body.
+function _briefSection(title, opts, bodyHtml){
+  opts = opts || {};
+  var h = '<div style="margin-bottom:20px">';
+  h += '<div style="display:flex;align-items:baseline;gap:8px;margin:0 0 9px;padding:0 2px">';
+  h += '<div style="font-size:13px;font-weight:600;color:var(--navy);letter-spacing:.2px">'+escHtml(title)+'</div>';
+  if(opts.count != null) h += '<div style="font-size:12px;color:var(--muted);font-weight:500;font-variant-numeric:tabular-nums">'+opts.count+'</div>';
+  if(opts.meta) h += '<div style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:500">'+escHtml(opts.meta)+'</div>';
+  h += '</div>';
+  h += bodyHtml;
+  h += '</div>';
+  return h;
+}
+
+// Flat surface list: rows separated by hairlines, near-flat shadow.
+function _briefList(rows){
+  if(!rows || !rows.length) return '';
+  var h = '<div style="background:var(--surf);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--sh)">';
+  rows.forEach(function(r, i){
+    h += '<div style="'+(i < rows.length-1 ? 'border-bottom:1px solid var(--border)' : '')+'">'+r+'</div>';
+  });
+  h += '</div>';
+  return h;
+}
+
+// Empty-state row inside a section.
+function _briefEmpty(text){
+  return '<div style="background:var(--surf);border:1px solid var(--border);border-radius:12px;box-shadow:var(--sh);padding:18px;text-align:center;color:var(--muted);font-size:12.5px">'+escHtml(text)+'</div>';
+}
+
+// Small leading status/type dot.
+function _briefDot(c){
+  return '<span style="flex:none;display:inline-block;width:8px;height:8px;border-radius:50%;background:'+(c||'var(--muted)')+'"></span>';
+}
+
+// Two-line row body (name + optional sub). name/sub are pre-built HTML.
+function _briefMain(name, sub){
+  var h = '<div style="font-size:13.5px;font-weight:600;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+name+'</div>';
+  if(sub) h += '<div style="font-size:11.5px;margin-top:2px;color:var(--muted)">'+sub+'</div>';
+  return h;
+}
+
+// Clean tappable row: leading dot + main + trailing actions. onclick is a pre-built JS string.
+function _briefRow(dotColor, mainHtml, rightHtml, onclick){
+  var oc = onclick ? ' onclick="'+onclick+'"' : '';
+  var cur = onclick ? 'cursor:pointer;' : '';
+  return '<div'+oc+' style="'+cur+'padding:11px 14px;display:flex;align-items:center;gap:11px">'
+    + (dotColor ? _briefDot(dotColor) : '')
+    + '<div style="flex:1;min-width:0">'+mainHtml+'</div>'
+    + (rightHtml ? '<div style="flex:none;display:flex;align-items:center;gap:6px">'+rightHtml+'</div>' : '')
+    + '</div>';
+}
+
 function rDailyBrief(){
-  var role = currentRole(); // future-proofing
-  var greet = (function(){
-    var h = new Date().getHours();
-    if(h < 12) return 'Good morning';
-    if(h < 18) return 'Good afternoon';
-    return 'Good evening';
-  })();
-  var dateStr = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
-  
   var actions = computeTodaysActions();
   var weddings = _briefWeddings();
   var appts = _briefAppointments();
   var sinceData = _briefSinceLastVisit();
   var warnings = _briefNeedsAttention();
-  
-  var html = '';
-  
-  // Header
-  html += '<div style="margin-bottom:18px"><div style="font-family:Cinzel,serif;font-size:18px;color:var(--navy);letter-spacing:.5px">'+greet+'</div><div style="font-size:12px;color:var(--muted);margin-top:2px">'+dateStr+'</div></div>';
-  
-  // Section 0: Approval Requests (owner only, only if pending exist)
-  if(isOwner()){
-    var pendingReqs = listPendingRequests();
-    if(pendingReqs.length > 0){
-      html += renderApprovalRequests(pendingReqs);
-    }
+  var searching = !!q;
+
+  // Triage queue: what genuinely needs action today (the "N things" number).
+  var enquiries = listIntake();
+  var pendingReqs = isOwner() ? listPendingRequests() : [];
+  var actionCount = actions.quietMode ? 0 : (actions.followUps.length + actions.appts.length + actions.quotesDue.length + actions.urgentPayments.length);
+  var needCount = actionCount + enquiries.length + pendingReqs.length;
+
+  var dateStr = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+
+  // --- Today header (Inter, not Cinzel) + one-line summary ---
+  var summary;
+  if(searching){
+    summary = 'Showing matches for “'+escHtml(q)+'”';
+  } else if(actions.quietMode){
+    summary = 'Quiet mode is on';
+  } else if(needCount === 0){
+    summary = 'You’re all caught up';
+  } else {
+    summary = '<strong style="color:var(--navy);font-weight:600">'+needCount+'</strong> thing'+(needCount!==1?'s':'')+' need'+(needCount===1?'s':'')+' you today';
   }
 
-  // Section 0b: New Enquiries (chatbot intake) — owner AND manager
-  var enquiries = listIntake();
-  if(enquiries.length > 0){
-    html += renderNewEnquiries(enquiries);
-  }
-  
-  // Section 1: Today's Actions (reuse existing widget)
-  html += renderTodaysActions(actions);
-  
-  // Section 2: This Week's Weddings
-  html += '<div style="margin-bottom:18px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><div style="font-size:18px">💍</div><div style="font-family:Cinzel,serif;font-size:13px;color:var(--navy);letter-spacing:1.2px;font-weight:600;text-transform:uppercase">This Week\u2019s Weddings</div><div style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:600">'+weddings.length+'</div></div>';
-  if(weddings.length === 0){
-    html += '<div style="background:var(--surf);border:1.5px solid var(--border);border-radius:10px;padding:18px;text-align:center;color:var(--muted);font-size:12px;font-style:italic">No weddings in the next 7 days</div>';
-  } else {
-    weddings.forEach(function(w){
-      var dayLabel = w.daysAway===0 ? 'TODAY' : w.daysAway===1 ? 'TOMORROW' : 'in '+w.daysAway+' days';
-      var dayColor = w.daysAway<=2 ? 'var(--danger)' : w.daysAway<=5 ? 'var(--warn)' : 'var(--navy)';
-      var wdate = new Date(w.weddingDate).toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short'});
-      var balLine = w.balance > 0 
-        ? '<div style="font-size:12px;color:var(--danger);margin-top:4px">⚠ Balance '+fR(w.balance)+'</div>'
-        : w.paidInFull ? '<div style="font-size:12px;color:var(--success);margin-top:4px">✓ Paid in full</div>'
-        : '<div style="font-size:12px;color:var(--muted);margin-top:4px">No invoice yet</div>';
-      var trialLine = w.finalTrial
-        ? '<div style="font-size:12px;color:var(--text2);margin-top:2px">Final trial: '+fmt(w.finalTrial.date)+(w.finalTrial.time?' at '+w.finalTrial.time:'')+'</div>'
-        : '<div style="font-size:12px;color:var(--warn);margin-top:2px">⚠ Final trial not booked</div>';
-      var details = w.theme || w.bmCount ? '<div style="font-size:11px;color:var(--muted);margin-top:4px">'+escHtml(w.theme||'No theme')+(w.bmCount?' · '+w.bmCount+' BM'+(w.bmCount!==1?'s':''):'')+'</div>' : '';
-      html += '<div style="background:var(--surf);border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer" onclick="openDetail(\''+w.id+'\')">'
-        +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">'
-        +'<div style="font-size:14px;font-weight:700;color:var(--navy)">'+escHtml(w.name)+'</div>'
-        +'<div style="font-size:10px;font-weight:700;color:'+dayColor+';letter-spacing:.5px">'+dayLabel+'</div>'
-        +'</div>'
-        +'<div style="font-size:11px;color:var(--muted)">'+wdate+'</div>'
-        +balLine+trialLine+details
-        +'</div>';
-    });
+  var html = '';
+  html += '<div style="margin-bottom:22px">';
+  html += '<div style="display:flex;align-items:flex-start;gap:12px">';
+  html += '<div style="flex:1;min-width:0">';
+  html += '<div style="font-family:\'Inter\',sans-serif;font-size:26px;font-weight:700;letter-spacing:-.5px;color:var(--navy);line-height:1.1">Today</div>';
+  html += '<div style="font-size:12.5px;color:var(--muted);margin-top:5px">'+dateStr+'</div>';
+  html += '</div>';
+  if(!actions.quietMode && !searching){
+    html += '<button class="btn btn-ghost btn-xs" style="flex:none;margin-top:4px" onclick="openQuietPicker()">Quiet mode</button>';
   }
   html += '</div>';
-  
-  // Section 3: This Week's Appointments
-  html += '<div style="margin-bottom:18px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><div style="font-size:18px">📅</div><div style="font-family:Cinzel,serif;font-size:13px;color:var(--navy);letter-spacing:1.2px;font-weight:600;text-transform:uppercase">This Week\u2019s Appointments</div><div style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:600">'+appts.length+'</div></div>';
-  if(appts.length === 0){
-    html += '<div style="background:var(--surf);border:1.5px solid var(--border);border-radius:10px;padding:18px;text-align:center;color:var(--muted);font-size:12px;font-style:italic">No appointments scheduled this week</div>';
-  } else {
-    html += '<div style="background:var(--surf);border:1.5px solid var(--border);border-radius:10px;overflow:hidden">';
-    appts.forEach(function(a, i){
+  html += '<div style="font-size:13px;color:var(--text2);margin-top:10px">'+summary+'</div>';
+  html += '</div>';
+
+  // Body accumulates so we can show a single "no matches" state while searching.
+  var body = '';
+
+  // --- New enquiries (chatbot intake) ---
+  var fEnq = searching ? enquiries.filter(function(b){return _briefMatchesQ(b.name);}) : enquiries;
+  if(fEnq.length > 0) body += renderNewEnquiries(fEnq);
+
+  // --- Approval requests (owner) — not name-keyed, so hidden while searching ---
+  if(pendingReqs.length > 0 && !searching) body += renderApprovalRequests(pendingReqs);
+
+  // --- Today's actions (filters internally on q; returns '' when nothing matches) ---
+  var actionsHtml = renderTodaysActions(actions);
+  if(actionsHtml) body += actionsHtml;
+
+  // --- This week's weddings ---
+  var fWed = searching ? weddings.filter(function(w){return _briefMatchesQ(w.name);}) : weddings;
+  if(!searching || fWed.length > 0){
+    var wedRows = fWed.map(function(w){
+      var dayLabel = w.daysAway===0 ? 'Today' : w.daysAway===1 ? 'Tomorrow' : 'in '+w.daysAway+' days';
+      var dayColor = w.daysAway<=2 ? 'var(--danger)' : w.daysAway<=5 ? 'var(--warn)' : '#5B7FA6';
+      var wdate = new Date(w.weddingDate).toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short'});
+      var bits = [wdate];
+      if(w.balance > 0) bits.push('<span style="color:var(--danger)">Balance '+fR(w.balance)+'</span>');
+      else if(w.paidInFull) bits.push('<span style="color:var(--success)">Paid in full</span>');
+      else bits.push('No invoice yet');
+      if(w.finalTrial) bits.push('Final trial '+fmt(w.finalTrial.date)+(w.finalTrial.time?' at '+w.finalTrial.time:''));
+      else bits.push('<span style="color:var(--warn)">Final trial not booked</span>');
+      if(w.theme) bits.push(escHtml(w.theme));
+      if(w.bmCount) bits.push(w.bmCount+' BM'+(w.bmCount!==1?'s':''));
+      var right = '<span style="font-size:11px;font-weight:600;color:'+dayColor+';white-space:nowrap">'+dayLabel+'</span>';
+      return _briefRow(dayColor, _briefMain(escHtml(w.name), bits.join(' · ')), right, "openDetail('"+escAttr(w.id)+"')");
+    });
+    body += _briefSection('This week’s weddings', {count:fWed.length}, fWed.length ? _briefList(wedRows) : _briefEmpty('No weddings in the next 7 days'));
+  }
+
+  // --- This week's appointments (event-type dot) ---
+  var fAppt = searching ? appts.filter(function(a){return _briefMatchesQ(a.brideName);}) : appts;
+  if(!searching || fAppt.length > 0){
+    var apptRows = fAppt.map(function(a){
       var d = new Date(a.date+'T'+(a.time||'00:00'));
       var dayLbl = d.toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short'});
-      html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;'+(i<appts.length-1?'border-bottom:1px solid var(--border);':'')+'cursor:pointer" onclick="openDetail(\''+a.brideId+'\')">'
-        +'<div style="min-width:60px;font-size:11px;color:var(--text2);font-weight:600">'+dayLbl+'</div>'
-        +'<div style="min-width:48px;font-size:12px;color:var(--navy);font-weight:600">'+(a.time||'—')+'</div>'
-        +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+escHtml(a.brideName)+'</div><div style="font-size:11px;color:var(--muted)">'+escHtml(a.reason)+'</div></div>'
-        +'</div>';
+      var sub = escHtml(a.reason)+' · '+dayLbl+(a.time?' at '+a.time:'');
+      return _briefRow(_apptTypeDot(a.reason), _briefMain(escHtml(a.brideName), sub), '', "openDetail('"+escAttr(a.brideId)+"')");
     });
-    html += '</div>';
+    body += _briefSection('This week’s appointments', {count:fAppt.length}, fAppt.length ? _briefList(apptRows) : _briefEmpty('No appointments scheduled this week'));
   }
-  html += '</div>';
-  
-  // Section 4: Since Last Visit
-  var sinceLabel = sinceData.since ? _humanAgo(sinceData.since) : 'last 24 hours';
+
+  // --- Since last visit (demoted metrics — compact activity digest) ---
   var g = sinceData.groups;
-  var totalActivity = g.newLeads.length + g.consultations.length + g.payments.length + g.confirmations.length + g.lost.length + g.cancellations.length;
-  html += '<div style="margin-bottom:18px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><div style="font-size:18px">📊</div><div style="font-family:Cinzel,serif;font-size:13px;color:var(--navy);letter-spacing:1.2px;font-weight:600;text-transform:uppercase">Since Last Visit</div><div style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:500">'+sinceLabel+'</div></div>';
-  if(totalActivity === 0){
-    html += '<div style="background:var(--surf);border:1.5px solid var(--border);border-radius:10px;padding:18px;text-align:center;color:var(--muted);font-size:12px;font-style:italic">No new activity</div>';
-  } else {
-    html += '<div style="background:var(--surf);border:1.5px solid var(--border);border-radius:10px;padding:12px 14px">';
-    if(g.newLeads.length > 0){
-      var sources = g.newLeads.map(function(l){return l.source||'?';}).join(', ');
-      html += '<div style="font-size:13px;color:var(--text);margin-bottom:6px"><strong style="color:var(--navy)">'+g.newLeads.length+' new lead'+(g.newLeads.length!==1?'s':'')+'</strong> <span style="color:var(--muted);font-size:11px">('+escHtml(sources)+')</span></div>';
-    }
-    if(g.consultations.length > 0){
-      html += '<div style="font-size:13px;color:var(--text);margin-bottom:6px"><strong style="color:var(--navy)">'+g.consultations.length+' consultation'+(g.consultations.length!==1?'s':'')+' completed</strong></div>';
-    }
-    if(g.payments.length > 0){
-      var totalPay = g.payments.reduce(function(s,p){return s+p.amount;},0);
-      html += '<div style="font-size:13px;color:var(--text);margin-bottom:6px"><strong style="color:var(--success)">'+g.payments.length+' payment'+(g.payments.length!==1?'s':'')+' received</strong> <span style="color:var(--muted);font-size:11px">('+fR(totalPay)+' total)</span></div>';
-    }
-    if(g.confirmations.length > 0){
-      html += '<div style="font-size:13px;color:var(--text);margin-bottom:6px"><strong style="color:var(--gold)">'+g.confirmations.length+' booking'+(g.confirmations.length!==1?'s':'')+' confirmed</strong></div>';
-    }
-    if(g.lost.length > 0){
-      html += '<div style="font-size:13px;color:var(--text);margin-bottom:6px"><strong style="color:var(--danger)">'+g.lost.length+' lead'+(g.lost.length!==1?'s':'')+' closed-lost</strong></div>';
-    }
-    if(g.cancellations.length > 0){
-      html += '<div style="font-size:13px;color:var(--text);margin-bottom:6px"><strong style="color:var(--danger)">'+g.cancellations.length+' booking'+(g.cancellations.length!==1?'s':'')+' cancelled</strong></div>';
-    }
-    html += '</div>';
+  function _sf(arr){ return searching ? arr.filter(function(x){return _briefMatchesQ(x.name);}) : arr; }
+  var nl=_sf(g.newLeads), cs=_sf(g.consultations), pm=_sf(g.payments), cf=_sf(g.confirmations), ls=_sf(g.lost), cn=_sf(g.cancellations);
+  var totalActivity = nl.length + cs.length + pm.length + cf.length + ls.length + cn.length;
+  if(!searching || totalActivity > 0){
+    var sinceLabel = sinceData.since ? _humanAgo(sinceData.since) : 'last 24 hours';
+    var DL = '<div style="font-size:12.5px;color:var(--text2);padding:2px 0">', DLE = '</div>';
+    var lines = [];
+    if(nl.length){ var sources = nl.map(function(l){return l.source||'?';}).join(', '); lines.push(DL+'<strong style="color:var(--navy);font-weight:600">'+nl.length+'</strong> new lead'+(nl.length!==1?'s':'')+' <span style="color:var(--muted)">('+escHtml(sources)+')</span>'+DLE); }
+    if(cs.length) lines.push(DL+'<strong style="color:var(--navy);font-weight:600">'+cs.length+'</strong> consultation'+(cs.length!==1?'s':'')+' completed'+DLE);
+    if(pm.length){ var totalPay = pm.reduce(function(s,p){return s+p.amount;},0); lines.push(DL+'<strong style="color:var(--success);font-weight:600">'+pm.length+'</strong> payment'+(pm.length!==1?'s':'')+' received <span style="color:var(--muted)">('+fR(totalPay)+')</span>'+DLE); }
+    if(cf.length) lines.push(DL+'<strong style="color:var(--navy);font-weight:600">'+cf.length+'</strong> booking'+(cf.length!==1?'s':'')+' confirmed'+DLE);
+    if(ls.length) lines.push(DL+'<strong style="color:var(--text2);font-weight:600">'+ls.length+'</strong> lead'+(ls.length!==1?'s':'')+' closed-lost'+DLE);
+    if(cn.length) lines.push(DL+'<strong style="color:var(--text2);font-weight:600">'+cn.length+'</strong> booking'+(cn.length!==1?'s':'')+' cancelled'+DLE);
+    var digestBody = totalActivity > 0
+      ? '<div style="background:var(--surf);border:1px solid var(--border);border-radius:12px;box-shadow:var(--sh);padding:12px 15px">'+lines.join('')+'</div>'
+      : _briefEmpty('No new activity');
+    body += _briefSection('Since last visit', {meta:sinceLabel}, digestBody);
   }
-  html += '</div>';
-  
-  // Section 5: Needs Attention
-  if(warnings.length > 0){
-    html += '<div style="margin-bottom:18px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><div style="font-size:18px">🔥</div><div style="font-family:Cinzel,serif;font-size:13px;color:var(--navy);letter-spacing:1.2px;font-weight:600;text-transform:uppercase">Needs Attention</div><div style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:600">'+warnings.length+'</div></div>';
-    html += '<div style="background:#FEF7E5;border:1.5px solid #F0D285;border-radius:10px;overflow:hidden">';
-    warnings.forEach(function(w, i){
-      html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;'+(i<warnings.length-1?'border-bottom:1px solid rgba(240,210,133,0.4);':'')+'cursor:pointer" onclick="openDetail(\''+w.id+'\')">'
-        +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+escHtml(w.name)+'</div><div style="font-size:11px;color:var(--warn);margin-top:2px">'+escHtml(w.text)+'</div></div>'
-        +'<div style="color:var(--muted);font-size:14px">›</div>'
-        +'</div>';
+
+  // --- Needs attention (amber, soft warnings) ---
+  var fWarn = searching ? warnings.filter(function(w){return _briefMatchesQ(w.name);}) : warnings;
+  if(fWarn.length > 0){
+    var warnRows = fWarn.map(function(w){
+      var sub = '<span style="color:var(--warn)">'+escHtml(w.text)+'</span>';
+      var chev = '<span style="color:var(--muted);font-size:15px">›</span>';
+      return _briefRow('var(--warn)', _briefMain(escHtml(w.name), sub), chev, "openDetail('"+escAttr(w.id)+"')");
     });
-    html += '</div></div>';
+    body += _briefSection('Needs attention', {count:fWarn.length}, _briefList(warnRows));
   }
-  
+
+  if(searching && !body) body = _briefEmpty('No matches in today’s view');
+
+  html += body;
   document.getElementById('MC').innerHTML = html;
 }
 
@@ -5848,30 +5921,21 @@ function toggleActionGroup(key){
 // ===== Phase 1B-2: Approval Requests widget (owner Daily Brief) =====
 function renderApprovalRequests(reqs){
   if(!reqs||reqs.length===0)return '';
-  var h='';
-  h+='<div style="background:#FFFBEB;border:1.5px solid var(--gold);border-radius:12px;padding:14px 16px;margin-bottom:18px">';
-  h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">';
-  h+='<div style="font-size:18px">\u2691</div>';
-  h+='<div style="font-family:Cinzel,serif;font-size:13px;color:var(--navy);letter-spacing:1.2px;font-weight:600;text-transform:uppercase">Approval Requests</div>';
-  h+='<div style="margin-left:auto;background:var(--gold);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;letter-spacing:.5px">'+reqs.length+' PENDING</div>';
-  h+='</div>';
-  reqs.forEach(function(r){
+  var rows=reqs.map(function(r){
     var when=r.requestedAt?timeAgo(r.requestedAt):'';
     var who=r.requestedBy||'(unknown)';
-    h+='<div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px">';
-    h+='<div style="font-size:13.5px;font-weight:600;color:var(--navy);margin-bottom:4px">'+escHtml(describeRequest(r))+'</div>';
+    var h='<div style="font-size:13px;font-weight:600;color:var(--navy)">'+escHtml(describeRequest(r))+'</div>';
     if(r.reason){
-      h+='<div style="font-size:12px;color:var(--text2);font-style:italic;margin-bottom:6px;padding:6px 9px;background:var(--bg);border-radius:6px;border-left:2px solid var(--gold)">\u201C'+escHtml(r.reason)+'\u201D</div>';
+      h+='<div style="font-size:12px;color:var(--text2);font-style:italic;margin-top:6px;padding:7px 10px;background:var(--bg);border-radius:8px;border-left:2px solid var(--border)">“'+escHtml(r.reason)+'”</div>';
     }
-    h+='<div style="font-size:11px;color:var(--muted);margin-bottom:10px">'+when+' \u00b7 '+escHtml(who)+'</div>';
-    h+='<div style="display:flex;gap:8px">';
-    h+='<button class="btn btn-ghost btn-xs" style="flex:1" onclick="rejectReqUI(\u0027'+r.id+'\u0027)">Reject</button>';
-    h+='<button class="btn btn-primary btn-xs" style="flex:1" onclick="approveReqUI(\u0027'+r.id+'\u0027)">Approve</button>';
+    h+='<div style="font-size:11px;color:var(--muted);margin-top:8px">'+escHtml(when)+' · '+escHtml(who)+'</div>';
+    h+='<div style="display:flex;gap:8px;margin-top:10px">';
+    h+='<button class="btn btn-ghost btn-xs" style="flex:1" onclick="rejectReqUI(\''+escAttr(r.id)+'\')">Reject</button>';
+    h+='<button class="btn btn-primary btn-xs" style="flex:1" onclick="approveReqUI(\''+escAttr(r.id)+'\')">Approve</button>';
     h+='</div>';
-    h+='</div>';
+    return '<div style="padding:12px 14px">'+h+'</div>';
   });
-  h+='</div>';
-  return h;
+  return _briefSection('Approval requests', {count:reqs.length}, _briefList(rows));
 }
 // ===== New Enquiries widget (chatbot intake queue, owner + manager) =====
 // Maps a stored band/time back to a human label for display.
@@ -5894,37 +5958,27 @@ function _intakeEvents(b){
 }
 function renderNewEnquiries(items){
   if(!items||items.length===0)return '';
-  var h='';
-  h+='<div style="background:#FFFBEB;border:1.5px solid var(--gold);border-radius:12px;padding:14px 16px;margin-bottom:18px">';
-  h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">';
-  h+='<div style="font-size:18px">\uD83D\uDC8C</div>';
-  h+='<div style="font-family:Cinzel,serif;font-size:13px;color:var(--navy);letter-spacing:1.2px;font-weight:600;text-transform:uppercase">New Enquiries</div>';
-  h+='<div style="margin-left:auto;background:var(--gold);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;letter-spacing:.5px">'+items.length+' NEW</div>';
-  h+='</div>';
-  items.forEach(function(b){
+  var rows=items.map(function(b){
     var id=b.id||'';
     var name=b.name||'(no name)';
     var when=b.intakeAt?timeAgo(b.intakeAt):'';
     var evLine=_intakeEvents(b);
-    var wdate=b.weddingDate?(' \u00b7 '+fmt(b.weddingDate)):'';
+    var wdate=b.weddingDate?(' · '+fmt(b.weddingDate)):'';
     var callWhen=_intakeWhenLabel(b);
-    h+='<div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px">';
-    h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">';
-    h+='<div style="font-size:14px;font-weight:700;color:var(--navy)">'+escHtml(name)+'</div>';
-    h+='<div style="font-size:11px;color:var(--muted)">'+when+'</div>';
+    var h='<div style="display:flex;align-items:baseline;gap:8px">';
+    h+='<div style="font-size:13.5px;font-weight:600;color:var(--navy);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escHtml(name)+'</div>';
+    h+='<div style="font-size:11px;color:var(--muted);flex:none">'+escHtml(when)+'</div>';
     h+='</div>';
-    if(b.phone)h+='<div style="font-size:12px;color:var(--text2);margin-bottom:2px">'+escHtml(fmtPhone(b.phone))+'</div>';
-    if(evLine)h+='<div style="font-size:12px;color:var(--text);margin-bottom:2px">'+escHtml(evLine)+escHtml(wdate)+'</div>';
-    if(callWhen)h+='<div style="font-size:11px;color:var(--muted);margin-bottom:10px">Prefers callback: '+escHtml(callWhen)+'</div>';
-    else h+='<div style="margin-bottom:10px"></div>';
-    h+='<div style="display:flex;gap:8px">';
-    h+='<button class="btn btn-ghost btn-xs" style="flex:1" onclick="dismissIntake(\u0027'+escAttr(id)+'\u0027)">Dismiss</button>';
-    h+='<button class="btn btn-primary btn-xs" style="flex:1" onclick="acceptIntake(\u0027'+escAttr(id)+'\u0027)">Review &amp; Accept</button>';
+    if(b.phone)h+='<div style="font-size:12px;color:var(--text2);margin-top:3px">'+escHtml(fmtPhone(b.phone))+'</div>';
+    if(evLine)h+='<div style="font-size:12px;color:var(--text);margin-top:2px">'+escHtml(evLine)+escHtml(wdate)+'</div>';
+    if(callWhen)h+='<div style="font-size:11px;color:var(--muted);margin-top:2px">Prefers callback: '+escHtml(callWhen)+'</div>';
+    h+='<div style="display:flex;gap:8px;margin-top:10px">';
+    h+='<button class="btn btn-ghost btn-xs" style="flex:1" onclick="dismissIntake(\''+escAttr(id)+'\')">Dismiss</button>';
+    h+='<button class="btn btn-primary btn-xs" style="flex:1" onclick="acceptIntake(\''+escAttr(id)+'\')">Review &amp; Accept</button>';
     h+='</div>';
-    h+='</div>';
+    return '<div style="padding:12px 14px">'+h+'</div>';
   });
-  h+='</div>';
-  return h;
+  return _briefSection('New enquiries', {count:items.length}, _briefList(rows));
 }
 // Accept: open the Overview Form pre-filled from the intake record. Saving the form
 // promotes it to /brides and (via ofSave) deletes the intake record.
@@ -6000,144 +6054,79 @@ async function rejectReqUI(rid){
 }
 
 function renderTodaysActions(actions){
-  // If quiet mode, show small banner with resume button only
+  // Quiet mode: flat neutral banner with resume button only.
   if(actions.quietMode){
     var s = gSet();
     var until = new Date(s.quietUntil);
     var hrs = Math.max(0, Math.round((until - new Date()) / 3600000));
-    return '<div style="background:#F3F4F6;border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px">'
-      +'<div style="font-size:16px">🤫</div>'
-      +'<div style="flex:1;font-size:12px;color:var(--text2);font-weight:500">Quiet mode on · resumes in '+hrs+'h</div>'
+    return '<div style="background:var(--surf);border:1px solid var(--border);border-radius:12px;box-shadow:var(--sh);padding:12px 14px;margin-bottom:20px;display:flex;align-items:center;gap:11px">'
+      +'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'
+      +'<div style="flex:1;font-size:12.5px;color:var(--text2)">Quiet mode on · resumes in '+hrs+'h</div>'
       +'<button class="btn btn-ghost btn-xs" onclick="resumeReminders()">Resume now</button>'
       +'</div>';
   }
-  
-  var totalCount = actions.followUps.length + actions.appts.length + actions.quotesDue.length + actions.urgentPayments.length;
-  if(totalCount === 0){
-    return ''; // No actions, no widget — keeps Pipeline clean on slow days
-  }
-  
-  var groups = [];
-  
-  // Follow-ups group
-  if(actions.followUps.length > 0){
-    var overdueCount = actions.followUps.filter(function(f){return f.overdue;}).length;
-    var subTxt = overdueCount > 0 ? overdueCount+' overdue' : 'due today';
-    groups.push({
-      key:'followUps',
-      icon:'📞',
-      label:'Follow up with '+actions.followUps.length+' lead'+(actions.followUps.length!==1?'s':''),
-      sub: subTxt,
-      color: overdueCount > 0 ? 'var(--danger)' : 'var(--warn)',
-      items: actions.followUps,
-      renderItem: function(f){
-        var ph = (f.phone||'').replace(/\D/g,'');
-        var waBtn = ph ? '<button class="lcard-icon-btn" onclick="event.stopPropagation();window.open(\'https://wa.me/'+ph+'\',\'_blank\')">💬</button>' : '';
-        var callBtn = ph ? '<button class="lcard-icon-btn" onclick="event.stopPropagation();window.open(\'tel:+'+ph+'\')">📞</button>' : '';
-        var logBtn = '<button class="lcard-cta-btn" onclick="event.stopPropagation();openDisp(\''+f.id+'\')">Log Attempt</button>';
-        var status = f.overdue ? '<span style="color:var(--danger);font-weight:600">Overdue</span>' : '<span style="color:var(--warn)">Due today</span>';
-        return '<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+escHtml(f.name)+'</div><div style="font-size:11px;margin-top:2px">'+status+'</div></div><div style="display:flex;gap:4px;align-items:center">'+waBtn+callBtn+logBtn+'</div></div>';
-      }
+
+  var searching = !!q;
+  var fu = searching ? actions.followUps.filter(function(x){return _briefMatchesQ(x.name);}) : actions.followUps;
+  var ap = searching ? actions.appts.filter(function(x){return _briefMatchesQ(x.brideName);}) : actions.appts;
+  var qd = searching ? actions.quotesDue.filter(function(x){return _briefMatchesQ(x.name);}) : actions.quotesDue;
+  var up = searching ? actions.urgentPayments.filter(function(x){return _briefMatchesQ(x.name);}) : actions.urgentPayments;
+  if(fu.length + ap.length + qd.length + up.length === 0) return '';
+
+  var html = '';
+
+  // Follow-ups (overdue red / due-today amber dot) — quick WhatsApp/Call + Log.
+  if(fu.length > 0){
+    var overdue = fu.filter(function(f){return f.overdue;}).length;
+    var rows = fu.map(function(f){
+      var ph = (f.phone||'').replace(/\D/g,'');
+      var wa = ph ? '<button class="lcard-icon-btn" onclick="event.stopPropagation();window.open(\'https://wa.me/'+ph+'\',\'_blank\')" aria-label="WhatsApp">'+_icoWA+'</button>' : '';
+      var call = ph ? '<button class="lcard-icon-btn" onclick="event.stopPropagation();window.open(\'tel:+'+ph+'\')" aria-label="Call">'+_icoCall+'</button>' : '';
+      var log = '<button class="lcard-cta-btn" onclick="event.stopPropagation();openDisp(\''+escAttr(f.id)+'\')">Log</button>';
+      var status = f.overdue ? '<span style="color:var(--danger);font-weight:600">Overdue</span>' : '<span style="color:var(--warn)">Due today</span>';
+      return _briefRow(f.overdue?'var(--danger)':'var(--warn)', _briefMain(escHtml(f.name), status), wa+call+log, "openDisp('"+escAttr(f.id)+"')");
     });
+    html += _briefSection('Follow-ups', {count:fu.length, meta:(overdue>0?overdue+' overdue':'due today')}, _briefList(rows));
   }
-  
-  // Appointments group
-  if(actions.appts.length > 0){
-    var todayCount = actions.appts.filter(function(a){return a.isToday;}).length;
-    var apptSub = todayCount > 0 ? todayCount+' today' : 'tomorrow';
-    groups.push({
-      key:'appts',
-      icon:'📅',
-      label:'Confirm '+actions.appts.length+' appointment'+(actions.appts.length!==1?'s':''),
-      sub: apptSub,
-      color: 'var(--navy)',
-      items: actions.appts,
-      renderItem: function(a){
-        var ph = (a.phone||'').replace(/\D/g,'');
-        var waBtn = ph ? '<button class="lcard-icon-btn" onclick="event.stopPropagation();window.open(\'https://wa.me/'+ph+'\',\'_blank\')">💬</button>' : '';
-        var openBtn = '<button class="lcard-icon-btn" onclick="event.stopPropagation();openDetail(\''+a.brideId+'\')">→</button>';
-        var when = (a.isToday ? 'Today' : 'Tomorrow') + (a.time ? ' at '+a.time : '');
-        return '<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+escHtml(a.brideName)+'</div><div style="font-size:11px;color:var(--text2);margin-top:2px">'+escHtml(a.reason)+' · '+when+'</div></div><div style="display:flex;gap:4px">'+waBtn+openBtn+'</div></div>';
-      }
+
+  // Appointments to confirm (event-type dot) — quick WhatsApp.
+  if(ap.length > 0){
+    var todayN = ap.filter(function(a){return a.isToday;}).length;
+    var rows = ap.map(function(a){
+      var ph = (a.phone||'').replace(/\D/g,'');
+      var wa = ph ? '<button class="lcard-icon-btn" onclick="event.stopPropagation();window.open(\'https://wa.me/'+ph+'\',\'_blank\')" aria-label="WhatsApp">'+_icoWA+'</button>' : '';
+      var when = (a.isToday ? 'Today' : 'Tomorrow') + (a.time ? ' at '+a.time : '');
+      return _briefRow(_apptTypeDot(a.reason), _briefMain(escHtml(a.brideName), escHtml(a.reason)+' · '+when), wa, "openDetail('"+escAttr(a.brideId)+"')");
     });
+    html += _briefSection('Appointments to confirm', {count:ap.length, meta:(todayN>0?todayN+' today':'tomorrow')}, _briefList(rows));
   }
-  
-  // Quotes due group
-  if(actions.quotesDue.length > 0){
-    groups.push({
-      key:'quotesDue',
-      icon:'💌',
-      label:'Send '+actions.quotesDue.length+' quote'+(actions.quotesDue.length!==1?'s':''),
-      sub: 'consultation done',
-      color: 'var(--gold)',
-      items: actions.quotesDue,
-      renderItem: function(q){
-        var quoteBtn = '<button class="lcard-cta-btn" onclick="event.stopPropagation();openOverviewForm(\''+q.id+'\',{intent:\'quote\'})">Create Quote</button>';
-        return '<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+escHtml(q.name)+'</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Consultation '+q.daysSince+'d ago</div></div>'+quoteBtn+'</div>';
-      }
+
+  // Quotes to send (amber time-cue dot) — Create quote CTA.
+  if(qd.length > 0){
+    var rows = qd.map(function(qq){
+      var cta = '<button class="lcard-cta-btn" onclick="event.stopPropagation();openOverviewForm(\''+escAttr(qq.id)+'\',{intent:\'quote\'})">Create quote</button>';
+      return _briefRow('var(--warn)', _briefMain(escHtml(qq.name), 'Consultation '+qq.daysSince+'d ago'), cta, "openOverviewForm('"+escAttr(qq.id)+"',{intent:'quote'})");
     });
+    html += _briefSection('Quotes to send', {count:qd.length, meta:'consultation done'}, _briefList(rows));
   }
-  
-  // Urgent payments group
-  if(actions.urgentPayments.length > 0){
-    var overdueCount = actions.urgentPayments.filter(function(u){return u.overdue;}).length;
-    var urgLabel = overdueCount > 0 
-      ? overdueCount+' OVERDUE payment'+(overdueCount!==1?'s':'')
-      : actions.urgentPayments.length+' wedding payment'+(actions.urgentPayments.length!==1?'s':'')+' urgent';
-    groups.push({
-      key:'urgentPayments',
-      icon: overdueCount > 0 ? '🔴' : '⚠️',
-      label: urgLabel,
-      sub: overdueCount > 0 ? 'wedding passed, balance unpaid' : 'balance due',
-      color: 'var(--danger)',
-      items: actions.urgentPayments,
-      renderItem: function(u){
-        var openBtn = '<button class="lcard-cta-btn" onclick="event.stopPropagation();openDetail(\''+u.id+'\')">Open</button>';
-        var wedTxt;
-        if(u.overdue){
-          wedTxt = 'Wedding was '+Math.abs(u.daysToWed)+'d ago';
-        } else if(u.daysToWed === 0){
-          wedTxt = 'Wedding today';
-        } else if(u.daysToWed === 1){
-          wedTxt = 'Wedding tomorrow';
-        } else {
-          wedTxt = 'Wedding in '+u.daysToWed+'d';
-        }
-        var subColor = u.overdue ? 'var(--danger)' : 'var(--danger)';
-        var weight = u.overdue ? '700' : '600';
-        return '<div style="background:var(--bg);border:1px solid '+(u.overdue?'var(--danger)':'var(--border)')+';border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+escHtml(u.name)+(u.overdue?' <span style="background:var(--danger);color:#fff;font-size:8px;font-weight:700;padding:2px 5px;border-radius:3px;letter-spacing:.5px;margin-left:4px">OVERDUE</span>':'')+'</div><div style="font-size:11px;color:'+subColor+';margin-top:2px;font-weight:'+weight+'">Balance '+fR(u.balance)+' · '+wedTxt+'</div></div>'+openBtn+'</div>';
-      }
+
+  // Payments (red — genuine act-now) — Open CTA.
+  if(up.length > 0){
+    var overdueP = up.filter(function(u){return u.overdue;}).length;
+    var rows = up.map(function(u){
+      var open = '<button class="lcard-cta-btn" onclick="event.stopPropagation();openDetail(\''+escAttr(u.id)+'\')">Open</button>';
+      var wedTxt;
+      if(u.overdue) wedTxt = 'Wedding was '+Math.abs(u.daysToWed)+'d ago';
+      else if(u.daysToWed === 0) wedTxt = 'Wedding today';
+      else if(u.daysToWed === 1) wedTxt = 'Wedding tomorrow';
+      else wedTxt = 'Wedding in '+u.daysToWed+'d';
+      var badge = u.overdue ? ' <span style="background:var(--danger);color:#fff;font-size:8px;font-weight:700;padding:2px 5px;border-radius:3px;letter-spacing:.5px;margin-left:4px">OVERDUE</span>' : '';
+      var sub = '<span style="color:var(--danger);font-weight:'+(u.overdue?'700':'600')+'">Balance '+fR(u.balance)+' · '+wedTxt+'</span>';
+      return _briefRow('var(--danger)', _briefMain(escHtml(u.name)+badge, sub), open, "openDetail('"+escAttr(u.id)+"')");
     });
+    html += _briefSection('Payments', {count:up.length, meta:(overdueP>0?overdueP+' overdue':'balance due')}, _briefList(rows));
   }
-  
-  // Build the widget HTML
-  var html = '<div style="background:var(--surf);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:16px;box-shadow:var(--sh)">';
-  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
-  html += '<div style="font-family:Cinzel,serif;font-size:13px;color:var(--navy);letter-spacing:1.2px;font-weight:600;text-transform:uppercase">Today\u2019s Actions</div>';
-  html += '<button class="btn btn-ghost btn-xs" onclick="openQuietPicker()" title="Quiet mode">🤫</button>';
-  html += '</div>';
-  
-  groups.forEach(function(g){
-    var expanded = !!window._expandedActions[g.key];
-    var caret = expanded ? '▾' : '▸';
-    html += '<div style="border:1px solid var(--border);border-radius:8px;margin-bottom:8px;overflow:hidden">';
-    html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;background:'+(expanded?'var(--bg)':'var(--surf)')+'" onclick="toggleActionGroup(\''+g.key+'\')">';
-    html += '<div style="font-size:18px">'+g.icon+'</div>';
-    html += '<div style="flex:1;min-width:0">';
-    html += '<div style="font-size:13px;font-weight:600;color:var(--navy)">'+g.label+'</div>';
-    html += '<div style="font-size:11px;color:'+g.color+';margin-top:1px;font-weight:600">'+g.sub+'</div>';
-    html += '</div>';
-    html += '<div style="font-size:13px;color:var(--muted)">'+caret+'</div>';
-    html += '</div>';
-    if(expanded){
-      html += '<div style="padding:8px 10px 4px;background:var(--surf)">';
-      g.items.forEach(function(it){ html += g.renderItem(it); });
-      html += '</div>';
-    }
-    html += '</div>';
-  });
-  
-  html += '</div>';
+
   return html;
 }
 

@@ -16,7 +16,7 @@ Single-file bridal-styling CRM for Kushan (Biso by Dinushi, Negombo, Sri Lanka).
 - **No native dialogs** (`alert` / `confirm` / `prompt`) — use **`showConfirm`**; user-facing notifications via **`notif`**.
 - **Wrap any multi-write save in `window._saving = true/false`** — a 15-second polling loop overwrites local state otherwise.
 - **Red = act-now only** (overdue, errors, danger). Never use red for informational urgency — amber for time cues, neutral otherwise.
-- Fonts: **Cinzel** (brand + page/section titles only) + **Inter** (everything else, incl. all data and numbers). Navy / gold palette.
+- Fonts: **Cinzel** (brand wordmark + quote/invoice/receipt documents ONLY) + **Inter** (everything else, incl. all screen/page/section titles, data and numbers). Navy / gold palette.
 
 ## Audit — MANDATORY before every change (any FAIL = hard stop, investigate)
 
@@ -75,7 +75,8 @@ White-background modern productivity app — “warm minimalism” (Linear / Thi
 - **Phase 1 — global tokens — DONE & LIVE.**
 - **Phase 2 — labels (de-uppercased) — DONE & LIVE.**
 - **Phase 3 — tags (tamed) — DONE & LIVE.**
-- **Next: Phase 4 (Today / Daily Brief).** Phases 1–3 are CSS-only and already in the committed `index.html` — confirm with `grep -c -- --canvas index.html` (must be ≥ 1) before starting, so you build on them and don’t undo them.
+- **Phase 4 — Today / Daily Brief (list-first rebuild) — DONE.** Phases 1–3 are CSS-only and already in the committed `index.html` — confirm with `grep -c -- --canvas index.html` (must be ≥ 1) before any further phase, so you build on them and don’t undo them.
+- **Next: Phase 5 (Pipeline).** Reuse the Phase-4 `_brief*` component vocabulary (see below).
 
 ### The token system AS SHIPPED — do NOT revert
 
@@ -96,7 +97,7 @@ In `:root` inside the app `<style>` at the top of `index.html`:
 - **One gold, one job:** gold = primary actions + the active state ONLY (the `+`, primary CTAs, active tab/filter). Navy ink = text and state. “Ink for state, gold for action.”
 - Separation via hairlines + whitespace, not heavy borders/shadows. Don’t introduce new shadows beyond `--sh`; overlays use `--sh2`.
 - Sentence-case labels everywhere (except the documented brand/role flourishes above).
-- Numbers in Inter `tabular-nums`. **Cinzel is reserved for the brand + page/section titles only — never on data.**
+- Numbers in Inter `tabular-nums`. **Cinzel is reserved for the brand wordmark + the quote/invoice/receipt documents ONLY** — screen/page/section titles, data and numbers are all Inter. (As of Phase 4 the in-content "Today" heading is Inter bold/tight; the shared topbar `.page-title` class is the last Cinzel-on-a-title holdout — flip it to Inter in the final consistency sweep.)
 - Tags restrained: neutral default, WhatsApp green, amber for time cues, RED only for genuine act-now (overdue / error / danger) — never for informational urgency.
 - Line icons (Tabler-style) in place of emoji where feasible.
 - ~8px spacing rhythm, modest radii (10–16px).
@@ -104,11 +105,23 @@ In `:root` inside the app `<style>` at the top of `index.html`:
 
 ### Remaining phases — one audited cycle each, plan-then-approve, ship-to-test each
 
-1. **Today / Daily Brief** — flat grouped lists (sections + counts), a search field and a single `+` primary action (the shared chrome is introduced here), checkable task rows, appointment rows with small event-type dots, a one-line “X things need you today” summary; demote the stat-card grid in favour of list-first. This establishes the component vocabulary that 5 and 6 reuse.
+1. **Today / Daily Brief — DONE.** Flat grouped lists (sentence-case section header + muted tabular count), clean tappable rows (no fake checkbox — there's no persistent task store), appointment rows with cool event-type dots, an Inter "Today" heading + one-line "N things need you today" summary, Brief-scoped name search with a "No matches in today's view" empty state, demoted the metric-y *Since last visit* digest below the action lists. The global topbar `+ Add` is now gold (one gold, one job).
 1. **Pipeline** — regroup the existing collapsible lanes into the grouped-list look; muted COOL stage dots (not gold); keep the per-card “hero” next-step CTA (gold); idle/rotting in amber (not red); pipeline value in the subtitle / per-card. (Logic already exists — this is mostly restyle/regroup.)
 1. **Data screens (batch)** — Quotations, Invoices, Finance, Confirmed, Profiles, Analytics — shared table/list pattern → cleaner rows/cards on the established tokens. May split into 2 cycles.
 1. **Schedule + Overview Form / bride detail & modals** — the remaining bespoke surfaces.
 1. **Login decision + final polish & consistency sweep.**
+
+### Phase 4 — component vocabulary (introduced in `rDailyBrief`, REUSE in Phases 5–6)
+
+Presentation-only rebuild — every data source/action was preserved (the compute helpers `computeTodaysActions` and `_brief*` were untouched). The reusable list primitives, all in the app `<script>` just above `rDailyBrief`, are the shared vocabulary for the next screens:
+
+- `_briefSection(title, {count, meta}, bodyHtml)` — sentence-case Inter section header + muted tabular count + optional right-aligned meta, then the body.
+- `_briefList(rows)` — flat `--surf` card, rows separated by 1px `--border` hairlines, `--sh` shadow.
+- `_briefRow(dotColor, mainHtml, rightHtml, onclick)` — clean tappable row: leading dot + main + trailing quick-actions. `_briefMain(name, sub)` builds the two-line label; `_briefDot(color)` the dot; `_briefEmpty(text)` the per-section empty state.
+- `_apptTypeDot(reason)` — COOL, non-gold/non-red event-type dot (consultation blue `#5B7FA6`, trial teal `#3E8E8A`, pickup slate `#7A6E8E`, else `--muted`).
+- `_briefMatchesQ(name)` — Brief-scoped name filter against the global `q` (the topbar search). Real cross-record global search is a separate later capability.
+- Row CTAs deliberately stay **navy** (`.lcard-cta-btn`, `btn-primary`) so the only gold per screen is the topbar `+`. **Flag for Phase 5:** Pipeline cards already use gold WhatsApp CTAs (`btn-gold`), so once the `+` is gold there are competing golds on Pipeline until Phase 5 harmonizes them.
+- **Runtime sim lives at `sim/dailyBrief.sim.js`** — extracts render fns live from `index.html` (regex/string/comment-aware brace matcher), mounts them on a mocked DOM/data across 6 scenarios, and regression-diffs every untouched function vs `git HEAD`. Run `node sim/dailyBrief.sim.js` (exit 0 = pass). Extend it for later phases.
 
 ### Audit for the redesign — MANDATORY, same discipline as the rest of the project
 
