@@ -97,7 +97,7 @@ In `:root` inside the app `<style>` at the top of `index.html`:
 - **One gold, one job:** gold = primary actions + the active state ONLY (the `+`, primary CTAs, active tab/filter). Navy ink = text and state. “Ink for state, gold for action.”
 - Separation via hairlines + whitespace, not heavy borders/shadows. Don’t introduce new shadows beyond `--sh`; overlays use `--sh2`.
 - Sentence-case labels everywhere (except the documented brand/role flourishes above).
-- Numbers in Inter `tabular-nums`. **Cinzel is reserved for the brand wordmark + the quote/invoice/receipt documents ONLY** — screen/page/section titles, data and numbers are all Inter. (As of Phase 4 the in-content "Today" heading is Inter bold/tight; the shared topbar `.page-title` class is the last Cinzel-on-a-title holdout — flip it to Inter in the final consistency sweep.)
+- Numbers in Inter `tabular-nums`. **Cinzel is reserved for the brand wordmark + the quote/invoice/receipt documents ONLY** — screen/page/section titles, data and numbers are all Inter. (Both the in-content "Today" heading and the shared topbar `.page-title` are now Inter bold/tight — no Cinzel-on-a-title holdouts remain.)
 - Tags restrained: neutral default, WhatsApp green, amber for time cues, RED only for genuine act-now (overdue / error / danger) — never for informational urgency.
 - Line icons (Tabler-style) in place of emoji where feasible.
 - ~8px spacing rhythm, modest radii (10–16px).
