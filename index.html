@@ -2328,7 +2328,7 @@ function prevAdv(src,sId,qId){
   var qt=src==='lead'?(obj.quotations||{})[qId]:(obj.quotes||{})[qId];if(!qt)return;
   var bp=parseMoney((document.getElementById('adv-amt')||{}).value);
   var notes=(document.getElementById('adv-notes')||{}).value||'';
-  buildPDF('I',{name:obj.name,phone:obj.phone||'',weddingDate:obj.weddingDate||''},{id:docDraft('invoice'),date:new Date().toISOString().slice(0,10),items:qt.items,advance:bp,notes:notes});
+  buildPDF('I',{name:obj.name,phone:obj.phone||'',weddingDate:obj.weddingDate||''},{id:docDraft('invoice'),date:new Date().toISOString().slice(0,10),items:qt.items,advance:bp,notes:notes,schedule:qt.schedule});
 }
 async function convInv(src,sId,qId){
   var obj=src==='lead'?leads[sId]:custs[sId];if(!obj)return;
@@ -2339,7 +2339,7 @@ async function convInv(src,sId,qId){
   var notes=(document.getElementById('adv-notes')||{}).value||'';
   var date=(document.getElementById('adv-date')||{}).value||new Date().toISOString().slice(0,10);
   var items=Object.assign({},qt.items);var tot=qTot(items);
-  var inv={id:await mintDocNum('invoice'),date:date,items:items,advance:bp,notes:notes};
+  var inv={id:await mintDocNum('invoice'),date:date,items:items,advance:bp,notes:notes};if(qt.schedule)inv.schedule=qt.schedule;
   window._saving=true;
   try{
     if(src==='lead'){
@@ -2430,7 +2430,15 @@ function viewPDF(type,src,sId,dId){
 function dMoney(n){return 'Rs '+Math.round(Number(n)||0).toLocaleString();}
 var _CEREMONY_LABELS={wedding:'Wedding Day',homecoming:'Homecoming',goingAway:'Going Away',engagement:'Engagement'};
 var _CEREMONY_ORDER=['wedding','homecoming','goingAway','engagement','additional'];
-function docSectionFor(it){
+function docSectionFor(it,itemsObj){
+  // Package PARENT: pinned to ONE ceremony via pkgCeremony (deliberately NOT linkedTo,
+  // so the untouched event-binding helpers that key off linkedTo never see a package).
+  if(it.isPackage){
+    var c=it.pkgCeremony;
+    return (c==='wedding'||c==='homecoming'||c==='goingAway'||c==='engagement')?c:'additional';
+  }
+  // Package CHILD: grouped under its parent's ceremony.
+  if(it.parentKey&&itemsObj&&itemsObj[it.parentKey])return docSectionFor(itemsObj[it.parentKey],itemsObj);
   var lt=it.linkedTo;
   if(lt==='wedding'||lt==='bridesmaids'||lt==='flowerGirls'||lt==='littleMaids')return 'wedding';
   if(lt==='homecoming')return 'homecoming';
@@ -2442,20 +2450,38 @@ function docSections(itemsObj){
   var items=Object.values(itemsObj||{});
   var groups={};var discountAmt=0;
   items.forEach(function(it){
+    if(it.isPackage)return; // parent header carries no price; rendered inside its ceremony group
     var line=cLine(it);
     if(it.linkedTo==='discount'||it.auto||line<0){discountAmt+=Math.abs(line);return;}
-    var sec=docSectionFor(it);(groups[sec]=groups[sec]||[]).push(it);
+    var sec=docSectionFor(it,itemsObj);(groups[sec]=groups[sec]||[]).push(it);
   });
   var subtotal=0;var html='';
   _CEREMONY_ORDER.forEach(function(sec){
     var arr=groups[sec];if(!arr||!arr.length)return;
     var label=sec==='additional'?'Additional Services':_CEREMONY_LABELS[sec];
     var secTot=0;var rows='';
+    // Standalone lines render inline (legacy behaviour); package children collect under their parent.
+    var byPkg={};var pkgOrder=[];
     arr.forEach(function(it){
+      if(it.parentKey&&itemsObj[it.parentKey]&&itemsObj[it.parentKey].isPackage){
+        if(!byPkg[it.parentKey]){byPkg[it.parentKey]=[];pkgOrder.push(it.parentKey);}
+        byPkg[it.parentKey].push(it);
+        return;
+      }
       var line=cLine(it);secTot+=line;
       var qty=Number(it.qty)||1;var unit=Number(it.unit)||0;
-      var sub=qty>1?'<span class="q">'+qty+' \u00d7 '+dMoney(unit)+' each</span>':'';
+      var sub=qty>1?'<span class="q">'+qty+' × '+dMoney(unit)+' each</span>':'';
       rows+='<div class="item"><div class="d">'+escHtml(it.desc||'')+sub+'</div><div class="a">'+dMoney(line)+'</div></div>';
+    });
+    pkgOrder.forEach(function(pk){
+      var parent=itemsObj[pk];var kids=byPkg[pk];var pkgTot=0;var krows='';
+      kids.forEach(function(it){
+        var line=cLine(it);pkgTot+=line;secTot+=line;
+        var qty=Number(it.qty)||1;var unit=Number(it.unit)||0;
+        var sub=qty>1?'<span class="q">'+qty+' × '+dMoney(unit)+' each</span>':'';
+        krows+='<div class="item pkgsub"><div class="d">'+escHtml(it.desc||'')+sub+'</div><div class="a">'+dMoney(line)+'</div></div>';
+      });
+      rows+='<div class="pkg"><div class="item pkghead"><div class="d">'+escHtml(parent.desc||'Package')+'</div><div class="a">'+dMoney(pkgTot)+'</div></div>'+krows+'</div>';
     });
     subtotal+=secTot;
     html+='<div class="sechead">'+escHtml(label)+'</div>'+rows+'<div class="subtot"><span class="lbl2">Subtotal</span><span>'+dMoney(secTot)+'</span></div>';
@@ -2474,21 +2500,53 @@ function docTotals(subtotal,discountAmt,paid){
   }
   h+='</div>';return h;
 }
-function docSchedule(total,deposit,weddingDate,paid){
+function _docResolveDue(due,weddingDate,offset){
+  if(!due)return {desc:'',date:''};
+  if(due.type==='confirmation')return {desc:'Due on confirmation',date:''};
+  if(due.type==='date'&&due.date)return {desc:'Due by '+fmt(due.date),date:due.date};
+  if(due.type==='beforeWedding'){
+    var n=Number(due.days)||0;var dd='';
+    if(weddingDate){var wd=new Date(weddingDate);if(!isNaN(wd.getTime())){wd.setDate(wd.getDate()-n);dd=wd.toISOString().slice(0,10);}}
+    return {desc:dd?('Due by '+fmt(dd)+' · '+n+' days before the wedding'):(n+' days before the wedding'),date:dd};
+  }
+  return {desc:'',date:''};
+}
+function _docCustomSchedule(insts,weddingDate,offset,paid){
+  var isInv=(paid!=null);var remaining=Number(paid)||0;var today=new Date().toISOString().slice(0,10);
+  function badge(t,c){return '<span class="pbadge" style="color:'+c+';border-color:'+c+'">'+t+'</span>';}
+  var rows='';
+  insts.forEach(function(it){
+    var amt=Math.max(0,Number(it.amount)||0);
+    var due=_docResolveDue(it.due,weddingDate,offset);
+    var b='';var desc=due.desc;
+    if(isInv){
+      var covered=Math.min(remaining,amt);remaining=Math.max(0,remaining-covered);
+      if(amt>0&&covered>=amt){b=' '+badge('Paid','#38A169');}
+      else if(covered>0){b=' '+badge('Partial','#A8862E');desc=(desc?desc+' · ':'')+dMoney(amt-covered)+' remaining';}
+      else{var od=due.date&&today>due.date;b=' '+badge(od?'Overdue':'Due',od?'#E53E3E':'#A8862E');}
+    }
+    rows+='<div class="payrow"><div><div class="pl">'+escHtml(it.label||'Installment')+b+'</div><div class="pd">'+escHtml(desc)+'</div></div><div class="pa">'+dMoney(amt)+'</div></div>';
+  });
+  return '<div class="pay"><div class="payhead">Payment Schedule</div>'+rows+'</div>';
+}
+function docSchedule(total,deposit,weddingDate,paid,schedule){
   var s=gSet();var offset=parseInt(s.balanceDueDays,10);if(isNaN(offset))offset=14;
+  if(schedule&&schedule.mode==='custom'&&schedule.installments&&schedule.installments.length){
+    return _docCustomSchedule(schedule.installments,weddingDate,offset,paid);
+  }
   deposit=Math.max(0,Number(deposit)||0);total=Number(total)||0;
   var balance=Math.max(0,total-deposit);var dueDate='';
   if(weddingDate){var wd=new Date(weddingDate);if(!isNaN(wd.getTime())){wd.setDate(wd.getDate()-offset);dueDate=wd.toISOString().slice(0,10);}}
   var isInv=(paid!=null);var p=Number(paid)||0;var today=new Date().toISOString().slice(0,10);
   function badge(t,c){return '<span class="pbadge" style="color:'+c+';border-color:'+c+'">'+t+'</span>';}
   var depB=isInv?(p>=deposit&&deposit>0?badge('Paid','#38A169'):badge('Due','#A8862E')):'';
-  var rows='<div class="payrow"><div><div class="pl">Bespeaking fee'+(isInv?' '+depB:'')+'</div><div class="pd">'+(isInv?'Received on confirmation':'Due on confirmation')+' \u00b7 non-refundable, deducted from the final bill</div></div><div class="pa">'+dMoney(deposit)+'</div></div>';
+  var rows='<div class="payrow"><div><div class="pl">Bespeaking fee'+(isInv?' '+depB:'')+'</div><div class="pd">'+(isInv?'Received on confirmation':'Due on confirmation')+' · non-refundable, deducted from the final bill</div></div><div class="pa">'+dMoney(deposit)+'</div></div>';
   var balB='',balDesc='';
   if(isInv){
     var rem=Math.max(0,total-p);
     if(rem<=0){balB=badge('Paid','#38A169');balDesc='Settled in full';}
-    else{var od=dueDate&&today>dueDate;balB=od?badge('Overdue','#E53E3E'):badge('Due','#A8862E');balDesc=(dueDate?'Due by '+fmt(dueDate):'Due before the wedding')+(rem<balance?' \u00b7 '+dMoney(rem)+' remaining':'');}
-  }else{balDesc=dueDate?'Due '+offset+' days before \u2014 by '+fmt(dueDate):'Due before the wedding day';}
+    else{var od=dueDate&&today>dueDate;balB=od?badge('Overdue','#E53E3E'):badge('Due','#A8862E');balDesc=(dueDate?'Due by '+fmt(dueDate):'Due before the wedding')+(rem<balance?' · '+dMoney(rem)+' remaining':'');}
+  }else{balDesc=dueDate?'Due '+offset+' days before — by '+fmt(dueDate):'Due before the wedding day';}
   rows+='<div class="payrow"><div><div class="pl">Balance'+(isInv?' '+balB:'')+'</div><div class="pd">'+balDesc+'</div></div><div class="pa">'+dMoney(balance)+'</div></div>';
   return '<div class="pay"><div class="payhead">Payment Schedule</div>'+rows+'</div>';
 }
@@ -2538,6 +2596,10 @@ function docCSS(){return '<style>'
   +'.bdoc .foot{text-align:center}.bdoc .fbiz{font-size:11px;color:#9AA0AE;letter-spacing:.3px}'
   +'.bdoc .fbank{font-size:11.5px;color:#5A6275;margin-top:8px;line-height:1.6}'
   +'.bdoc .ftag{font-family:\'EB Garamond\',serif;font-style:italic;font-size:14px;color:#A8862E;margin-top:8px}'
+  +'.bdoc .pkg{margin:2px 0}'
+  +'.bdoc .item.pkghead .d{font-weight:600}'
+  +'.bdoc .item.pkgsub{padding-left:18px}'
+  +'.bdoc .item.pkgsub .d{color:#5A6275;font-size:14px}'
   +'</style>';}
 function docLogo(){var s=gSet();return s.logoUrl?'<img src="'+escAttr(s.logoUrl)+'" style="height:54px;object-fit:contain" alt="Biso by Dinushi"/>':'<div class="dname">Biso</div><div class="dsub">BY DINUSHI</div>';}
 function docHeader(typeLabel,metaHtml){
@@ -2569,7 +2631,7 @@ function buildPDF(type,l,doc){
   if(!celebRight)celebRight='<div class="pinfo">\u2014</div>';
   var parties='<div class="parties"><div><div class="lbl">Prepared for</div><div class="pname">'+escHtml(l.name||'')+'</div>'+(l.phone?'<div class="pinfo">'+escHtml(l.phone)+'</div>':'')+'</div>'
     +'<div class="pright"><div class="lbl">Celebration</div>'+celebRight+'</div></div>';
-  var body=sec.html+docTotals(sec.subtotal,sec.discountAmt,isI?paidI:null)+docSchedule(grand,deposit,wDate,isI?paidI:null);
+  var body=sec.html+docTotals(sec.subtotal,sec.discountAmt,isI?paidI:null)+docSchedule(grand,deposit,wDate,isI?paidI:null,doc.schedule);
   if(doc.notes)body+='<div class="notes"><div class="nh">Terms</div><div class="nb">'+escHtmlMultiline(doc.notes)+'</div></div>';
   var html=docWrap(isI?'INVOICE':'QUOTATION',meta,parties,body);
   document.getElementById('pdf-t').textContent=(isI?'Invoice':'Quote')+' - '+doc.id;
@@ -3652,6 +3714,7 @@ function openOverviewForm(brideId, opts){
     
     // Load a specific quote (opts.quoteId) or the latest unsent draft, if any
     OF.draft.quoteItems = {};
+    OF.draft.quoteSchedule = null;
     var draftQuote = null;
     var quotes = OF.draft.quotes || {};
     if(opts.quoteId && quotes[opts.quoteId]){
@@ -3666,7 +3729,7 @@ function openOverviewForm(brideId, opts){
         var k = it.key || ('L-'+Math.random().toString(36).slice(2,9));
         var loaded = Object.assign({}, it, {key:k});
         // Infer linkedTo from desc if missing (legacy data compatibility)
-        if(!loaded.linkedTo && !loaded.custom){
+        if(!loaded.linkedTo && !loaded.custom && !loaded.isPackage && !loaded.parentKey){
           var d = (loaded.desc||'').toLowerCase();
           if(d.indexOf('bridal')===0)loaded.linkedTo = 'wedding';
           else if(d.indexOf('homecoming package discount')===0)loaded.linkedTo = 'discount';
@@ -3680,12 +3743,13 @@ function openOverviewForm(brideId, opts){
         OF.draft.quoteItems[k] = loaded;
       });
       OF.existingQuoteId = draftQuote.id;
+      OF.draft.quoteSchedule = draftQuote.schedule || null;
     }
     // Dedupe linked items (keep first of each link key)
     var seen = {};
     Object.keys(OF.draft.quoteItems).forEach(function(k){
       var it = OF.draft.quoteItems[k];
-      if(it.linkedTo){
+      if(it.linkedTo && !it.parentKey && !it.isPackage){
         if(seen[it.linkedTo]){ delete OF.draft.quoteItems[k]; }
         else seen[it.linkedTo] = k;
       }
@@ -3716,7 +3780,8 @@ function openOverviewForm(brideId, opts){
       notesLog: {},
       documents: {},
       _history: {},
-      quoteItems: {}
+      quoteItems: {},
+      quoteSchedule: null
     };
     OF.countryCode = '94';
   }
@@ -4186,6 +4251,7 @@ async function ofSave(){
   var quoteItems = OF.draft.quoteItems || {};
   var brideClone = Object.assign({}, OF.draft);
   delete brideClone.quoteItems;
+  delete brideClone.quoteSchedule;
   // Remove transient fields
   
   // Set saving flag to pause background polling
@@ -4214,7 +4280,8 @@ async function ofSave(){
         items: items,
         notes: defNotes(),
         convertedToInvoice: false,
-        sent: false
+        sent: false,
+        schedule: OF.draft.quoteSchedule || null
       };
       // Single canonical path
       var patch = {};
@@ -4248,7 +4315,8 @@ async function ofSave(){
         items: invItems,
         advance: 0,
         payments: {},
-        notes: ''
+        notes: '',
+        schedule: OF.draft.quoteSchedule || null
       };
       var ipatch = {};
       ipatch[inv.id] = inv;
@@ -4421,7 +4489,9 @@ function buildQuoteSection(){
   var items = OF.draft.quoteItems || {};
   var keys = Object.keys(items);
   var order = ['engagement','wedding','homecoming','discount','goingAway','bridesmaids','flowerGirls','littleMaids'];
-  keys.sort(function(a, b){
+  // Top-level lines (not a package parent, not a package child) — sorted as before.
+  var topKeys = keys.filter(function(k){return !items[k].isPackage && !items[k].parentKey;});
+  topKeys.sort(function(a, b){
     var la = items[a].linkedTo, lb = items[b].linkedTo;
     var ia = la ? order.indexOf(la) : 999;
     var ib = lb ? order.indexOf(lb) : 999;
@@ -4432,32 +4502,28 @@ function buildQuoteSection(){
   });
   var rowsHtml = '';
   var subtotal = 0;
-  keys.forEach(function(k){
+  topKeys.forEach(function(k){
     var it = items[k];
     if(it.orderDiscount)return; // order discount renders as its own control below
-    var line = (it.qty||1) * (it.unit||0) * (1 - (it.disc||0)/100);
-    subtotal += line;
-    var isDiscount = (it.linkedTo === 'discount');
-    var linkBadge = it.linkedTo ? '<span style="font-size:9px;color:var(--gold);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-left:6px">⚓ linked</span>' : '';
-    rowsHtml += '<div style="background:'+(isDiscount?'#FEF7E5':'var(--bg)')+';border:1.5px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px">';
-    rowsHtml += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">';
-    if(it.custom && !it.linkedTo){
-      rowsHtml += '<input type="text" value="'+escHtml(it.desc)+'" onchange="qiUpdate(\''+k+'\',\'desc\',this.value)" placeholder="Service description" style="flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--navy);padding:6px 8px;border:1.5px solid var(--border);border-radius:6px"/>';
-    } else {
-      rowsHtml += '<div style="flex:1;font-size:13px;font-weight:600;color:'+(isDiscount?'var(--gold)':'var(--navy)')+'">'+escHtml(it.desc)+linkBadge+'</div>';
-    }
-    rowsHtml += '<button class="btn btn-ghost btn-xs" onclick="qiDelete(\''+k+'\')" style="color:var(--danger);padding:4px 8px">✕</button>';
-    rowsHtml += '</div>';
-    rowsHtml += '<div style="display:flex;gap:6px;align-items:flex-end">';
-    rowsHtml += '<div style="flex:1"><label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:2px">Qty</label><input type="number" value="'+(it.qty||1)+'" min="1" onchange="qiUpdate(\''+k+'\',\'qty\',parseFloat(this.value)||1)" style="width:100%;padding:6px 8px;font-size:13px;text-align:center;border:1.5px solid var(--border);border-radius:6px"/></div>';
-    rowsHtml += '<div style="flex:2"><label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:2px">Unit Rs</label><input type="text" inputmode="numeric" value="'+groupMoney(it.unit||0)+'" onchange="qiUpdate(\''+k+'\',\'unit\',parseMoney(this.value))" style="width:100%;padding:6px 8px;font-size:13px;text-align:right;border:1.5px solid var(--border);border-radius:6px"/></div>';
-    rowsHtml += '<div style="flex:1"><label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:2px">Disc %</label><input type="number" value="'+(it.disc||0)+'" min="0" max="100" onchange="qiUpdate(\''+k+'\',\'disc\',parseFloat(this.value)||0)" style="width:100%;padding:6px 8px;font-size:13px;text-align:center;border:1.5px solid var(--border);border-radius:6px"/></div>';
-    rowsHtml += '<div style="flex:1;text-align:right;font-size:13px;font-weight:700;color:'+(line<0?'var(--gold)':'var(--navy)')+';padding-bottom:6px">'+(line<0?'-':'')+'Rs '+Math.abs(Math.round(line)).toLocaleString()+'</div>';
-    rowsHtml += '</div></div>';
+    subtotal += (it.qty||1) * (it.unit||0) * (1 - (it.disc||0)/100);
+    rowsHtml += _qiRowHtml(k, it, false);
+  });
+  // Packages: parent header + indented priced sub-lines (package total = sum of sub-lines).
+  keys.filter(function(k){return items[k].isPackage;}).forEach(function(pk){
+    var p = items[pk];
+    var pkgTot = 0; var childRows = '';
+    keys.filter(function(ck){return items[ck].parentKey === pk;}).forEach(function(ck){
+      var it = items[ck];
+      var line = (it.qty||1) * (it.unit||0) * (1 - (it.disc||0)/100);
+      subtotal += line; pkgTot += line;
+      childRows += _qiRowHtml(ck, it, true);
+    });
+    rowsHtml += _qiPackageHtml(pk, p, childRows, pkgTot);
   });
   var addCustomBtn = '<div style="margin-top:6px">'
     +'<input type="text" id="qi-search" placeholder="Search a service, or type a custom name…" oninput="qiSearch(this.value)" onfocus="qiSearch(this.value)" style="width:100%;padding:9px 11px;font-size:13px;border:1.5px solid var(--border);border-radius:8px;box-sizing:border-box"/>'
     +'<div id="qi-results" style="margin-top:4px"></div>'
+    +'<button class="btn btn-outline btn-sm" onclick="qiAddPackage()" style="margin-top:8px">+ Add package</button>'
     +'</div>';
   var discKey = ofDiscItemKey();
   var dItem = discKey ? items[discKey] : null;
@@ -4482,12 +4548,13 @@ function buildQuoteSection(){
       +'</div></div>';
     var rows2 = '<div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text2);padding:2px 0"><span>Subtotal</span><span>Rs '+Math.round(subtotal).toLocaleString()+'</span></div>';
     if(dAmt>0){
-      rows2 += '<div style="display:flex;justify-content:space-between;font-size:13px;color:var(--gold);font-weight:600;padding:2px 0"><span>Discount'+(dType==='pct'?' ('+dVal+'%)':'')+'</span><span>\u2212 Rs '+Math.round(dAmt).toLocaleString()+'</span></div>';
+      rows2 += '<div style="display:flex;justify-content:space-between;font-size:13px;color:var(--gold);font-weight:600;padding:2px 0"><span>Discount'+(dType==='pct'?' ('+dVal+'%)':'')+'</span><span>− Rs '+Math.round(dAmt).toLocaleString()+'</span></div>';
     }
     totalsHtml = '<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-top:10px">'+rows2+'</div>'
       +'<div style="background:var(--navy);color:#fff;border-radius:10px;padding:12px 16px;margin-top:8px;display:flex;align-items:center;justify-content:space-between"><div style="font-size:11px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;opacity:.85">Total</div><div style="font-size:18px;font-weight:700">Rs '+Math.round(grand).toLocaleString()+'</div></div>';
   }
-  return rowsHtml + addCustomBtn + discBlock + totalsHtml;
+  var scheduleHtml = (keys.length > 0) ? _qiScheduleHtml(grand) : '';
+  return rowsHtml + addCustomBtn + discBlock + totalsHtml + scheduleHtml;
 }
 
 function shouldShowQuoteSection(){
@@ -4542,6 +4609,13 @@ async function qiDelete(key){
     ofMark();
     syncQuoteItems();
     renderOverviewForm();
+  } else if(it.isPackage){
+    var r = await showConfirm({title:'Remove package',msg:'Remove this package and all of its sub-lines?',yesText:'Remove',dangerous:true});
+    if(!r.ok)return;
+    Object.keys(OF.draft.quoteItems).forEach(function(ck){if(OF.draft.quoteItems[ck]&&OF.draft.quoteItems[ck].parentKey===key)delete OF.draft.quoteItems[ck];});
+    delete OF.draft.quoteItems[key];
+    ofMark();
+    renderOverviewForm();
   } else {
     delete OF.draft.quoteItems[key];
     ofMark();
@@ -4582,6 +4656,145 @@ function qiAddCustom(name){
   OF.draft.quoteItems[k] = {key:k, desc:desc, qty:1, unit:0, disc:0, custom:true};
   renderOverviewForm();
 }
+// ===== #5: Packages (parent + priced sub-lines) =====
+// A package PARENT is a $0 grouping header (isPackage:true, pkgCeremony pins it to ONE
+// ceremony). A CHILD carries parentKey + the full item field set. cLine(parent)=0 so qTot
+// and every downstream consumer are unchanged; package total = sum of the sub-lines.
+function qiAddPackage(){
+  ofMark();
+  OF.draft.quoteItems = OF.draft.quoteItems || {};
+  var k = 'P-'+Math.random().toString(36).slice(2,9);
+  OF.draft.quoteItems[k] = {key:k, isPackage:true, desc:'Package', qty:1, unit:0, disc:0, custom:true, pkgCeremony:''};
+  renderOverviewForm();
+}
+function qiAddSubLine(parentKey){
+  ofMark();
+  OF.draft.quoteItems = OF.draft.quoteItems || {};
+  if(!OF.draft.quoteItems[parentKey])return;
+  var k = 'L-'+Math.random().toString(36).slice(2,9);
+  OF.draft.quoteItems[k] = {key:k, parentKey:parentKey, desc:'', qty:1, unit:0, disc:0, custom:true};
+  renderOverviewForm();
+}
+function qiSetPkgCeremony(key,val){
+  ofMark();
+  OF.draft.quoteItems = OF.draft.quoteItems || {};
+  if(OF.draft.quoteItems[key])OF.draft.quoteItems[key].pkgCeremony = val;
+  renderOverviewForm();
+}
+// One editable line row (shared by top-level lines and package sub-lines).
+function _qiRowHtml(k,it,isChild){
+  var line=(it.qty||1)*(it.unit||0)*(1-(it.disc||0)/100);
+  var isDiscount=(!isChild && it.linkedTo==='discount');
+  var linkBadge=(!isChild && it.linkedTo)?'<span style="font-size:9px;color:var(--gold);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-left:6px">⚓ linked</span>':'';
+  var editableDesc=isChild||(it.custom && !it.linkedTo);
+  var h='<div style="background:'+(isDiscount?'#FEF7E5':(isChild?'var(--surf)':'var(--bg)'))+';border:1.5px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px">';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">';
+  if(editableDesc){
+    h+='<input type="text" value="'+escHtml(it.desc||'')+'" onchange="qiUpdate(\''+k+'\',\'desc\',this.value)" placeholder="'+(isChild?'Sub-line description':'Service description')+'" style="flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--navy);padding:6px 8px;border:1.5px solid var(--border);border-radius:6px"/>';
+  } else {
+    h+='<div style="flex:1;font-size:13px;font-weight:600;color:'+(isDiscount?'var(--gold)':'var(--navy)')+'">'+escHtml(it.desc)+linkBadge+'</div>';
+  }
+  h+='<button class="btn btn-ghost btn-xs" onclick="qiDelete(\''+k+'\')" style="color:var(--danger);padding:4px 8px">✕</button>';
+  h+='</div>';
+  h+='<div style="display:flex;gap:6px;align-items:flex-end">';
+  h+='<div style="flex:1"><label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:2px">Qty</label><input type="number" value="'+(it.qty||1)+'" min="1" onchange="qiUpdate(\''+k+'\',\'qty\',parseFloat(this.value)||1)" style="width:100%;padding:6px 8px;font-size:13px;text-align:center;border:1.5px solid var(--border);border-radius:6px"/></div>';
+  h+='<div style="flex:2"><label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:2px">Unit Rs</label><input type="text" inputmode="numeric" value="'+groupMoney(it.unit||0)+'" onchange="qiUpdate(\''+k+'\',\'unit\',parseMoney(this.value))" style="width:100%;padding:6px 8px;font-size:13px;text-align:right;border:1.5px solid var(--border);border-radius:6px"/></div>';
+  h+='<div style="flex:1"><label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:2px">Disc %</label><input type="number" value="'+(it.disc||0)+'" min="0" max="100" onchange="qiUpdate(\''+k+'\',\'disc\',parseFloat(this.value)||0)" style="width:100%;padding:6px 8px;font-size:13px;text-align:center;border:1.5px solid var(--border);border-radius:6px"/></div>';
+  h+='<div style="flex:1;text-align:right;font-size:13px;font-weight:700;color:'+(line<0?'var(--gold)':'var(--navy)')+';padding-bottom:6px">'+(line<0?'-':'')+'Rs '+Math.abs(Math.round(line)).toLocaleString()+'</div>';
+  h+='</div></div>';
+  return h;
+}
+// Package card: name + ceremony pin + indented sub-lines + add-sub-line + package total.
+function _qiPackageHtml(pk,p,childRows,pkgTot){
+  var cers=[['','Additional Services'],['wedding','Wedding Day'],['homecoming','Homecoming'],['goingAway','Going Away'],['engagement','Engagement']];
+  var cur=p.pkgCeremony||'';
+  var opts=cers.map(function(c){return '<option value="'+c[0]+'"'+(c[0]===cur?' selected':'')+'>'+c[1]+'</option>';}).join('');
+  var h='<div style="background:var(--bg);border:1.5px solid var(--gold);border-radius:10px;padding:12px;margin-bottom:8px">';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">';
+  h+='<span style="font-size:10px;color:var(--gold);font-weight:700;letter-spacing:.5px;text-transform:uppercase">📦 Package</span>';
+  h+='<button class="btn btn-ghost btn-xs" onclick="qiDelete(\''+pk+'\')" style="color:var(--danger);padding:4px 8px">✕</button>';
+  h+='</div>';
+  h+='<input type="text" value="'+escHtml(p.desc||'')+'" onchange="qiUpdate(\''+pk+'\',\'desc\',this.value)" placeholder="Package name" style="width:100%;font-size:13px;font-weight:700;color:var(--navy);padding:7px 9px;border:1.5px solid var(--border);border-radius:6px;margin-bottom:6px;box-sizing:border-box"/>';
+  h+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px"><label style="font-size:10px;color:var(--muted);font-weight:600">Groups under</label><select onchange="qiSetPkgCeremony(\''+pk+'\',this.value)" style="flex:1;padding:6px 8px;font-size:13px;border:1.5px solid var(--border);border-radius:6px;background:var(--surf)">'+opts+'</select></div>';
+  h+='<div style="padding-left:8px;border-left:2px solid var(--gold)">'+(childRows||'<div style="font-size:12px;color:var(--muted);font-style:italic;padding:4px 0 8px">No sub-lines yet</div>')+'</div>';
+  h+='<button class="btn btn-ghost btn-xs" onclick="qiAddSubLine(\''+pk+'\')" style="margin-top:4px">+ Add sub-line</button>';
+  h+='<div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:13px"><span style="color:var(--muted);font-weight:600">Package total</span><span style="font-weight:700;color:var(--navy)">Rs '+Math.round(pkgTot).toLocaleString()+'</span></div>';
+  h+='</div>';
+  return h;
+}
+// ===== #5: Installment schedule editor (one concept; absent = the auto schedule) =====
+function _sid(){return 's-'+Math.random().toString(36).slice(2,8);}
+function _ofOrderDiscAmt(){var k=ofDiscItemKey();if(!k||!OF.draft.quoteItems[k])return 0;return Math.abs(cLine(OF.draft.quoteItems[k]));}
+function ofScheduleGrand(){return ofSubtotalExclDiscount()-_ofOrderDiscAmt();}
+function _qiScheduleHtml(grand){
+  var sch=OF.draft.quoteSchedule;
+  var custom=!!(sch && sch.mode==='custom');
+  var h='<div style="margin-top:14px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:12px">';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:.5px;text-transform:uppercase">Payment schedule</div>';
+  if(custom)h+='<button class="btn btn-ghost btn-xs" onclick="ofScheduleReset()">Reset to automatic</button>';
+  h+='</div>';
+  if(!custom){
+    h+='<div style="font-size:12.5px;color:var(--text2);margin-bottom:8px">Automatic — bespeaking fee on confirmation, balance before the wedding.</div>';
+    h+='<button class="btn btn-outline btn-sm" onclick="ofScheduleCustomize()">Customize installments</button>';
+  } else {
+    var insts=sch.installments||[];var sum=0;
+    insts.forEach(function(it,i){
+      sum+=Math.max(0,Number(it.amount)||0);
+      var due=it.due||{type:'confirmation'};var dtype=due.type||'confirmation';
+      var typeOpts=[['confirmation','On confirmation'],['beforeWedding','Days before wedding'],['date','On a date']].map(function(o){return '<option value="'+o[0]+'"'+(o[0]===dtype?' selected':'')+'>'+o[1]+'</option>';}).join('');
+      h+='<div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:9px;margin-bottom:6px">';
+      h+='<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">';
+      h+='<input type="text" value="'+escHtml(it.label||'')+'" onchange="ofScheduleUpd('+i+',\'label\',this.value)" placeholder="Label" style="flex:1;min-width:0;font-size:13px;font-weight:600;padding:6px 8px;border:1px solid var(--border);border-radius:6px"/>';
+      h+='<button class="btn btn-ghost btn-xs" onclick="ofScheduleDel('+i+')" style="color:var(--danger);padding:4px 8px">✕</button>';
+      h+='</div>';
+      h+='<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">';
+      h+='<input type="text" inputmode="numeric" value="'+groupMoney(it.amount||0)+'" onchange="ofScheduleUpd('+i+',\'amount\',parseMoney(this.value))" placeholder="Amount" style="flex:1;min-width:90px;font-size:13px;text-align:right;padding:6px 8px;border:1px solid var(--border);border-radius:6px"/>';
+      h+='<select onchange="ofScheduleUpd('+i+',\'dueType\',this.value)" style="flex:1;min-width:120px;font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surf)">'+typeOpts+'</select>';
+      if(dtype==='beforeWedding')h+='<input type="number" min="0" value="'+(Number(due.days)||0)+'" onchange="ofScheduleUpd('+i+',\'days\',parseFloat(this.value)||0)" placeholder="days" style="width:72px;font-size:13px;text-align:center;padding:6px 8px;border:1px solid var(--border);border-radius:6px"/>';
+      else if(dtype==='date')h+='<input type="date" value="'+escAttr(due.date||'')+'" onchange="ofScheduleUpd('+i+',\'date\',this.value)" style="flex:1;min-width:130px;font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:6px"/>';
+      h+='</div></div>';
+    });
+    h+='<button class="btn btn-ghost btn-xs" onclick="ofScheduleAdd()">+ Add installment</button>';
+    var diff=Math.round((Number(grand)||0)-sum);
+    if(diff!==0)h+='<div style="margin-top:8px;font-size:12px;color:var(--warn);font-weight:600">Installments total Rs '+Math.round(sum).toLocaleString()+' · '+(diff>0?'Rs '+diff.toLocaleString()+' under':'Rs '+Math.abs(diff).toLocaleString()+' over')+' the quote total</div>';
+    else h+='<div style="margin-top:8px;font-size:12px;color:var(--success);font-weight:600">Installments match the quote total</div>';
+  }
+  h+='</div>';
+  return h;
+}
+function ofScheduleCustomize(){
+  var grand=ofScheduleGrand();
+  var besp=parseFloat(gSet().defaultBespeaking)||50000;if(besp>grand)besp=Math.max(0,grand);
+  var bal=Math.max(0,grand-besp);
+  var off=parseInt(gSet().balanceDueDays,10);if(isNaN(off))off=14;
+  OF.draft.quoteSchedule={mode:'custom',installments:[
+    {id:_sid(),label:'Bespeaking fee',amount:besp,due:{type:'confirmation'}},
+    {id:_sid(),label:'Balance',amount:bal,due:{type:'beforeWedding',days:off}}
+  ]};
+  ofMark();renderOverviewForm();
+}
+function ofScheduleReset(){OF.draft.quoteSchedule=null;ofMark();renderOverviewForm();}
+function ofScheduleAdd(){
+  OF.draft.quoteSchedule=OF.draft.quoteSchedule||{mode:'custom',installments:[]};
+  OF.draft.quoteSchedule.installments.push({id:_sid(),label:'Installment',amount:0,due:{type:'confirmation'}});
+  ofMark();renderOverviewForm();
+}
+function ofScheduleDel(i){
+  var sch=OF.draft.quoteSchedule;if(!sch||!sch.installments)return;
+  sch.installments.splice(i,1);
+  if(!sch.installments.length)OF.draft.quoteSchedule=null;
+  ofMark();renderOverviewForm();
+}
+function ofScheduleUpd(i,field,val){
+  var sch=OF.draft.quoteSchedule;if(!sch||!sch.installments||!sch.installments[i])return;
+  var it=sch.installments[i];
+  if(field==='dueType'){it.due=it.due||{};it.due.type=val;if(val==='confirmation'){delete it.due.days;delete it.due.date;}else if(val==='beforeWedding'){delete it.due.date;if(it.due.days==null)it.due.days=0;}else if(val==='date'){delete it.due.days;}}
+  else if(field==='days'){it.due=it.due||{type:'beforeWedding'};it.due.days=val;}
+  else if(field==='date'){it.due=it.due||{type:'date'};it.due.date=val;}
+  else it[field]=val;
+  ofMark();renderOverviewForm();
+}
+
 
 // ============================================================
 // LEGACY ENTRY POINT STUBS (route to unified openOverviewForm)
