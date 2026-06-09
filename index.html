@@ -2648,7 +2648,7 @@ function buildPDF(type,l,doc){
 function printPDF(){
   var pa=document.getElementById('print-area');if(!pa)return;
   var title=document.getElementById('pdf-t')?document.getElementById('pdf-t').textContent:'Document';
-  var h='<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>'+title+'</title><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:\'Inter\',Arial,sans-serif}@page{size:A4;margin:12mm 13mm}</style></head><body>'+pa.innerHTML+'</body></html>';
+  var h='<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>'+title+'</title><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:\'Inter\',Arial,sans-serif}@page{size:A4;margin:12mm 13mm}.bdoc{max-width:none!important;margin:0!important;padding:2px!important}</style></head><body>'+pa.innerHTML+'</body></html>';
   var url=URL.createObjectURL(new Blob([h],{type:'text/html'}));
   var a=document.createElement('a');a.href=url;a.target='_blank';a.click();
   setTimeout(function(){URL.revokeObjectURL(url);},5000);
