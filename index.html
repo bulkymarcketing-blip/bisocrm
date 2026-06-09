@@ -99,6 +99,9 @@ body{background:var(--canvas);color:var(--text);font-family:'Inter',sans-serif;f
 .bicon:active{background:var(--navy-dim)}
 .bact{font-family:'Inter',sans-serif;font-size:11px;font-weight:600;color:var(--navy);background:transparent;border:1px solid var(--border);border-radius:6px;padding:4px 9px;cursor:pointer;white-space:nowrap}
 .bact:active{background:var(--navy-dim)}
+.fpills{display:flex;gap:8px;margin:2px 0 18px;flex-wrap:wrap}
+.fpill{font-size:12px;font-weight:500;color:var(--muted);background:transparent;border:none;padding:6px 13px;border-radius:18px;cursor:pointer;font-family:'Inter',sans-serif}
+.fpill.on{font-weight:600;color:var(--navy);background:var(--gold);padding:6px 14px}
 .lname{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:3px}
 .ldate{font-size:11px;color:var(--muted)}
 .ltags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
@@ -5875,6 +5878,7 @@ function _briefRow(dotColor, mainHtml, rightHtml, onclick){
     + '</div>';
 }
 
+function setBriefFilter(f){ window._briefFilter = f; rDailyBrief(); }
 function rDailyBrief(){
   var actions = computeTodaysActions();
   var weddings = _briefWeddings();
@@ -5882,6 +5886,7 @@ function rDailyBrief(){
   var sinceData = _briefSinceLastVisit();
   var warnings = _briefNeedsAttention();
   var searching = !!q;
+  var f = window._briefFilter || 'all';
 
   // Triage queue: what genuinely needs action today (the "N things" number).
   var enquiries = listIntake();
@@ -5917,23 +5922,29 @@ function rDailyBrief(){
   html += '<div style="font-size:13px;color:var(--text2);margin-top:10px">'+summary+'</div>';
   html += '</div>';
 
+  // Filter pills (Daily Brief only) — default All; session-scoped window._briefFilter.
+  var PILLS = [['all','All'],['leads','Leads'],['quotes','Quotes'],['visits','Visits']];
+  html += '<div class="fpills">';
+  PILLS.forEach(function(p){ html += '<button class="fpill'+(f===p[0]?' on':'')+'" onclick="setBriefFilter(\''+p[0]+'\')">'+p[1]+'</button>'; });
+  html += '</div>';
+
   // Body accumulates so we can show a single "no matches" state while searching.
   var body = '';
 
   // --- New enquiries (chatbot intake) ---
   var fEnq = searching ? enquiries.filter(function(b){return _briefMatchesQ(b.name);}) : enquiries;
-  if(fEnq.length > 0) body += renderNewEnquiries(fEnq);
+  if(fEnq.length > 0 && (f==='all'||f==='leads')) body += renderNewEnquiries(fEnq);
 
   // --- Approval requests (owner) — not name-keyed, so hidden while searching ---
-  if(pendingReqs.length > 0 && !searching) body += renderApprovalRequests(pendingReqs);
+  if(pendingReqs.length > 0 && !searching && f==='all') body += renderApprovalRequests(pendingReqs);
 
   // --- Today's actions (filters internally on q; returns '' when nothing matches) ---
-  var actionsHtml = renderTodaysActions(actions);
+  var actionsHtml = renderTodaysActions(actions, f);
   if(actionsHtml) body += actionsHtml;
 
   // --- This week's weddings ---
   var fWed = searching ? weddings.filter(function(w){return _briefMatchesQ(w.name);}) : weddings;
-  if(fWed.length > 0){
+  if(fWed.length > 0 && (f==='all'||f==='visits')){
     var wedRows = fWed.map(function(w){
       var dayLabel = w.daysAway===0 ? 'Today' : w.daysAway===1 ? 'Tomorrow' : 'in '+w.daysAway+' days';
       var dayColor = w.daysAway<=2 ? 'var(--danger)' : w.daysAway<=5 ? 'var(--warn)' : '#5B7FA6';
@@ -5954,7 +5965,7 @@ function rDailyBrief(){
 
   // --- This week's appointments (event-type dot) ---
   var fAppt = searching ? appts.filter(function(a){return _briefMatchesQ(a.brideName);}) : appts;
-  if(fAppt.length > 0){
+  if(fAppt.length > 0 && (f==='all'||f==='visits')){
     var apptRows = fAppt.map(function(a){
       var d = new Date(a.date+'T'+(a.time||'00:00'));
       var dayLbl = d.toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short'});
@@ -5969,7 +5980,7 @@ function rDailyBrief(){
   function _sf(arr){ return searching ? arr.filter(function(x){return _briefMatchesQ(x.name);}) : arr; }
   var nl=_sf(g.newLeads), cs=_sf(g.consultations), pm=_sf(g.payments), cf=_sf(g.confirmations), ls=_sf(g.lost), cn=_sf(g.cancellations);
   var totalActivity = nl.length + cs.length + pm.length + cf.length + ls.length + cn.length;
-  if(!searching || totalActivity > 0){
+  if(f==='all' && (!searching || totalActivity > 0)){
     var sinceLabel = sinceData.since ? _humanAgo(sinceData.since) : 'last 24 hours';
     var DL = '<div style="font-size:12.5px;color:var(--text2);padding:2px 0">', DLE = '</div>';
     var lines = [];
@@ -5987,7 +5998,7 @@ function rDailyBrief(){
 
   // --- Needs attention (amber, soft warnings) ---
   var fWarn = searching ? warnings.filter(function(w){return _briefMatchesQ(w.name);}) : warnings;
-  if(fWarn.length > 0){
+  if(fWarn.length > 0 && (f==='all'||f==='leads')){
     var warnRows = fWarn.map(function(w){
       var sub = '<span style="color:var(--warn)">'+escHtml(w.text)+'</span>';
       var chev = '<span style="color:var(--muted);font-size:15px">›</span>';
@@ -5996,7 +6007,10 @@ function rDailyBrief(){
     body += _briefSection('Needs attention', {count:fWarn.length}, _briefList(warnRows));
   }
 
-  if(searching && !body) body = _briefEmpty('No matches in today’s view');
+  if(!body){
+    if(searching) body = _briefEmpty('No matches in today’s view');
+    else if(f !== 'all') body = _briefEmpty('Nothing under '+({leads:'Leads',quotes:'Quotes',visits:'Visits'}[f]||f)+' today');
+  }
 
   html += body;
   document.getElementById('MC').innerHTML = html;
@@ -6281,7 +6295,8 @@ async function rejectReqUI(rid){
   await rejectRequest(rid,r.note||'');
 }
 
-function renderTodaysActions(actions){
+function renderTodaysActions(actions, filter){
+  filter = filter || 'all';
   // Quiet mode: flat neutral banner with resume button only.
   if(actions.quietMode){
     var s = gSet();
@@ -6304,7 +6319,7 @@ function renderTodaysActions(actions){
   var html = '';
 
   // Follow-ups (overdue red / due-today amber dot) — quick WhatsApp/Call + Log.
-  if(fu.length > 0){
+  if(fu.length > 0 && (filter==='all'||filter==='leads')){
     var overdue = fu.filter(function(f){return f.overdue;}).length;
     var rows = fu.map(function(f){
       var ph = (f.phone||'').replace(/\D/g,'');
@@ -6318,7 +6333,7 @@ function renderTodaysActions(actions){
   }
 
   // Appointments to confirm (event-type dot) — quick WhatsApp.
-  if(ap.length > 0){
+  if(ap.length > 0 && (filter==='all'||filter==='visits')){
     var todayN = ap.filter(function(a){return a.isToday;}).length;
     var rows = ap.map(function(a){
       var ph = (a.phone||'').replace(/\D/g,'');
@@ -6330,7 +6345,7 @@ function renderTodaysActions(actions){
   }
 
   // Quotes to send (amber time-cue dot) — Create quote CTA.
-  if(qd.length > 0){
+  if(qd.length > 0 && (filter==='all'||filter==='quotes')){
     var rows = qd.map(function(qq){
       var cta = '<button class="bact" onclick="event.stopPropagation();openOverviewForm(\''+escAttr(qq.id)+'\',{intent:\'quote\'})">Create quote</button>';
       return _briefRow('var(--warn)', _briefMain(escHtml(qq.name), 'Consultation '+qq.daysSince+'d ago'), cta, "openOverviewForm('"+escAttr(qq.id)+"',{intent:'quote'})");
@@ -6339,7 +6354,7 @@ function renderTodaysActions(actions){
   }
 
   // Payments (red — genuine act-now) — Open CTA.
-  if(up.length > 0){
+  if(up.length > 0 && filter==='all'){
     var overdueP = up.filter(function(u){return u.overdue;}).length;
     var rows = up.map(function(u){
       var open = '<button class="bact" onclick="event.stopPropagation();openDetail(\''+escAttr(u.id)+'\')">Open</button>';

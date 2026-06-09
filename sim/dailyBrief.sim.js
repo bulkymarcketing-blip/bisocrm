@@ -108,7 +108,7 @@ function makeSandbox(){
     document: { getElementById: getEl },
     localStorage: { getItem(){ return null; }, setItem(){} },
     // data globals (overwritten per scenario)
-    brides: {}, INTAKE: {}, REQUESTS: {}, q: '',
+    brides: {}, INTAKE: {}, REQUESTS: {}, q: '', window: {},
     _settings: {}, _role: 'owner',
     // leaf utils (mocked)
     escHtml(s){ if(s == null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); },
@@ -282,6 +282,54 @@ const SRC = buildSource(WORK);
   ok(/\.bicon\{[^}]*width:40px[^}]*height:40px/.test(WORK), 'G: .bicon has a 40px tap target');
   ok(WORK.indexOf(".bact{") >= 0, 'G: .bact class defined');
   ok(/\.brand-mark\{[^}]*letter-spacing:4px/.test(WORK), 'G: .brand-mark is its own letter-spaced style');
+})();
+
+// H — filter pills (Daily Brief only)
+(function(){
+  console.log('\n[H] filter pills');
+  function r(filter){
+    const ctx = makeSandbox();
+    ctx.brides = richBrides();
+    ctx.INTAKE = { e1:{ id:'e1', name:'Gaya Lead', phone:'9477', intakeAt:new Date().toISOString(), events:{wedding:{enabled:true}} } };
+    if(filter) vm.runInContext("window._briefFilter='"+filter+"'", ctx);
+    return render(ctx, SRC);
+  }
+  const all = r(null);
+  ok(all.indexOf('class="fpill') >= 0, 'H: filter pills render');
+  ['All','Leads','Quotes','Visits'].forEach(function(l){ ok(all.indexOf('>'+l+'</button>') >= 0, 'H: pill '+l+' present'); });
+  ok(all.indexOf('class="fpill on" onclick="setBriefFilter(\'all\')"') >= 0, 'H: default All pill is active (.on)');
+  ok(all.indexOf('Follow-ups')>=0 && all.indexOf('Quotes to send')>=0 && all.indexOf('Payments')>=0 && all.indexOf('This week’s weddings')>=0 && all.indexOf('New enquiries')>=0 && all.indexOf('Since last visit')>=0, 'H: All shows every section');
+
+  const q = r('quotes');
+  ok(q.indexOf('Quotes to send') >= 0, 'H: quotes shows Quotes to send');
+  ok(q.indexOf('Follow-ups')<0 && q.indexOf('Appointments to confirm')<0 && q.indexOf('Payments')<0 && q.indexOf('New enquiries')<0 && q.indexOf('Needs attention')<0 && q.indexOf('This week’s weddings')<0 && q.indexOf('This week’s appointments')<0 && q.indexOf('Since last visit')<0, 'H: quotes hides every non-Quotes section');
+  ok(q.indexOf('class="fpill on" onclick="setBriefFilter(\'quotes\')"') >= 0, 'H: Quotes pill is the active (gold) one');
+
+  const ld = r('leads');
+  ok(ld.indexOf('Follow-ups')>=0 && ld.indexOf('New enquiries')>=0 && ld.indexOf('Needs attention')>=0, 'H: leads shows Follow-ups / New enquiries / Needs attention');
+  ok(ld.indexOf('Quotes to send')<0 && ld.indexOf('Payments')<0 && ld.indexOf('Appointments to confirm')<0 && ld.indexOf('This week’s appointments')<0 && ld.indexOf('Since last visit')<0, 'H: leads hides non-lead sections');
+
+  // empty state when the active filter has nothing (only a follow-up exists, filter=visits)
+  const ctx2 = makeSandbox();
+  ctx2.brides = { b:{ id:'b', name:'Solo Lead', phone:'9477', stage:1, nextReminderAt:new Date(Date.now()-DAY).toISOString() } };
+  vm.runInContext("window._briefFilter='visits'", ctx2);
+  const ev = render(ctx2, SRC);
+  ok(ev.indexOf('Nothing under Visits today') >= 0, 'H: empty filter shows quiet "Nothing under Visits today"');
+  ok(ev.indexOf('var(--surf)') < 0, 'H: empty filter state is not a boxed card');
+  ok(/\.fpill\.on\{[^}]*background:var\(--gold\)/.test(WORK), 'H: .fpill.on active state is gold');
+})();
+
+// I — Pipeline unaffected: renderTodaysActions (no arg / 'all') byte-identical to HEAD
+(function(){
+  console.log('\n[I] Pipeline action widget byte-identical to HEAD');
+  const ctx = makeSandbox();
+  ctx.brides = richBrides();
+  vm.runInContext(SRC, ctx);
+  const headFn = extractFn(HEAD,'renderTodaysActions').replace('function renderTodaysActions(actions)','function renderTodaysActions_HEAD(actions)');
+  vm.runInContext(headFn, ctx);
+  const out = vm.runInContext("(function(){var a=computeTodaysActions();return [renderTodaysActions(a), renderTodaysActions(a,'all'), renderTodaysActions_HEAD(a)];})()", ctx);
+  ok(out[0] === out[2], 'I: renderTodaysActions(actions) [no arg, as Pipeline calls] === HEAD output');
+  ok(out[1] === out[2], "I: renderTodaysActions(actions,'all') === HEAD output");
 })();
 
 console.log('\n[REGRESSION] untouched functions vs git HEAD');
