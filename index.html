@@ -94,6 +94,11 @@ body{background:var(--canvas);color:var(--text);font-family:'Inter',sans-serif;f
 .lcard-icon-btn:active{background:var(--navy-dim)}
 .lcard-cta-btn{background:var(--navy);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap}
 .lcard-cta-btn:active{opacity:.8}
+.brand-mark{font-family:'Inter',sans-serif;font-size:16px;letter-spacing:4px;font-weight:600;color:var(--navy)}
+.bicon{width:40px;height:40px;border:none;background:transparent;color:var(--text2);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0;border-radius:8px}
+.bicon:active{background:var(--navy-dim)}
+.bact{font-family:'Inter',sans-serif;font-size:11px;font-weight:600;color:var(--navy);background:transparent;border:1px solid var(--border);border-radius:6px;padding:4px 9px;cursor:pointer;white-space:nowrap}
+.bact:active{background:var(--navy-dim)}
 .lname{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:3px}
 .ldate{font-size:11px;color:var(--muted)}
 .ltags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
@@ -860,6 +865,12 @@ function buildNav(){
   }).join('');
 }
 // Track last visit timestamp when navigating AWAY from the Brief
+function setPT(v){
+  var el=document.getElementById('PT');
+  if(!el)return;
+  if(v==='dailyBrief'){el.textContent='BISO';el.className='brand-mark';}
+  else{el.textContent=TITLES[v]||v;el.className='page-title';}
+}
 function sv(v){
   // Guard: block managers from restricted pages
   if(!canViewPage(v)){
@@ -872,7 +883,7 @@ function sv(v){
   }
   view=v;
   buildNav();
-  document.getElementById('PT').textContent=TITLES[v]||v;
+  setPT(v);
   render();
 }
 function doSearch(){q=document.getElementById('SI').value.toLowerCase();render();}
@@ -888,8 +899,9 @@ function handleAdd(){
 }
 function render(){
   // Defensive: if current view became restricted (e.g. role changed mid-session), bounce to brief
-  if(!canViewPage(view)){view='dailyBrief';buildNav();document.getElementById('PT').textContent=TITLES[view]||view;}
+  if(!canViewPage(view)){view='dailyBrief';buildNav();setPT(view);}
   var fn={dailyBrief:rDailyBrief,pipeline:rPipeline,analytics:rAnalytics,clients:rClients,customers:rCustomers,schedule:rSchedule,quotations:rQuotations,invoices:rInvoices,finance:rFinance,settings:rSettings,messages:rMessages};
+  setPT(view);
   if(fn[view])fn[view]();
 }
 
@@ -5827,17 +5839,17 @@ function _briefSection(title, opts, bodyHtml){
 // Flat surface list: rows separated by hairlines, near-flat shadow.
 function _briefList(rows){
   if(!rows || !rows.length) return '';
-  var h = '<div style="background:var(--surf);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--sh)">';
+  // Flat list: rows sit directly on the canvas, separated by a 1px --border hairline (last row none).
+  var h = '';
   rows.forEach(function(r, i){
     h += '<div style="'+(i < rows.length-1 ? 'border-bottom:1px solid var(--border)' : '')+'">'+r+'</div>';
   });
-  h += '</div>';
   return h;
 }
 
 // Empty-state row inside a section.
 function _briefEmpty(text){
-  return '<div style="background:var(--surf);border:1px solid var(--border);border-radius:12px;box-shadow:var(--sh);padding:18px;text-align:center;color:var(--muted);font-size:12.5px">'+escHtml(text)+'</div>';
+  return '<div style="padding:10px 2px;color:var(--muted);font-size:12.5px">'+escHtml(text)+'</div>';
 }
 
 // Small leading status/type dot.
@@ -5856,7 +5868,7 @@ function _briefMain(name, sub){
 function _briefRow(dotColor, mainHtml, rightHtml, onclick){
   var oc = onclick ? ' onclick="'+onclick+'"' : '';
   var cur = onclick ? 'cursor:pointer;' : '';
-  return '<div'+oc+' style="'+cur+'padding:11px 14px;display:flex;align-items:center;gap:11px">'
+  return '<div'+oc+' style="'+cur+'padding:12px 2px;display:flex;align-items:center;gap:11px">'
     + (dotColor ? _briefDot(dotColor) : '')
     + '<div style="flex:1;min-width:0">'+mainHtml+'</div>'
     + (rightHtml ? '<div style="flex:none;display:flex;align-items:center;gap:6px">'+rightHtml+'</div>' : '')
@@ -5921,7 +5933,7 @@ function rDailyBrief(){
 
   // --- This week's weddings ---
   var fWed = searching ? weddings.filter(function(w){return _briefMatchesQ(w.name);}) : weddings;
-  if(!searching || fWed.length > 0){
+  if(fWed.length > 0){
     var wedRows = fWed.map(function(w){
       var dayLabel = w.daysAway===0 ? 'Today' : w.daysAway===1 ? 'Tomorrow' : 'in '+w.daysAway+' days';
       var dayColor = w.daysAway<=2 ? 'var(--danger)' : w.daysAway<=5 ? 'var(--warn)' : '#5B7FA6';
@@ -5937,19 +5949,19 @@ function rDailyBrief(){
       var right = '<span style="font-size:11px;font-weight:600;color:'+dayColor+';white-space:nowrap">'+dayLabel+'</span>';
       return _briefRow(dayColor, _briefMain(escHtml(w.name), bits.join(' · ')), right, "openDetail('"+escAttr(w.id)+"')");
     });
-    body += _briefSection('This week’s weddings', {count:fWed.length}, fWed.length ? _briefList(wedRows) : _briefEmpty('No weddings in the next 7 days'));
+    body += _briefSection('This week’s weddings', {count:fWed.length}, _briefList(wedRows));
   }
 
   // --- This week's appointments (event-type dot) ---
   var fAppt = searching ? appts.filter(function(a){return _briefMatchesQ(a.brideName);}) : appts;
-  if(!searching || fAppt.length > 0){
+  if(fAppt.length > 0){
     var apptRows = fAppt.map(function(a){
       var d = new Date(a.date+'T'+(a.time||'00:00'));
       var dayLbl = d.toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short'});
       var sub = escHtml(a.reason)+' · '+dayLbl+(a.time?' at '+a.time:'');
       return _briefRow(_apptTypeDot(a.reason), _briefMain(escHtml(a.brideName), sub), '', "openDetail('"+escAttr(a.brideId)+"')");
     });
-    body += _briefSection('This week’s appointments', {count:fAppt.length}, fAppt.length ? _briefList(apptRows) : _briefEmpty('No appointments scheduled this week'));
+    body += _briefSection('This week’s appointments', {count:fAppt.length}, _briefList(apptRows));
   }
 
   // --- Since last visit (demoted metrics — compact activity digest) ---
@@ -5968,7 +5980,7 @@ function rDailyBrief(){
     if(ls.length) lines.push(DL+'<strong style="color:var(--text2);font-weight:600">'+ls.length+'</strong> lead'+(ls.length!==1?'s':'')+' closed-lost'+DLE);
     if(cn.length) lines.push(DL+'<strong style="color:var(--text2);font-weight:600">'+cn.length+'</strong> booking'+(cn.length!==1?'s':'')+' cancelled'+DLE);
     var digestBody = totalActivity > 0
-      ? '<div style="background:var(--surf);border:1px solid var(--border);border-radius:12px;box-shadow:var(--sh);padding:12px 15px">'+lines.join('')+'</div>'
+      ? '<div style="padding:2px 2px">'+lines.join('')+'</div>'
       : _briefEmpty('No new activity');
     body += _briefSection('Since last visit', {meta:sinceLabel}, digestBody);
   }
@@ -6149,7 +6161,7 @@ function renderApprovalRequests(reqs){
     h+='<button class="btn btn-ghost btn-xs" style="flex:1" onclick="rejectReqUI(\''+escAttr(r.id)+'\')">Reject</button>';
     h+='<button class="btn btn-primary btn-xs" style="flex:1" onclick="approveReqUI(\''+escAttr(r.id)+'\')">Approve</button>';
     h+='</div>';
-    return '<div style="padding:12px 14px">'+h+'</div>';
+    return '<div style="padding:12px 2px">'+h+'</div>';
   });
   return _briefSection('Approval requests', {count:reqs.length}, _briefList(rows));
 }
@@ -6192,7 +6204,7 @@ function renderNewEnquiries(items){
     h+='<button class="btn btn-ghost btn-xs" style="flex:1" onclick="dismissIntake(\''+escAttr(id)+'\')">Dismiss</button>';
     h+='<button class="btn btn-primary btn-xs" style="flex:1" onclick="acceptIntake(\''+escAttr(id)+'\')">Review &amp; Accept</button>';
     h+='</div>';
-    return '<div style="padding:12px 14px">'+h+'</div>';
+    return '<div style="padding:12px 2px">'+h+'</div>';
   });
   return _briefSection('New enquiries', {count:items.length}, _briefList(rows));
 }
@@ -6296,9 +6308,9 @@ function renderTodaysActions(actions){
     var overdue = fu.filter(function(f){return f.overdue;}).length;
     var rows = fu.map(function(f){
       var ph = (f.phone||'').replace(/\D/g,'');
-      var wa = ph ? '<button class="lcard-icon-btn" onclick="event.stopPropagation();window.open(\'https://wa.me/'+ph+'\',\'_blank\')" aria-label="WhatsApp">'+_icoWA+'</button>' : '';
-      var call = ph ? '<button class="lcard-icon-btn" onclick="event.stopPropagation();window.open(\'tel:+'+ph+'\')" aria-label="Call">'+_icoCall+'</button>' : '';
-      var log = '<button class="lcard-cta-btn" onclick="event.stopPropagation();openDisp(\''+escAttr(f.id)+'\')">Log</button>';
+      var wa = ph ? '<button class="bicon" onclick="event.stopPropagation();window.open(\'https://wa.me/'+ph+'\',\'_blank\')" aria-label="WhatsApp">'+_icoWA+'</button>' : '';
+      var call = ph ? '<button class="bicon" onclick="event.stopPropagation();window.open(\'tel:+'+ph+'\')" aria-label="Call">'+_icoCall+'</button>' : '';
+      var log = '<button class="bact" onclick="event.stopPropagation();openDisp(\''+escAttr(f.id)+'\')">Log</button>';
       var status = f.overdue ? '<span style="color:var(--danger);font-weight:600">Overdue</span>' : '<span style="color:var(--warn)">Due today</span>';
       return _briefRow(f.overdue?'var(--danger)':'var(--warn)', _briefMain(escHtml(f.name), status), wa+call+log, "openDisp('"+escAttr(f.id)+"')");
     });
@@ -6310,7 +6322,7 @@ function renderTodaysActions(actions){
     var todayN = ap.filter(function(a){return a.isToday;}).length;
     var rows = ap.map(function(a){
       var ph = (a.phone||'').replace(/\D/g,'');
-      var wa = ph ? '<button class="lcard-icon-btn" onclick="event.stopPropagation();window.open(\'https://wa.me/'+ph+'\',\'_blank\')" aria-label="WhatsApp">'+_icoWA+'</button>' : '';
+      var wa = ph ? '<button class="bicon" onclick="event.stopPropagation();window.open(\'https://wa.me/'+ph+'\',\'_blank\')" aria-label="WhatsApp">'+_icoWA+'</button>' : '';
       var when = (a.isToday ? 'Today' : 'Tomorrow') + (a.time ? ' at '+a.time : '');
       return _briefRow(_apptTypeDot(a.reason), _briefMain(escHtml(a.brideName), escHtml(a.reason)+' · '+when), wa, "openDetail('"+escAttr(a.brideId)+"')");
     });
@@ -6320,7 +6332,7 @@ function renderTodaysActions(actions){
   // Quotes to send (amber time-cue dot) — Create quote CTA.
   if(qd.length > 0){
     var rows = qd.map(function(qq){
-      var cta = '<button class="lcard-cta-btn" onclick="event.stopPropagation();openOverviewForm(\''+escAttr(qq.id)+'\',{intent:\'quote\'})">Create quote</button>';
+      var cta = '<button class="bact" onclick="event.stopPropagation();openOverviewForm(\''+escAttr(qq.id)+'\',{intent:\'quote\'})">Create quote</button>';
       return _briefRow('var(--warn)', _briefMain(escHtml(qq.name), 'Consultation '+qq.daysSince+'d ago'), cta, "openOverviewForm('"+escAttr(qq.id)+"',{intent:'quote'})");
     });
     html += _briefSection('Quotes to send', {count:qd.length, meta:'consultation done'}, _briefList(rows));
@@ -6330,7 +6342,7 @@ function renderTodaysActions(actions){
   if(up.length > 0){
     var overdueP = up.filter(function(u){return u.overdue;}).length;
     var rows = up.map(function(u){
-      var open = '<button class="lcard-cta-btn" onclick="event.stopPropagation();openDetail(\''+escAttr(u.id)+'\')">Open</button>';
+      var open = '<button class="bact" onclick="event.stopPropagation();openDetail(\''+escAttr(u.id)+'\')">Open</button>';
       var wedTxt;
       if(u.overdue) wedTxt = 'Wedding was '+Math.abs(u.daysToWed)+'d ago';
       else if(u.daysToWed === 0) wedTxt = 'Wedding today';

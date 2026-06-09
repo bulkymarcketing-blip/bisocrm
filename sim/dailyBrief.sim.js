@@ -174,8 +174,14 @@ const SRC = buildSource(WORK);
   const html = render(ctx, SRC);
   sane(html, 'A');
   ok(html.indexOf('caught up') >= 0, 'A: "You’re all caught up" summary');
-  ok(html.indexOf('No weddings in the next 7 days') >= 0, 'A: weddings empty state');
-  ok(html.indexOf('No appointments scheduled this week') >= 0, 'A: appointments empty state');
+  ok(html.indexOf('This week’s weddings') < 0, 'A: empty weddings section hidden');
+  ok(html.indexOf('This week’s appointments') < 0, 'A: empty appointments section hidden');
+  // flat list primitives: rows sit on the canvas, no card surf/shadow/radius
+  var lst = vm.runInContext("_briefList(['<div>x</div>','<div>y</div>'])", ctx);
+  ok(lst.indexOf('var(--surf)') < 0 && lst.indexOf('box-shadow') < 0 && lst.indexOf('border-radius:12px') < 0, 'A: _briefList is flat (no card)');
+  ok(lst.indexOf('border-bottom:1px solid var(--border)') >= 0, 'A: _briefList keeps the row hairline');
+  var emp = vm.runInContext("_briefEmpty('x')", ctx);
+  ok(emp.indexOf('var(--surf)') < 0 && emp.indexOf('box-shadow') < 0, 'A: _briefEmpty is flat (no card)');
 })();
 
 // B — owner, rich data
@@ -251,6 +257,33 @@ const SRC = buildSource(WORK);
 })();
 
 // ---- Regression diff: untouched functions must be byte-identical to HEAD ----
+// G — topbar brand mark (setPT) + calm row actions + bicon tap target
+(function(){
+  console.log('\n[G] brand mark + calm actions');
+  // setPT: brand mark on dailyBrief only, TITLES[v] elsewhere
+  const titlesLine = WORK.match(/const TITLES=\{[^;]*\};/)[0].replace('const','var');
+  const el = {};
+  const sctx = vm.createContext({ document:{ getElementById(){ return el; } } });
+  vm.runInContext(titlesLine + '\n' + extractFn(WORK,'setPT'), sctx);
+  vm.runInContext("setPT('dailyBrief')", sctx);
+  ok(el.textContent === 'BISO' && el.className === 'brand-mark', 'G: setPT(dailyBrief) → BISO + brand-mark class');
+  vm.runInContext("setPT('pipeline')", sctx);
+  ok(el.textContent === 'Lead Pipeline' && el.className === 'page-title', 'G: setPT(pipeline) → TITLES + page-title (other screens unchanged)');
+
+  // calm action classes used in the Brief; .lcard-* left for Pipeline
+  const ctx = makeSandbox();
+  ctx.brides = richBrides();
+  const html = render(ctx, SRC);
+  ok(html.indexOf('class="bicon"') >= 0, 'G: WhatsApp/Call use calm .bicon');
+  ok(html.indexOf('class="bact"') >= 0, 'G: Log/Create-quote use calm .bact');
+  ok(html.indexOf('lcard-icon-btn') < 0 && html.indexOf('lcard-cta-btn') < 0, 'G: no heavy .lcard-* buttons in the Brief');
+
+  // static CSS: new classes exist; .bicon keeps a ~40px tap target; brand mark is its own style
+  ok(/\.bicon\{[^}]*width:40px[^}]*height:40px/.test(WORK), 'G: .bicon has a 40px tap target');
+  ok(WORK.indexOf(".bact{") >= 0, 'G: .bact class defined');
+  ok(/\.brand-mark\{[^}]*letter-spacing:4px/.test(WORK), 'G: .brand-mark is its own letter-spaced style');
+})();
+
 console.log('\n[REGRESSION] untouched functions vs git HEAD');
 const UNTOUCHED = [
   'computeTodaysActions', '_briefWeddings', '_briefAppointments', '_briefSinceLastVisit',
