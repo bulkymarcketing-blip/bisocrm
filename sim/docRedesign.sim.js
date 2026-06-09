@@ -64,6 +64,17 @@ console.log('\n=== Document v4 redesign sim ===');
   });
 })();
 
+// [1b] PRINT-FILL: docCSS print override + unified @page margin
+(function(){
+  console.log('\n[1b] print layout (fill the page)');
+  const css=extractFn(WORK,'docCSS');
+  ok(css.indexOf('@media print{.bdoc{max-width:none;margin:0;padding:2px}}')>=0,'docCSS has @media print override (max-width:none;margin:0;padding:2px)');
+  const pageHits=(WORK.match(/@page\{size:A4;margin:12mm 13mm\}/g)||[]).length;
+  ok(pageHits===2,'both @page rules set to v4 12mm 13mm (found '+pageHits+')');
+  ok(WORK.indexOf('margin:14mm 18mm')<0,'old 14mm 18mm @page gone');
+  ok(WORK.indexOf('margin:12mm 15mm')<0,'old 12mm 15mm @page gone');
+})();
+
 // ---- render mount (docCSS STUBBED) ----
 const MOCKS=`
   var __set={balanceDueDays:14,defaultBespeaking:50000,logoUrl:'',bankDetails:''};
