@@ -72,6 +72,8 @@ A quote/invoice keeps its shape: `{ id, date, expiry?, items, notes, convertedTo
 
 Built in **Claude Code on this repo**: plan-then-approve (propose the plan + the exact functions you’ll touch, then wait for approval — no surprise code), implement, run the full audit above, commit. Deploy is automatic on push to `main`. The browser chat handles design / mockups / decisions.
 
+**Merge policy (owner's standing rule):** develop on the designated branch, push it, and then **HOLD at the branch stage and wait for the owner's explicit go-ahead before fast-forwarding into `main`** for anything touching the **documents** (quote/invoice/receipt), the **data/quote structure**, app **logic**, or anything involving a **judgment call**. Only **genuinely trivial mechanical fixes** (e.g. a print-margin value, a one-line CSS value) may be fast-forwarded to `main` directly. **When in doubt, hold.**
+
 -----
 
 ## Redesign — frontend visual overhaul (productivity-app direction)
