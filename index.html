@@ -2474,14 +2474,14 @@ function docSections(itemsObj){
       rows+='<div class="item"><div class="d">'+escHtml(it.desc||'')+sub+'</div><div class="a">'+dMoney(line)+'</div></div>';
     });
     pkgOrder.forEach(function(pk){
-      var parent=itemsObj[pk];var kids=byPkg[pk];var pkgTot=0;var krows='';
+      var parent=itemsObj[pk];var kids=byPkg[pk];var krows='';
       kids.forEach(function(it){
-        var line=cLine(it);pkgTot+=line;secTot+=line;
+        var line=cLine(it);secTot+=line;
         var qty=Number(it.qty)||1;var unit=Number(it.unit)||0;
         var sub=qty>1?'<span class="q">'+qty+' × '+dMoney(unit)+' each</span>':'';
         krows+='<div class="item pkgsub"><div class="d">'+escHtml(it.desc||'')+sub+'</div><div class="a">'+dMoney(line)+'</div></div>';
       });
-      rows+='<div class="pkg"><div class="item pkghead"><div class="d">'+escHtml(parent.desc||'Package')+'</div><div class="a">'+dMoney(pkgTot)+'</div></div>'+krows+'</div>';
+      rows+='<div class="pkg"><div class="pkglabel">'+escHtml(parent.desc||'Package')+'</div>'+krows+'</div>';
     });
     subtotal+=secTot;
     html+='<div class="sechead">'+escHtml(label)+'</div>'+rows+'<div class="subtot"><span class="lbl2">Subtotal</span><span>'+dMoney(secTot)+'</span></div>';
@@ -2596,8 +2596,8 @@ function docCSS(){return '<style>'
   +'.bdoc .foot{text-align:center}.bdoc .fbiz{font-size:11px;color:#9AA0AE;letter-spacing:.3px}'
   +'.bdoc .fbank{font-size:11.5px;color:#5A6275;margin-top:8px;line-height:1.6}'
   +'.bdoc .ftag{font-family:\'EB Garamond\',serif;font-style:italic;font-size:14px;color:#A8862E;margin-top:8px}'
-  +'.bdoc .pkg{margin:2px 0}'
-  +'.bdoc .item.pkghead .d{font-weight:600}'
+  +'.bdoc .pkg{margin:6px 0 2px}'
+  +'.bdoc .pkglabel{font-size:12px;color:#9AA0AE;font-style:italic;padding:4px 2px 2px}'
   +'.bdoc .item.pkgsub{padding-left:18px}'
   +'.bdoc .item.pkgsub .d{color:#5A6275;font-size:14px}'
   +'</style>';}

@@ -98,11 +98,13 @@ const work=mount(WORK,DOC_FNS_W,VARS);
     H:{key:'H',desc:'Homecoming',qty:1,unit:100000,disc:0,linkedTo:'homecoming'}
   };
   const sec=work.docSections(items);
-  ok(sec.html.indexOf('Glam Add-ons')>=0,'package header renders');
+  ok(sec.html.indexOf('Glam Add-ons')>=0,'package name sub-label renders');
+  ok(sec.html.indexOf('pkglabel')>=0,'package label is a muted name-only sub-label (pkglabel)');
   ok(sec.html.indexOf('pkgsub')>=0 && sec.html.indexOf('Hair styling')>=0 && sec.html.indexOf('Makeup')>=0,'sub-lines render indented');
-  ok(sec.html.indexOf('pkghead')>=0,'package header row class present');
-  // wedding subtotal must equal standalone Bridal + both children (125000 + 20000 + 30000)
-  ok(sec.html.indexOf('Rs 175,000')>=0,'Wedding ceremony subtotal = standalone + package children (Rs 175,000)');
+  ok(sec.html.indexOf('pkghead')<0,'NO package header amount row (pkghead removed)');
+  ok(sec.html.indexOf('Rs 50,000')<0,'NO per-package subtotal shown in the document');
+  // the ONLY subtotal is the per-ceremony one: standalone Bridal + both children (125000 + 20000 + 30000)
+  ok(sec.html.indexOf('Rs 175,000')>=0,'only subtotal is the per-ceremony one (Rs 175,000)');
   // grand-total invariant holds with packages (parent priced at 0)
   ok(work.qTot(items)===sec.subtotal-sec.discountAmt,'qTot === Σ subtotals − discountAmt (with package)');
   ok(work.qTot(items)===275000,'qTot counts package children once (Rs 275,000)');
