@@ -89,7 +89,7 @@ White-background modern productivity app — “warm minimalism” (Linear / Thi
 - **Phase 1 — global tokens — DONE & LIVE.**
 - **Phase 2 — labels (de-uppercased) — DONE & LIVE.**
 - **Phase 3 — tags (tamed) — DONE & LIVE.**
-- **Phase 4 — Today / Daily Brief (list-first rebuild) — DONE.** Phases 1–3 are CSS-only and already in the committed `index.html` — confirm with `grep -c -- --canvas index.html` (must be ≥ 1) before any further phase, so you build on them and don’t undo them.
+- **Phase 4 — Today / Daily Brief (list-first rebuild + concept realign) — DONE.** Flat grouped lists sitting **directly on the canvas** (no cards), the **BISO brand mark** in the topbar on this screen, and **empty weekly sections hidden**. Phases 1–3 are CSS-only and already in the committed `index.html` — confirm with `grep -c -- --canvas index.html` (must be ≥ 1) before any further phase, so you build on them and don’t undo them.
 - **Next: Phase 5 (Pipeline).** Reuse the Phase-4 `_brief*` component vocabulary (see below).
 
 ### The token system AS SHIPPED — do NOT revert
@@ -119,7 +119,7 @@ In `:root` inside the app `<style>` at the top of `index.html`:
 
 ### Remaining phases — one audited cycle each, plan-then-approve, ship-to-test each
 
-1. **Today / Daily Brief — DONE.** Flat grouped lists (sentence-case section header + muted tabular count), clean tappable rows (no fake checkbox — there's no persistent task store), appointment rows with cool event-type dots, an Inter "Today" heading + one-line "N things need you today" summary, Brief-scoped name search with a "No matches in today's view" empty state, demoted the metric-y *Since last visit* digest below the action lists. The global topbar `+ Add` is now gold (one gold, one job).
+1. **Today / Daily Brief — DONE.** Flat grouped lists (sentence-case section header + muted tabular count), clean tappable rows (no fake checkbox — there's no persistent task store), appointment rows with cool event-type dots, an Inter "Today" heading + one-line "N things need you today" summary, Brief-scoped name search with a "No matches in today's view" empty state, demoted the metric-y *Since last visit* digest below the action lists. The global topbar `+ Add` is now gold (one gold, one job). **Concept realign (shipped on top):** lists are now FLAT on the warm-white canvas (no `--surf` cards/shadows), the topbar shows the **BISO brand mark** on this screen instead of a page title, empty "This week's weddings/appointments" sections are hidden, and the row quick-actions were lightened to calm `.bicon`/`.bact` (still navy).
 1. **Pipeline** — regroup the existing collapsible lanes into the grouped-list look; muted COOL stage dots (not gold); keep the per-card “hero” next-step CTA (gold); idle/rotting in amber (not red); pipeline value in the subtitle / per-card. (Logic already exists — this is mostly restyle/regroup.)
 1. **Data screens (batch)** — Quotations, Invoices, Finance, Confirmed, Profiles, Analytics — shared table/list pattern → cleaner rows/cards on the established tokens. May split into 2 cycles.
 1. **Schedule + Overview Form / bride detail & modals** — the remaining bespoke surfaces.
@@ -130,12 +130,15 @@ In `:root` inside the app `<style>` at the top of `index.html`:
 Presentation-only rebuild — every data source/action was preserved (the compute helpers `computeTodaysActions` and `_brief*` were untouched). The reusable list primitives, all in the app `<script>` just above `rDailyBrief`, are the shared vocabulary for the next screens:
 
 - `_briefSection(title, {count, meta}, bodyHtml)` — sentence-case Inter section header + muted tabular count + optional right-aligned meta, then the body.
-- `_briefList(rows)` — flat `--surf` card, rows separated by 1px `--border` hairlines, `--sh` shadow.
-- `_briefRow(dotColor, mainHtml, rightHtml, onclick)` — clean tappable row: leading dot + main + trailing quick-actions. `_briefMain(name, sub)` builds the two-line label; `_briefDot(color)` the dot; `_briefEmpty(text)` the per-section empty state.
+- `_briefList(rows)` — **flat list on the canvas**: emits the rows directly, separated by a 1px `--border` hairline (last row none). **No `--surf` fill, no border box, no radius, no shadow** (the concept's "flat grouped lists, not cards"). Reused by every Brief section.
+- `_briefRow(dotColor, mainHtml, rightHtml, onclick)` — clean tappable row (`padding:12px 2px`, sits flush under its section header): leading dot + main + trailing quick-actions. `_briefMain(name, sub)` builds the two-line label; `_briefDot(color)` the dot; `_briefEmpty(text)` is a **plain muted line** (not a boxed card).
 - `_apptTypeDot(reason)` — COOL, non-gold/non-red event-type dot (consultation blue `#5B7FA6`, trial teal `#3E8E8A`, pickup slate `#7A6E8E`, else `--muted`).
 - `_briefMatchesQ(name)` — Brief-scoped name filter against the global `q` (the topbar search). Real cross-record global search is a separate later capability.
-- Row CTAs deliberately stay **navy** (`.lcard-cta-btn`, `btn-primary`) so the only gold per screen is the topbar `+`. **Flag for Phase 5:** Pipeline cards already use gold WhatsApp CTAs (`btn-gold`), so once the `+` is gold there are competing golds on Pipeline until Phase 5 harmonizes them.
-- **Runtime sim lives at `sim/dailyBrief.sim.js`** — extracts render fns live from `index.html` (regex/string/comment-aware brace matcher), mounts them on a mocked DOM/data across 6 scenarios, and regression-diffs every untouched function vs `git HEAD`. Run `node sim/dailyBrief.sim.js` (exit 0 = pass). Extend it for later phases.
+- `setPT(v)` — sets the shared topbar title element (`#PT`). On `dailyBrief` it renders the **BISO brand mark** (`textContent='BISO'`, class `.brand-mark` — Inter, `letter-spacing:4px`, navy); on every other view it uses `TITLES[v]` with class `.page-title`. **Routed through `sv()` and `render()` (incl. boot)** — all `#PT` writes must go through `setPT` so the brand-mark/title swap and the boot title both stay correct.
+- **Calm Brief-only action classes:** `.bicon` (borderless icon button, ~40px tap target, grey glyph) for WhatsApp/Call, and `.bact` (small navy **ghost** chip) for Log / Create quote / Open. Navy only — gold stays the topbar `+`. **Pipeline's `.lcard-icon-btn`/`.lcard-cta-btn` are a SEPARATE set and were left untouched** — don't restyle those globally; add screen-scoped classes instead.
+- **Hide-empty pattern:** render a whole section only when its `count > 0` (no empty-state card), e.g. "This week's weddings/appointments". Reuse this for sparse Phase-5/6 sections.
+- Brief row CTAs stay **navy** (the calm `.bact`/`.bicon` above) so the only gold on the Brief is the topbar `+`. **Flag for Phase 5:** Pipeline cards still use gold WhatsApp CTAs (`btn-gold`), so with the gold `+` there are competing golds on Pipeline until Phase 5 harmonizes them.
+- **Runtime sim lives at `sim/dailyBrief.sim.js`** — extracts render fns live from `index.html` (regex/string/comment-aware brace matcher), mounts them on a mocked DOM/data across 7 scenarios (incl. flat-list, brand-mark/`setPT`, calm `.bicon`/`.bact`), and regression-diffs every untouched function vs `git HEAD`. Run `node sim/dailyBrief.sim.js` (exit 0 = pass). Extend it for later phases.
 
 ### Audit for the redesign — MANDATORY, same discipline as the rest of the project
 
