@@ -2492,7 +2492,7 @@ function docTotals(subtotal,discountAmt,paid){
   var grand=subtotal-discountAmt;
   var h='<div class="totals"><div class="trow"><span>Subtotal</span><span>'+dMoney(subtotal)+'</span></div>';
   if(discountAmt>0)h+='<div class="trow"><span>Package discount</span><span>\u2212 '+dMoney(discountAmt)+'</span></div>';
-  h+='<div class="trow grand"><span class="cz">Total</span><span class="cz">'+dMoney(grand)+'</span></div>';
+  h+='<div class="trow grand"><span class="cz lq">Total</span><span class="cz vq">'+dMoney(grand)+'</span></div>';
   if(paid!=null){
     var p=Number(paid)||0;var bal=Math.max(0,grand-p);
     h+='<div class="trow" style="margin-top:4px"><span>Paid to date</span><span style="color:#38A169">'+dMoney(p)+'</span></div>';
@@ -2551,57 +2551,59 @@ function docSchedule(total,deposit,weddingDate,paid,schedule){
   return '<div class="pay"><div class="payhead">Payment Schedule</div>'+rows+'</div>';
 }
 function docCSS(){return '<style>'
-  +'.bdoc{background:#FDFBF7;font-family:\'EB Garamond\',Georgia,serif;color:#1B2B4B;max-width:740px;margin:0 auto;padding:40px 44px;font-size:15px}'
+  +'.bdoc{background:#FFFFFF;font-family:\'Inter\',Arial,sans-serif;color:#222C3A;max-width:760px;margin:0 auto;padding:30px 32px;font-size:16px;line-height:1.5}'
   +'.bdoc .cz{font-family:\'Cinzel\',serif}'
-  +'.bdoc .topline{height:2px;background:#C9A84C;opacity:.7;margin-bottom:28px}'
+  +'.bdoc .topline{height:2px;background:#A8862E;margin-bottom:18px}'
   +'.bdoc .dhead{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}'
-  +'.bdoc .dname{font-family:\'Cinzel\',serif;font-size:30px;font-weight:600;letter-spacing:2px;color:#1B2B4B;line-height:1}'
-  +'.bdoc .dsub{font-family:\'Cinzel\',serif;font-size:10px;letter-spacing:6px;color:#A8862E;margin-top:7px}'
-  +'.bdoc .dbiz{margin-top:12px;font-size:12px;color:#5A6275;line-height:1.7}'
+  +'.bdoc .dname{font-family:\'Cinzel\',serif;font-size:32px;font-weight:600;letter-spacing:1.5px;color:#142440;line-height:1}'
+  +'.bdoc .dsub{font-size:11px;letter-spacing:4px;color:#8A6D24;margin-top:8px;font-weight:600}'
+  +'.bdoc .dbiz{margin-top:13px;font-size:13px;color:#48566B;line-height:1.6}'
   +'.bdoc .dmeta{text-align:right;flex-shrink:0}'
-  +'.bdoc .dt{font-family:\'Cinzel\',serif;font-size:17px;letter-spacing:4px;color:#1B2B4B;font-weight:500}'
-  +'.bdoc .dm{font-size:13px;color:#5A6275;margin-top:5px;line-height:1.55}'
-  +'.bdoc .rule{height:1px;background:#EAE3D3;margin:24px 0}'
-  +'.bdoc .parties{display:flex;justify-content:space-between;gap:22px}'
+  +'.bdoc .dt{font-family:\'Cinzel\',serif;font-size:21px;letter-spacing:4px;color:#142440;font-weight:500}'
+  +'.bdoc .dm{font-size:13.5px;color:#48566B;margin-top:7px;line-height:1.6}'
+  +'.bdoc .dm b{color:#222C3A;font-weight:600}'
+  +'.bdoc .rule{height:1px;background:#E2D9C2;margin:17px 0}'
+  +'.bdoc .parties{display:flex;justify-content:space-between;gap:22px;align-items:flex-start}'
   +'.bdoc .parties>div{min-width:0}.bdoc .pright{text-align:right}'
-  +'.bdoc .lbl{font-family:\'Cinzel\',serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#A8862E;margin-bottom:6px}'
-  +'.bdoc .pname{font-family:\'Cinzel\',serif;font-size:18px;color:#1B2B4B;font-weight:500}'
-  +'.bdoc .pinfo{font-size:14px;color:#5A6275;margin-top:3px}.bdoc .pinfo.big{font-size:15px;color:#1B2B4B}'
-  +'.bdoc .sechead{font-family:\'Cinzel\',serif;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#1B2B4B;padding-bottom:7px;border-bottom:1px solid #C9A84C;margin:24px 0 4px}'
-  +'.bdoc .item{display:flex;justify-content:space-between;gap:16px;padding:7px 2px}'
-  +'.bdoc .item .d{font-size:15px;color:#1B2B4B;line-height:1.35}'
-  +'.bdoc .item .q{display:block;font-size:12px;color:#9AA0AE;font-style:italic;margin-top:1px}'
-  +'.bdoc .item .a{font-size:15px;color:#1B2B4B;white-space:nowrap}'
-  +'.bdoc .subtot{display:flex;justify-content:space-between;padding:8px 2px 2px;border-top:1px solid #EAE3D3;margin-top:6px}'
-  +'.bdoc .subtot .lbl2{text-transform:uppercase;letter-spacing:2px;font-size:11px;color:#9AA0AE}'
-  +'.bdoc .subtot span:last-child{font-size:13px;color:#5A6275}'
-  +'.bdoc .totals{max-width:300px;margin:22px 0 0 auto}'
-  +'.bdoc .trow{display:flex;justify-content:space-between;font-size:15px;color:#5A6275;padding:6px 2px}'
-  +'.bdoc .trow.grand{border-top:2px solid #1B2B4B;margin-top:9px;padding-top:12px}'
-  +'.bdoc .trow.grand span{font-family:\'Cinzel\',serif;font-size:19px;color:#1B2B4B}'
-  +'.bdoc .pay{margin-top:28px;border:1px solid #EAE3D3;background:rgba(201,168,76,.055);padding:18px 20px}'
-  +'.bdoc .payhead{font-family:\'Cinzel\',serif;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#1B2B4B;margin-bottom:12px}'
-  +'.bdoc .payrow{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:9px 0;border-top:1px solid #EAE3D3}'
+  +'.bdoc .lbl{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#8A6D24;margin-bottom:5px;font-weight:700}'
+  +'.bdoc .pname{font-size:19px;color:#142440;font-weight:600}'
+  +'.bdoc .pinfo{font-size:15px;color:#3A4658;margin-top:2px}.bdoc .pinfo.big{font-size:16px;color:#142440;font-weight:600}'
+  +'.bdoc .sechead{font-family:\'Cinzel\',serif;font-size:13.5px;letter-spacing:2px;text-transform:uppercase;color:#142440;padding-bottom:7px;border-bottom:1.5px solid #A8862E;margin:18px 0 0;font-weight:600}'
+  +'.bdoc .item{display:flex;justify-content:space-between;gap:16px;padding:9px 2px;border-bottom:1px solid #F0F1F4}'
+  +'.bdoc .item .d{font-size:16px;color:#1B2B4B;line-height:1.35;font-weight:500}'
+  +'.bdoc .item .q{display:block;font-size:13px;color:#5A6678;margin-top:2px;font-weight:400}'
+  +'.bdoc .item .a{font-size:16px;color:#142440;white-space:nowrap;font-weight:600}'
+  +'.bdoc .subtot{display:flex;justify-content:space-between;padding:8px 2px 0}'
+  +'.bdoc .subtot .lbl2{text-transform:uppercase;letter-spacing:1px;font-size:11.5px;color:#6B7585;font-weight:600}'
+  +'.bdoc .subtot span:last-child{font-size:14px;color:#3A4658;font-weight:600}'
+  +'.bdoc .totals{max-width:330px;margin:14px 0 0 auto}'
+  +'.bdoc .trow{display:flex;justify-content:space-between;font-size:16px;color:#3A4658;padding:6px 2px}'
+  +'.bdoc .trow.grand{border-top:2px solid #142440;margin-top:8px;padding-top:11px}'
+  +'.bdoc .trow.grand .lq{font-family:\'Cinzel\',serif;font-size:18px;color:#142440}'
+  +'.bdoc .trow.grand .vq{font-family:\'Cinzel\',serif;font-size:23px;color:#142440}'
+  +'.bdoc .pay{margin-top:20px;border:1px solid #E2D9C2;background:#FBF8F1;padding:15px 17px;page-break-inside:avoid}'
+  +'.bdoc .payhead{font-family:\'Cinzel\',serif;font-size:13.5px;letter-spacing:2px;text-transform:uppercase;color:#142440;margin-bottom:10px;font-weight:600}'
+  +'.bdoc .payrow{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:10px 0;border-top:1px solid #EBE3D0}'
   +'.bdoc .payrow:first-of-type{border-top:none}'
-  +'.bdoc .pl{font-size:15px;color:#1B2B4B}.bdoc .pd{font-size:12px;color:#9AA0AE;font-style:italic;margin-top:2px}'
-  +'.bdoc .pa{font-size:16px;color:#1B2B4B;white-space:nowrap}'
+  +'.bdoc .pl{font-size:16px;color:#1B2B4B;font-weight:600}.bdoc .pd{font-size:13px;color:#586374;margin-top:2px}'
+  +'.bdoc .pa{font-size:17px;color:#142440;white-space:nowrap;font-weight:600}'
   +'.bdoc .pbadge{font-family:\'Inter\',sans-serif;font-size:9px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;border:1px solid;border-radius:20px;padding:1px 7px;margin-left:7px;vertical-align:1px}'
   +'.bdoc .amt{background:rgba(56,161,105,.07);border:1px solid #cfe9da;border-radius:10px;padding:18px 20px;margin:4px 0 18px;text-align:center}'
-  +'.bdoc .amt .al{font-family:\'Cinzel\',serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#2f7d56;margin-bottom:6px}'
-  +'.bdoc .amt .av{font-family:\'Cinzel\',serif;font-size:28px;color:#38A169}'
+  +'.bdoc .amt .al{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#2f7d56;font-weight:700;margin-bottom:6px}'
+  +'.bdoc .amt .av{font-size:28px;color:#38A169;font-weight:700}'
   +'.bdoc .amt .am{font-size:13px;color:#5A6275;margin-top:6px}'
-  +'.bdoc .notes{margin-top:24px}.bdoc .nh{font-family:\'Cinzel\',serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#5A6275;margin-bottom:8px}'
-  +'.bdoc .nb{font-size:13px;color:#5A6275;line-height:1.7}'
-  +'.bdoc .goldrule{height:1px;background:#C9A84C;opacity:.5;margin:28px 0 12px}'
-  +'.bdoc .foot{text-align:center}.bdoc .fbiz{font-size:11px;color:#9AA0AE;letter-spacing:.3px}'
+  +'.bdoc .notes{margin-top:18px;page-break-inside:avoid}.bdoc .nh{font-size:11.5px;letter-spacing:1.5px;text-transform:uppercase;color:#586374;margin-bottom:8px;font-weight:700}'
+  +'.bdoc .nb{font-size:13px;color:#3D4758;line-height:1.5;margin-bottom:5px}'
+  +'.bdoc .goldrule{height:1px;background:#A8862E;margin:20px 0 11px;opacity:.7}'
+  +'.bdoc .foot{text-align:center;page-break-inside:avoid}.bdoc .fbiz{font-size:11.5px;color:#6B7585;letter-spacing:.2px}'
   +'.bdoc .fbank{font-size:11.5px;color:#5A6275;margin-top:8px;line-height:1.6}'
-  +'.bdoc .ftag{font-family:\'EB Garamond\',serif;font-style:italic;font-size:14px;color:#A8862E;margin-top:8px}'
+  +'.bdoc .ftag{font-style:italic;font-size:14px;color:#8A6D24;margin-top:7px}'
   +'.bdoc .pkg{margin:6px 0 2px}'
   +'.bdoc .pkglabel{font-size:12px;color:#9AA0AE;font-style:italic;padding:4px 2px 2px}'
   +'.bdoc .item.pkgsub{padding-left:18px}'
   +'.bdoc .item.pkgsub .d{color:#5A6275;font-size:14px}'
   +'</style>';}
-function docLogo(){var s=gSet();return s.logoUrl?'<img src="'+escAttr(s.logoUrl)+'" style="height:54px;object-fit:contain" alt="Biso by Dinushi"/>':'<div class="dname">Biso</div><div class="dsub">BY DINUSHI</div>';}
+function docLogo(){var s=gSet();return s.logoUrl?'<img src="'+escAttr(s.logoUrl)+'" style="max-height:52px;width:auto;object-fit:contain;display:block" alt="Biso by Dinushi"/>':'<div class="dname">Biso</div><div class="dsub">BY DINUSHI</div>';}
 function docHeader(typeLabel,metaHtml){
   return '<div class="topline"></div><div class="dhead"><div>'+docLogo()
     +'<div class="dbiz">BISO (PVT) LTD<br/>79 Minuwangoda Road, Negombo<br/>bisostyling@gmail.com &middot; +94 70 755 0221</div></div>'
@@ -2629,7 +2631,7 @@ function buildPDF(type,l,doc){
   if(wDate)celebRight+='<div class="pinfo big">'+fmt(wDate)+'</div>';
   if(venue)celebRight+='<div class="pinfo">'+escHtml(venue)+'</div>';
   if(!celebRight)celebRight='<div class="pinfo">\u2014</div>';
-  var parties='<div class="parties"><div><div class="lbl">Prepared for</div><div class="pname">'+escHtml(l.name||'')+'</div>'+(l.phone?'<div class="pinfo">'+escHtml(l.phone)+'</div>':'')+'</div>'
+  var parties='<div class="parties"><div><div class="lbl">Prepared for</div><div class="pname">'+escHtml(l.name||'')+'</div></div>'
     +'<div class="pright"><div class="lbl">Celebration</div>'+celebRight+'</div></div>';
   var body=sec.html+docTotals(sec.subtotal,sec.discountAmt,isI?paidI:null)+docSchedule(grand,deposit,wDate,isI?paidI:null,doc.schedule);
   if(doc.notes)body+='<div class="notes"><div class="nh">Terms</div><div class="nb">'+escHtmlMultiline(doc.notes)+'</div></div>';
@@ -2645,7 +2647,7 @@ function buildPDF(type,l,doc){
 function printPDF(){
   var pa=document.getElementById('print-area');if(!pa)return;
   var title=document.getElementById('pdf-t')?document.getElementById('pdf-t').textContent:'Document';
-  var h='<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>'+title+'</title><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:\'EB Garamond\',Georgia,serif}@page{size:A4;margin:12mm 15mm}</style></head><body>'+pa.innerHTML+'</body></html>';
+  var h='<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>'+title+'</title><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:\'Inter\',Arial,sans-serif}@page{size:A4;margin:12mm 15mm}</style></head><body>'+pa.innerHTML+'</body></html>';
   var url=URL.createObjectURL(new Blob([h],{type:'text/html'}));
   var a=document.createElement('a');a.href=url;a.target='_blank';a.click();
   setTimeout(function(){URL.revokeObjectURL(url);},5000);
@@ -2675,12 +2677,12 @@ function buildReceipt(l,inv,pay){
   var tot=qTot(inv.items);var paid=invPaid(inv);var bal=Math.max(0,tot-paid);
   var rno=pay.receiptNo||docDraft('receipt');
   var meta='No. '+escHtml(rno)+'<br>'+fmt(pay.date);
-  var parties='<div class="parties"><div><div class="lbl">Received from</div><div class="pname">'+escHtml(l.name||'')+'</div>'+(l.phone?'<div class="pinfo">'+escHtml(l.phone)+'</div>':'')+'</div>'
+  var parties='<div class="parties"><div><div class="lbl">Received from</div><div class="pname">'+escHtml(l.name||'')+'</div></div>'
     +'<div class="pright"><div class="lbl">Against invoice</div><div class="pinfo big">'+escHtml(inv.id)+'</div></div></div>';
   var body='<div class="amt"><div class="al">Amount received</div><div class="av">'+dMoney(pay.amount)+'</div>'+(pay.method?'<div class="am">via '+escHtml(pay.method)+'</div>':'')+'</div>'
     +'<div class="totals"><div class="trow"><span>Invoice total</span><span>'+dMoney(tot)+'</span></div>'
     +'<div class="trow"><span>Paid to date</span><span style="color:#38A169">'+dMoney(paid)+'</span></div>'
-    +'<div class="trow grand"><span class="cz">Balance</span><span class="cz">'+dMoney(bal)+'</span></div></div>';
+    +'<div class="trow grand"><span class="cz lq">Balance</span><span class="cz vq">'+dMoney(bal)+'</span></div></div>';
   var html=docWrap('RECEIPT',meta,parties,body);
   document.getElementById('pdf-t').textContent='Receipt - '+rno;
   document.getElementById('pdf-b').innerHTML=html;
