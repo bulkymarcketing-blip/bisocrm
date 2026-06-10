@@ -2024,6 +2024,7 @@ function rMessages(){
     +'</div>';
 }
 function rQuotations(){
+  var f = window._quoteFilter || 'all';
   var allQ=[];
   // Read from brides directly to avoid double-counting (leads+custs are derived views of same data)
   Object.values(brides).forEach(function(b){
@@ -2032,17 +2033,34 @@ function rQuotations(){
     });
   });
   allQ.sort(function(a,b){return new Date(b.date)-new Date(a.date);});
-  var filt=allQ.filter(function(qt){return q?qt.sN.toLowerCase().includes(q):true;});
-  var rows='';
-  filt.forEach(function(qt){
-    var tot=qTot(qt.items);
-    var sc=qt.sent?'bs':'bo';var sl=qt.sent?'SENT':'DRAFT';
-    rows+='<div class="lr" onclick="openQDoc(\''+qt.src+'\',\''+qt.sId+'\',\''+qt.id+'\')">'
-      +'<div style="flex:1;min-width:0"><div class="lrn">'+escHtml(qt.sN)+'</div><div class="lrm">'+fmt(qt.date)+' · '+qt.id+'</div><div style="margin-top:4px"><span class="badge '+sc+'">'+sl+'</span></div></div>'
-      +'<div style="text-align:right;flex-shrink:0"><div class="lra">LKR '+Number(tot).toLocaleString()+'.00</div><div class="lrc">›</div></div></div>';
+  var filt=allQ.filter(function(qt){
+    if(f==='draft' && qt.sent)return false;
+    if(f==='sent' && !qt.sent)return false;
+    return q?qt.sN.toLowerCase().includes(q):true;
   });
-  document.getElementById('MC').innerHTML='<div class="card"><div class="card-hdr"><div class="card-title">Quotations</div><div style="display:flex;gap:10px;align-items:center"><div style="font-size:12px;color:var(--muted)">'+filt.length+' open</div><button class="btn btn-primary btn-sm" onclick="openOverviewForm(null,{intent:\'quote\'})">+ New</button></div></div>'+(filt.length?rows:'<div class="empty" style="padding:60px"><div class="et">No open quotations</div></div>')+'</div>';
+  // Filter pills (session only; resets on reload) — reuse the Brief's wrapping .fpills row.
+  var PILLS=[['all','All'],['draft','Draft'],['sent','Sent']];
+  var pills='<div class="fpills">';
+  PILLS.forEach(function(p){ pills+='<button class="fpill'+(f===p[0]?' on':'')+'" onclick="setQuoteFilter(\''+p[0]+'\')">'+p[1]+'</button>'; });
+  pills+='</div>';
+  var body;
+  if(filt.length){
+    var rows=filt.map(function(qt){
+      var right='<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">'
+        +'<div style="font-size:15px;font-weight:600;color:var(--navy);font-variant-numeric:tabular-nums">Rs '+Math.round(qTot(qt.items)).toLocaleString('en-US')+'</div>'
+        +(qt.sent ? '<span class="tag twg">Sent</span>' : '<span class="tag ti">Draft</span>')
+        +'</div>';
+      return _briefRow(null, _briefMain(escHtml(qt.sN), qt.id+' · '+fmt(qt.date)), right, "openQDoc('"+qt.src+"','"+qt.sId+"','"+qt.id+"')");
+    });
+    body=_briefList(rows);
+  } else {
+    var label={all:'All',draft:'Draft',sent:'Sent'}[f];
+    body=_briefEmpty(allQ.length===0 ? 'No open quotations' : 'Nothing under '+label);
+  }
+  document.getElementById('MC').innerHTML = pills + _briefSection('Quotes', {count:filt.length}, body);
 }
+// Session quote filter — mirrors setBriefFilter / setPipeStage (no storage; resets on reload).
+function setQuoteFilter(f){ window._quoteFilter=f; rQuotations(); }
 function rInvoices(){
   var allI=[];
   // Read from brides directly

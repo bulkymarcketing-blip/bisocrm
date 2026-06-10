@@ -35,7 +35,7 @@ const MOCKS=`
   function pipelineMetrics(){return {thisWeek:3,weekDelta:10,convRate:40,bookedCount:2,leadCount:5,avgResp:5,avgValue:300000,pipelineValue:840000,upcoming90:2};}
   function qTot(items){return (items||[]).reduce(function(s,i){return s+(Number(i.amount)||0);},0);}
   function dS(d){if(!d)return 0;return Math.floor((${NOW}-new Date(d).getTime())/${DAY});}
-  function dU(d){if(!d)return null;return Math.round((new Date(d).getTime()-${NOW})/${DAY});}
+  function dU(d){if(!d)return null;var t=new Date(d);t.setHours(0,0,0,0);var n=new Date(${NOW});n.setHours(0,0,0,0);return Math.round((t-n)/86400000);}
   function fmt(s){return s?('['+String(s).slice(0,10)+']'):'TBD';}
   function fmtPhone(p){return String(p||'');}
   function escHtml(s){return s==null?'':String(s);}
