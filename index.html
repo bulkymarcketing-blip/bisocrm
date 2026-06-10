@@ -109,6 +109,8 @@ body{background:var(--canvas);color:var(--text);font-family:'Inter',sans-serif;f
 .tw{background:#E7F2E9;color:#46815B}.ti{background:#F0EEE8;color:#6C6E72}
 .tf{background:#F0EEE8;color:#6C6E72}.tr{background:#F0EEE8;color:#6C6E72}.twi{background:#F0EEE8;color:#6C6E72}
 .td{background:var(--bg);color:var(--muted);border:1px solid var(--border)}.tu{background:#FEE2E2;color:#DC2626}.tq{background:var(--gold-dim);color:#92400E;font-weight:600}.twg{background:#F5ECD6;color:#8A6D1E}
+.ts{background:#E6F2EB;color:#2F7A52}
+.ini{width:36px;height:36px;border-radius:50%;background:#EDEAE2;color:var(--navy);font-size:13px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;letter-spacing:.3px;flex:none}
 .card{background:var(--surf);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--sh)}
 .card-hdr{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .card-title{font-family:'Cinzel',serif;font-size:13px;color:var(--navy);letter-spacing:.5px}
@@ -1742,21 +1744,54 @@ function rClients(){
   document.getElementById('MC').innerHTML='<div class="card"><div class="card-hdr"><div class="card-title">Confirmed Brides</div><div style="font-size:12px;color:var(--muted)">'+cl.length+' client'+(cl.length!==1?'s':'')+'</div></div>'+body+'</div>';
 }
 function rCustomers(){
-  var all=cA().filter(function(c){return q?c.name.toLowerCase().includes(q)||(c.phone||'').includes(q):true;});
-  var rows='';
-  all.forEach(function(c){
-    var qc=Object.values(c.quotes||{}).length;var ic=Object.values(c.invoices||{}).length;
-    rows+='<tr onclick="openCust(\''+c.id+'\')">'
-      +'<td><div class="cn">'+escHtml(c.name)+'</div></td>'
-      +'<td style="font-size:12px">'+escHtml(c.phone||'—')+'</td>'
-      +'<td class="hm" style="font-size:12px">'+fmt(c.weddingDate)+'</td>'
-      +'<td class="hm" style="font-size:12px;color:var(--gold)">'+(c.anniversary?fmt(c.anniversary):'—')+'</td>'
-      +'<td><span class="badge bo">'+qc+'Q</span> <span class="badge bi">'+ic+'I</span></td></tr>';
+  var f = window._custFilter || 'all';
+  var all = cA().filter(function(c){
+    var isClient = Object.keys(c.invoices||{}).length > 0;
+    if(f==='clients' && !isClient)return false;
+    if(f==='leads' && isClient)return false;
+    return q ? (c.name.toLowerCase().includes(q)||(c.phone||'').includes(q)) : true;
   });
-  var body=all.length?'<div style="overflow-x:auto"><table><thead><tr><th>Customer</th><th>WhatsApp</th><th class="hm">Wedding</th><th class="hm">Anniversary</th><th>History</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
-    :'<div class="empty" style="padding:60px"><div class="ei">Person</div><div class="et">No profiles yet</div></div>';
-  document.getElementById('MC').innerHTML='<div class="card"><div class="card-hdr"><div class="card-title">Customer Profiles</div><div style="display:flex;gap:10px;align-items:center"><div style="font-size:12px;color:var(--muted)">'+all.length+'</div><button class="btn btn-primary btn-sm" onclick="openNC()">+ New</button></div></div>'+body+'</div>';
+  // Filter pills (session only; resets on reload) — reuse the Brief's wrapping .fpills row.
+  var PILLS=[['all','All'],['leads','Leads'],['clients','Clients']];
+  var pills='<div class="fpills">';
+  PILLS.forEach(function(p){ pills+='<button class="fpill'+(f===p[0]?' on':'')+'" onclick="setCustFilter(\''+p[0]+'\')">'+p[1]+'</button>'; });
+  pills+='</div>';
+  var body;
+  if(all.length){
+    var rows=all.map(function(c){
+      var isClient=Object.keys(c.invoices||{}).length>0;
+      var tagHtml=isClient ? '<span class="tag ts">Client</span>' : '<span class="tag ti">Lead</span>';
+      return _briefRowLead('<span class="ini">'+_initials(c.name)+'</span>', _briefMain(escHtml(c.name||'(no name)'), escHtml(c.phone||'—')), tagHtml, "openCust('"+c.id+"')");
+    });
+    body=_briefList(rows);
+  } else {
+    var anyCust=cA().length>0;
+    var text = !anyCust ? 'No profiles yet' : (f==='clients' ? 'No clients' : f==='leads' ? 'No leads' : 'No profiles yet');
+    body=_briefEmpty(text);
+  }
+  document.getElementById('MC').innerHTML = pills + _briefSection('Directory', {count:all.length}, body);
 }
+// 1–2 uppercase initials for the avatar.
+function _initials(name){
+  var n=String(name||'').trim();
+  if(!n)return '?';
+  var w=n.split(/\s+/);
+  if(w.length>=2 && w[0] && w[1])return (w[0][0]+w[1][0]).toUpperCase();
+  return n.slice(0,2).toUpperCase();
+}
+// Like _briefRow, but with an arbitrary leading element (e.g. an avatar) instead of a dot.
+// _briefRow itself is left byte-identical.
+function _briefRowLead(leadHtml, mainHtml, rightHtml, onclick){
+  var oc = onclick ? ' onclick="'+onclick+'"' : '';
+  var cur = onclick ? 'cursor:pointer;' : '';
+  return '<div'+oc+' style="'+cur+'padding:12px 2px;display:flex;align-items:center;gap:11px">'
+    + (leadHtml||'')
+    + '<div style="flex:1;min-width:0">'+mainHtml+'</div>'
+    + (rightHtml ? '<div style="flex:none;display:flex;align-items:center;gap:6px">'+rightHtml+'</div>' : '')
+    + '</div>';
+}
+// Session profiles filter — mirrors setQuoteFilter (no storage; resets on reload).
+function setCustFilter(f){ window._custFilter=f; rCustomers(); }
 function rSchedule(){
   // Collect ALL upcoming events: wedding dates, homecoming dates, going-away dates, appointments
   // Skip anniversaries entirely. Skip cancelled appointments.
