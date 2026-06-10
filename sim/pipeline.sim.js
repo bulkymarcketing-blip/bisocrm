@@ -145,7 +145,7 @@ console.log('\n=== Pipeline redesign sim ===');
   ok(h.indexOf('id="pipe-pill-on"')>=0, '[7] active pill is tagged for scroll-into-view');
   ok(/\.lcard-cta-full\{[^}]*display:inline-flex/.test(WORK), '[7] .lcard-cta-full is inline-flex (compact)');
   ok(/\.lcard-cta-full svg\{margin-right:0/.test(WORK), '[7] CTA icon margin-right neutralized (only gap:5px applies)');
-  ok(run(null).indexOf('</svg>Log first contact')>=0, '[7] no leading space between CTA icon and label');
+  ok(run(null).indexOf('</svg>Contact')>=0, '[7] no leading space between CTA icon and label');
   ok(!/\.lcard-cta-full\{[^}]*width:100%/.test(WORK), '[7] .lcard-cta-full no longer full width');
 })();
 

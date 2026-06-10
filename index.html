@@ -1696,13 +1696,13 @@ function cardIcons(l){
 // Full-width primary "next step" button — the hero of each card.
 function cardCTA(l){
   var s=Number(l.stage||0);
-  if(s===0)return '<button onclick="event.stopPropagation();openDisp(\''+l.id+'\')" class="lcard-cta-full">'+_icoCall+'Log first contact</button>';
-  if(s===1)return '<button onclick="event.stopPropagation();openDisp(\''+l.id+'\')" class="lcard-cta-full">'+_icoCall+'Log follow-up</button>';
+  if(s===0)return '<button onclick="event.stopPropagation();openDisp(\''+l.id+'\')" class="lcard-cta-full">'+_icoCall+'Contact</button>';
+  if(s===1)return '<button onclick="event.stopPropagation();openDisp(\''+l.id+'\')" class="lcard-cta-full">'+_icoCall+'Follow up</button>';
   if(s===2)return '<button onclick="event.stopPropagation();advStage(\''+l.id+'\',3)" class="lcard-cta-full">'+_icoCheck+'Mark visited</button>';
   if(s===3)return '<button onclick="event.stopPropagation();openOverviewForm(\''+l.id+'\',{intent:\'quote\'})" class="lcard-cta-full">'+_icoEdit+'Create quote</button>';
   if(s===4){
     var openQ=Object.values(l.quotations||{}).find(function(qt){return !qt.convertedToInvoice;});
-    if(openQ)return '<button onclick="event.stopPropagation();openAdv(\'lead\',\''+l.id+'\',\''+openQ.id+'\')" class="lcard-cta-full">'+_icoArrow+'Convert to invoice</button>';
+    if(openQ)return '<button onclick="event.stopPropagation();openAdv(\'lead\',\''+l.id+'\',\''+openQ.id+'\')" class="lcard-cta-full">'+_icoArrow+'Convert</button>';
   }
   return '';
 }
