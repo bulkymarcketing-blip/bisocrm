@@ -103,6 +103,7 @@ body{background:var(--canvas);color:var(--text);font-family:'Inter',sans-serif;f
 .lcard-icons{display:flex;gap:4px;flex-shrink:0}
 .lcard-cta-full{display:inline-flex;align-items:center;gap:5px;margin-top:11px;background:var(--navy);color:#fff;border:none;border-radius:9px;padding:7px 14px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
 .lcard-cta-full:active{opacity:.85}
+.lcard-cta-full svg{margin-right:0!important}
 .mc-toggle{font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;padding:6px 2px;margin-bottom:6px;display:inline-flex;align-items:center;gap:6px;user-select:none}
 .tag{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500}
 .tw{background:#E7F2E9;color:#46815B}.ti{background:#F0EEE8;color:#6C6E72}
@@ -1695,13 +1696,13 @@ function cardIcons(l){
 // Full-width primary "next step" button — the hero of each card.
 function cardCTA(l){
   var s=Number(l.stage||0);
-  if(s===0)return '<button onclick="event.stopPropagation();openDisp(\''+l.id+'\')" class="lcard-cta-full">'+_icoCall+' Log first contact</button>';
-  if(s===1)return '<button onclick="event.stopPropagation();openDisp(\''+l.id+'\')" class="lcard-cta-full">'+_icoCall+' Log follow-up</button>';
-  if(s===2)return '<button onclick="event.stopPropagation();advStage(\''+l.id+'\',3)" class="lcard-cta-full">'+_icoCheck+' Mark visited</button>';
-  if(s===3)return '<button onclick="event.stopPropagation();openOverviewForm(\''+l.id+'\',{intent:\'quote\'})" class="lcard-cta-full">'+_icoEdit+' Create quote</button>';
+  if(s===0)return '<button onclick="event.stopPropagation();openDisp(\''+l.id+'\')" class="lcard-cta-full">'+_icoCall+'Log first contact</button>';
+  if(s===1)return '<button onclick="event.stopPropagation();openDisp(\''+l.id+'\')" class="lcard-cta-full">'+_icoCall+'Log follow-up</button>';
+  if(s===2)return '<button onclick="event.stopPropagation();advStage(\''+l.id+'\',3)" class="lcard-cta-full">'+_icoCheck+'Mark visited</button>';
+  if(s===3)return '<button onclick="event.stopPropagation();openOverviewForm(\''+l.id+'\',{intent:\'quote\'})" class="lcard-cta-full">'+_icoEdit+'Create quote</button>';
   if(s===4){
     var openQ=Object.values(l.quotations||{}).find(function(qt){return !qt.convertedToInvoice;});
-    if(openQ)return '<button onclick="event.stopPropagation();openAdv(\'lead\',\''+l.id+'\',\''+openQ.id+'\')" class="lcard-cta-full">'+_icoArrow+' Convert to invoice</button>';
+    if(openQ)return '<button onclick="event.stopPropagation();openAdv(\'lead\',\''+l.id+'\',\''+openQ.id+'\')" class="lcard-cta-full">'+_icoArrow+'Convert to invoice</button>';
   }
   return '';
 }
