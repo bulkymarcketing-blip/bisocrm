@@ -94,11 +94,14 @@ body{background:var(--canvas);color:var(--text);font-family:'Inter',sans-serif;f
 .fpills{display:flex;gap:8px;margin:2px 0 18px;flex-wrap:wrap}
 .fpill{font-size:12px;font-weight:500;color:var(--muted);background:transparent;border:none;padding:6px 13px;border-radius:18px;cursor:pointer;font-family:'Inter',sans-serif}
 .fpill.on{font-weight:600;color:var(--navy);background:var(--gold);padding:6px 14px}
+.spath{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;overflow-x:auto;margin:2px 0 18px;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.spath::-webkit-scrollbar{display:none}
+.spath .fpill{flex:none}
 .lname{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:3px}
 .ldate{font-size:11px;color:var(--muted)}
 .ltags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .lcard-icons{display:flex;gap:4px;flex-shrink:0}
-.lcard-cta-full{display:block;width:100%;margin-top:10px;background:var(--navy);color:#fff;border:none;border-radius:8px;padding:11px 10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;text-align:center}
+.lcard-cta-full{display:inline-flex;align-items:center;gap:5px;margin-top:11px;background:var(--navy);color:#fff;border:none;border-radius:9px;padding:7px 14px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
 .lcard-cta-full:active{opacity:.85}
 .mc-toggle{font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;padding:6px 2px;margin-bottom:6px;display:inline-flex;align-items:center;gap:6px;user-select:none}
 .tag{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500}
@@ -1477,12 +1480,14 @@ function rPipeline(){
   }
   // Stage pills (reuse the Brief pill styling; gold active). Default = first stage.
   var sel=window._pipeStage||0; if(sel<0||sel>=STAGES.length)sel=0;
-  h+='<div class="fpills">';
+  h+='<div class="spath" id="pipe-path">';
   STAGES.forEach(function(st,i){
+    if(i>0)h+=_icoSep;
     var cnt=pl.filter(function(l){return Number(l.stage||0)===i;}).length;
-    h+='<button class="fpill'+(i===sel?' on':'')+'" onclick="setPipeStage('+i+')">'+escHtml(st)+' <span style="font-variant-numeric:tabular-nums;opacity:.7">'+cnt+'</span></button>';
+    h+='<button class="fpill'+(i===sel?' on':'')+'"'+(i===sel?' id="pipe-pill-on"':'')+' onclick="setPipeStage('+i+')">'+escHtml(st)+' <span style="font-variant-numeric:tabular-nums;opacity:.7">'+cnt+'</span></button>';
   });
   h+='</div>';
+  if(typeof setTimeout!=='undefined')setTimeout(function(){try{var _ap=document.getElementById('pipe-pill-on');if(_ap&&_ap.scrollIntoView)_ap.scrollIntoView({block:'nearest',inline:'center'});}catch(e){}},0);
   // Selected stage's leads — flat stack of cards.
   var cols=pl.filter(function(l){return Number(l.stage||0)===sel;});
   cols.sort(function(a,b){var ta=leadWedTs(a),tb=leadWedTs(b);if(ta!==tb)return ta-tb;return new Date(b.lastActivity||b.createdAt||0)-new Date(a.lastActivity||a.createdAt||0);});
@@ -5781,6 +5786,7 @@ var _icoEdit = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stro
 var _icoCheck = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px"><path d="M5 12l5 5L20 7"/></svg>';
 var _icoMail = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>';
 var _icoAlert = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>';
+var _icoSep = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--muted);flex:none;pointer-events:none" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
 var _icoWA = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>';
 var _icoCall = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>';
 

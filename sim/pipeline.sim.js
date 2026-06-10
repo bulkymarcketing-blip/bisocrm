@@ -50,7 +50,7 @@ const MOCKS=`
 function pctx(){
   const ctx=vm.createContext({console,Date,Math,Number,String,Object,Array,JSON,isNaN,parseInt,parseFloat,Infinity});
   vm.runInContext(MOCKS,ctx);
-  ['_icoWA','_icoCall','_icoClock','_icoArrow','_icoEdit','_icoCheck','_icoMail','_icoAlert','STAGES'].forEach(d=>vm.runInContext(extractDecl(WORK,d),ctx));
+  ['_icoWA','_icoCall','_icoClock','_icoArrow','_icoEdit','_icoCheck','_icoMail','_icoAlert','_icoSep','STAGES'].forEach(d=>vm.runInContext(extractDecl(WORK,d),ctx));
   ['fRshort','metricCard','cardIcons','cardCTA','lCard','rPipeline'].forEach(f=>vm.runInContext(extractFn(WORK,f),ctx));
   return ctx;
 }
@@ -77,7 +77,7 @@ console.log('\n=== Pipeline redesign sim ===');
   console.log('\n[1] stage pills (counts, default New Lead, gold active)');
   const h=run(null);
   ['New Lead','Contacted','Visit Booked','Visited','Quoted'].forEach(function(l){ ok(h.indexOf('>'+l+' <')>=0, '[1] pill "'+l+'" renders'); });
-  ok(h.indexOf('class="fpill on" onclick="setPipeStage(0)"')>=0, '[1] default pill = New Lead (gold .on)');
+  ok(h.indexOf('class="fpill on" id="pipe-pill-on" onclick="setPipeStage(0)"')>=0, '[1] default pill = New Lead (gold .on, scrolled into view via id)');
   ok(h.indexOf('class="fpill" onclick="setPipeStage(1)"')>=0, '[1] other pills inactive');
   ok(h.indexOf('Aaa New')>=0 && h.indexOf('Bbb Contacted')<0 && h.indexOf('Eee Quoted')<0, '[1] only stage-0 leads shown by default');
 })();
@@ -86,7 +86,7 @@ console.log('\n=== Pipeline redesign sim ===');
 (function(){
   console.log('\n[2] selecting a stage');
   const h=run('window._pipeStage=4;');
-  ok(h.indexOf('class="fpill on" onclick="setPipeStage(4)"')>=0, '[2] Quoted pill active when selected');
+  ok(h.indexOf('class="fpill on" id="pipe-pill-on" onclick="setPipeStage(4)"')>=0, '[2] Quoted pill active when selected');
   ok(h.indexOf('Eee Quoted')>=0 && h.indexOf('Aaa New')<0, '[2] shows only stage-4 leads');
   ok(h.indexOf('class="lamt">Rs 540,000 quoted')>=0, '[2] quoted cards show the "Rs X quoted" line');
   ok(h.indexOf('Reminder today')>=0 && h.indexOf('tag tu')>=0, '[2] reminder-today badge is red (act-now)');
@@ -133,22 +133,26 @@ console.log('\n=== Pipeline redesign sim ===');
     .forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[6] unchanged: '+n));
 })();
 
-// [7] regression (b) — Daily Brief unchanged except the stage relabel
+// [7] stage path — single-line scroller + chevrons + compact CTA
 (function(){
-  console.log('\n[7] regression (b): Daily Brief unchanged except relabel');
-  ok(extractFn(HEAD,'rDailyBrief')===extractFn(WORK,'rDailyBrief'), '[7] rDailyBrief byte-identical to HEAD');
-  // renderTodaysActions: identical to HEAD after the targeted relabel
-  const ctx=vm.createContext({console,Date,Math,Number,String,Object,Array,JSON,isNaN,parseInt,parseFloat});
-  vm.runInContext('var q="";function escHtml(s){return s==null?"":String(s);}function escAttr(s){return s==null?"":String(s);}function fR(n){return "Rs "+(Number(n)||0);}',ctx);
-  ['_icoWA','_icoCall'].forEach(d=>vm.runInContext(extractDecl(WORK,d),ctx));
-  ['_briefMatchesQ','_briefSection','_briefList','_briefRow','_briefMain','_briefDot','_apptTypeDot','renderTodaysActions'].forEach(f=>vm.runInContext(extractFn(WORK,f),ctx));
-  vm.runInContext(extractFn(HEAD,'renderTodaysActions').replace('function renderTodaysActions(actions, filter)','function renderTodaysActions_HEAD(actions, filter)').replace('function renderTodaysActions(actions)','function renderTodaysActions_HEAD(actions)'),ctx);
-  ctx.A={followUps:[],appts:[],urgentPayments:[],quietMode:false,quotesDue:[{id:'x',name:'Carol',daysSince:3}]};
-  const r=vm.runInContext("[renderTodaysActions(A), renderTodaysActions_HEAD(A)]",ctx);
-  const relabel=function(x){return x.replace(/Consultation (\d+d ago)/g,'Visited $1').replace('consultation done','visited');};
-  ok(r[1].indexOf('Consultation 3d ago')>=0 && r[1].indexOf('consultation done')>=0, '[7] HEAD widget had the old "Consultation" copy');
-  ok(r[0].indexOf('Visited 3d ago')>=0 && r[0].indexOf('Consultation')<0, '[7] WORK widget uses "Visited"');
-  ok(r[0]===relabel(r[1]), '[7] renderTodaysActions differs from HEAD ONLY by the stage relabel');
+  console.log('\n[7] stage path (single-line scroller, chevrons) + compact CTA');
+  const h=run(null);
+  ok(h.indexOf('class="spath"')>=0, '[7] stage row uses the pipeline-only .spath container');
+  ok(h.indexOf('class="fpills"')<0, '[7] Pipeline does NOT use the Brief .fpills class');
+  ok(/\.spath\{[^}]*flex-wrap:nowrap/.test(WORK) && /\.spath\{[^}]*overflow-x:auto/.test(WORK), '[7] .spath is a non-wrapping horizontal scroller');
+  const chev=h.split('M9 6l6 6-6 6').length-1;
+  ok(chev===4, '[7] a chevron sits between each pair of 5 stages, none after the last (got '+chev+')');
+  ok(h.indexOf('id="pipe-pill-on"')>=0, '[7] active pill is tagged for scroll-into-view');
+  ok(/\.lcard-cta-full\{[^}]*display:inline-flex/.test(WORK), '[7] .lcard-cta-full is inline-flex (compact)');
+  ok(!/\.lcard-cta-full\{[^}]*width:100%/.test(WORK), '[7] .lcard-cta-full no longer full width');
+})();
+
+// [8] regression (b) — Daily Brief untouched this branch (shared .fpills unchanged)
+(function(){
+  console.log('\n[8] regression (b): Daily Brief untouched (shared .fpills)');
+  ok(extractFn(HEAD,'rDailyBrief')===extractFn(WORK,'rDailyBrief'), '[8] rDailyBrief byte-identical to HEAD');
+  ok(extractFn(HEAD,'renderTodaysActions')===extractFn(WORK,'renderTodaysActions'), '[8] renderTodaysActions byte-identical to HEAD');
+  ok(WORK.indexOf('.fpills{display:flex;gap:8px;margin:2px 0 18px;flex-wrap:wrap}')>=0, '[8] Brief .fpills rule unchanged (filter pills still wrap)');
 })();
 
 console.log('\n=== '+(fails===0?'ALL PASS':fails+' FAILURE(S)')+' ===\n');
