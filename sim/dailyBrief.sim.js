@@ -268,7 +268,7 @@ const SRC = buildSource(WORK);
   vm.runInContext("setPT('dailyBrief')", sctx);
   ok(el.textContent === 'BISO' && el.className === 'brand-mark', 'G: setPT(dailyBrief) → BISO + brand-mark class');
   vm.runInContext("setPT('pipeline')", sctx);
-  ok(el.textContent === 'Lead Pipeline' && el.className === 'page-title', 'G: setPT(pipeline) → TITLES + page-title (other screens unchanged)');
+  ok(el.textContent === 'Pipeline' && el.className === 'page-title', 'G: setPT(pipeline) → TITLES + page-title (other screens unchanged)');
 
   // calm action classes used in the Brief; .lcard-* left for Pipeline
   const ctx = makeSandbox();
@@ -321,15 +321,19 @@ const SRC = buildSource(WORK);
 
 // I — Pipeline unaffected: renderTodaysActions (no arg / 'all') byte-identical to HEAD
 (function(){
-  console.log('\n[I] Pipeline action widget byte-identical to HEAD');
+  console.log('\n[I] Pipeline action widget — HEAD-identical after the Phase-5 stage relabel');
   const ctx = makeSandbox();
   ctx.brides = richBrides();
   vm.runInContext(SRC, ctx);
-  const headFn = extractFn(HEAD,'renderTodaysActions').replace('function renderTodaysActions(actions)','function renderTodaysActions_HEAD(actions)');
+  const headFn = extractFn(HEAD,'renderTodaysActions')
+    .replace('function renderTodaysActions(actions, filter)','function renderTodaysActions_HEAD(actions, filter)')
+    .replace('function renderTodaysActions(actions)','function renderTodaysActions_HEAD(actions)');
   vm.runInContext(headFn, ctx);
   const out = vm.runInContext("(function(){var a=computeTodaysActions();return [renderTodaysActions(a), renderTodaysActions(a,'all'), renderTodaysActions_HEAD(a)];})()", ctx);
-  ok(out[0] === out[2], 'I: renderTodaysActions(actions) [no arg, as Pipeline calls] === HEAD output');
-  ok(out[1] === out[2], "I: renderTodaysActions(actions,'all') === HEAD output");
+  // Phase 5 relabels only the Quotes-to-send copy; everything else stays byte-identical.
+  const relabel = function(x){ return x.replace(/Consultation (\d+d ago)/g,'Visited $1').replace('consultation done','visited'); };
+  ok(out[0] === relabel(out[2]), 'I: renderTodaysActions(actions) [no arg, as Pipeline calls] === HEAD after stage relabel');
+  ok(out[1] === relabel(out[2]), "I: renderTodaysActions(actions,'all') === HEAD after stage relabel");
 })();
 
 console.log('\n[REGRESSION] untouched functions vs git HEAD');
