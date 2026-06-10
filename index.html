@@ -1767,13 +1767,13 @@ function rSchedule(){
   
   // Color and label per event type
   var typeMeta = {
-    'Wedding': {color:'#C8A55B', bg:'#FAF4E5', label:'Wedding'},
+    'Wedding': {color:'#C77D8E', bg:'#F7E8EC', label:'Wedding'},
     'Homecoming': {color:'#1A2B4A', bg:'#E8ECF3', label:'Homecoming'},
     'Going Away': {color:'#6B4FA0', bg:'#EFE9F7', label:'Going Away'},
     'Engagement': {color:'#B0506A', bg:'#F9E8EE', label:'Engagement'},
     'Consultation': {color:'#2563EB', bg:'#E0EBFE', label:'Consultation'},
     'Trial': {color:'#EA580C', bg:'#FFEDD5', label:'Trial'},
-    'Final Trial': {color:'#DC2626', bg:'#FEE2E2', label:'Final Trial'},
+    'Final Trial': {color:'#8E2A4A', bg:'#F2E1E8', label:'Final Trial'},
     'Fabric Appointment': {color:'#0D9488', bg:'#CCFBF1', label:'Fabric'},
     'Pickup': {color:'#6B7280', bg:'#F3F4F6', label:'Pickup'},
     'Other': {color:'#6B7280', bg:'#F3F4F6', label:'Other'},
@@ -1904,12 +1904,10 @@ function rSchedule(){
     else later.push(e);
   });
   
-  function eventCard(e){
+    function eventCard(e){
     var meta = typeMeta[e.type] || typeMeta['Other'];
-    var d = new Date(e.date);
-    d.setHours(0,0,0,0);
+    var d = new Date(e.date); d.setHours(0,0,0,0);
     var dateLabel = d.toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short'});
-    // Round to nearest day to avoid timezone/time-of-day issues
     var daysAway = Math.round((d - now) / 86400000);
     var dayBadge;
     if(daysAway === 0) dayBadge = 'Today';
@@ -1917,68 +1915,59 @@ function rSchedule(){
     else if(daysAway > 1 && daysAway < 7) dayBadge = 'in '+daysAway+'d';
     else if(daysAway < 0) dayBadge = Math.abs(daysAway)+'d overdue';
     else dayBadge = '';
-    var dayBadgeColor = (e.isFollowUp && e.overdue) ? 'var(--danger)' : e.noShow ? 'var(--warn)' : 'var(--gold)';
+    // overdue = red (act-now, for follow-up reminders); everything else neutral (no gold).
+    var dayBadgeColor = (e.isFollowUp && e.overdue) ? 'var(--danger)' : 'var(--muted)';
     var timeLabel = e.time ? ' · '+e.time : '';
-    var venueLabel = e.venue ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">📍 '+escHtml(e.venue)+'</div>' : '';
-    var themeLabel = e.theme ? '<span style="display:inline-block;background:rgba(0,0,0,0.06);padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;color:var(--text2);margin-left:6px">'+escHtml(e.theme)+'</span>' : '';
-    // No-show badge takes precedence visually
-    var noShowBadge = e.noShow ? '<span style="display:inline-block;background:var(--warn);color:#fff;padding:2px 7px;border-radius:10px;font-size:9px;font-weight:700;letter-spacing:.5px;margin-right:4px">NO-SHOW</span>' : '';
+    var venueLabel = e.venue ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">'+escHtml(e.venue)+'</div>' : '';
+    var themeLabel = e.theme ? '<span style="display:inline-block;background:var(--bg);padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;color:var(--text2);margin-left:6px">'+escHtml(e.theme)+'</span>' : '';
+    // No-show = neutral status tag (de-uppercased).
+    var noShowBadge = e.noShow ? '<span style="display:inline-block;background:var(--bg);color:var(--text2);border:1px solid var(--border);padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;margin-right:4px">No-show</span>' : '';
     var extraLabel = '';
     if(e.extra){
       var extras = [];
-      if(e.extra.homecomingDate && e.extra.homecomingDate!==e.date){
-        var hd = new Date(e.extra.homecomingDate);
-        extras.push('Homecoming '+hd.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}));
-      }
-      if(e.extra.goingAwayDate){
-        var gd = new Date(e.extra.goingAwayDate);
-        extras.push('Going Away '+gd.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}));
-      }
+      if(e.extra.homecomingDate && e.extra.homecomingDate!==e.date){var hd=new Date(e.extra.homecomingDate);extras.push('Homecoming '+hd.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}));}
+      if(e.extra.goingAwayDate){var gd=new Date(e.extra.goingAwayDate);extras.push('Going Away '+gd.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}));}
       if(extras.length) extraLabel = '<div style="font-size:11px;color:var(--muted);margin-top:4px;font-style:italic">+ '+extras.join(' · ')+'</div>';
     }
-    // Follow-up cards get a small "📞 Log Attempt" CTA so the manager can act from Schedule
-    var followUpCta = '';
+    // Action affordances stay ink/navy: Reschedule = navy-filled chip, Did come = navy ghost chip.
+    var chipNavy='background:var(--navy);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:\'Inter\',sans-serif';
+    var chipGhost='background:transparent;color:var(--navy);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:\'Inter\',sans-serif';
+    var ctaRow='';
     if(e.isFollowUp){
-      followUpCta = '<button onclick="event.stopPropagation();openDisp(\''+e.brideId+'\')" style="background:var(--navy);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;margin-top:6px">📞 Log Attempt</button>';
-    }
-    // No-show cards get reschedule + done quick actions
-    var noShowCta = '';
-    if(e.noShow && e.apptKey){
-      noShowCta = '<div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">'
-        +'<button onclick="event.stopPropagation();openResched(\''+e.brideId+'\',\''+e.apptKey+'\')" style="background:var(--navy);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer">↻ Reschedule</button>'
-        +'<button onclick="event.stopPropagation();markApptDone(\''+e.brideId+'\',\''+e.apptKey+'\')" style="background:transparent;color:var(--success);border:1.5px solid var(--success);border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer">✓ Did come</button>'
+      ctaRow = '<div style="margin-top:9px"><button onclick="event.stopPropagation();openDisp(\''+e.brideId+'\')" style="'+chipNavy+'">Log attempt</button></div>';
+    } else if(e.noShow && e.apptKey){
+      ctaRow = '<div style="display:flex;gap:7px;margin-top:9px;flex-wrap:wrap">'
+        +'<button onclick="event.stopPropagation();openResched(\''+e.brideId+'\',\''+e.apptKey+'\')" style="'+chipNavy+'">Reschedule</button>'
+        +'<button onclick="event.stopPropagation();markApptDone(\''+e.brideId+'\',\''+e.apptKey+'\')" style="'+chipGhost+'">Did come</button>'
         +'</div>';
     }
-    // Dashed border for follow-ups; warn border for no-shows
-    var cardBorder = e.isFollowUp ? '1.5px dashed '+meta.color : e.noShow ? '1.5px solid var(--warn)' : '1.5px solid var(--border)';
-    var cardBg = e.noShow ? '#FEF7E5' : '#fff';
-    return '<div onclick="openDetail(\'' + e.brideId + '\')" style="background:'+cardBg+';border:'+cardBorder+';border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer;display:flex;align-items:flex-start;gap:12px;transition:transform .1s">'
-      +'<div style="width:8px;align-self:stretch;background:'+(e.noShow?'var(--warn)':meta.color)+';border-radius:4px;flex-shrink:0"></div>'
+    var typeTag = '<span style="display:inline-block;background:'+meta.bg+';color:'+meta.color+';padding:3px 9px;border-radius:10px;font-size:10px;font-weight:600;letter-spacing:.2px">'+escHtml(meta.label)+'</span>';
+    var dayBadgeEl = dayBadge ? '<span style="font-size:10px;color:'+dayBadgeColor+';font-weight:600">'+dayBadge+'</span>' : '';
+    return '<div onclick="openDetail(\''+e.brideId+'\')" style="background:var(--surf);border:1px solid var(--border);border-radius:12px;box-shadow:var(--sh);padding:13px 14px;margin-bottom:10px;cursor:pointer;display:flex;align-items:flex-start;gap:11px">'
+      +'<span style="flex:none;width:8px;height:8px;border-radius:50%;background:'+meta.color+';margin-top:5px"></span>'
       +'<div style="flex:1;min-width:0">'
-      +'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">'+noShowBadge+'<span style="display:inline-block;background:'+meta.bg+';color:'+meta.color+';padding:3px 9px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase">'+meta.label+'</span>'+(dayBadge?'<span style="font-size:10px;color:'+dayBadgeColor+';font-weight:700">'+dayBadge+'</span>':'')+themeLabel+'</div>'
-      +'<div style="font-weight:700;color:var(--navy);font-size:15px;margin-bottom:2px">'+escHtml(e.brideName)+'</div>'
-      +'<div style="font-size:12px;color:var(--text2)">'+dateLabel+timeLabel+'</div>'
+      +'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">'+noShowBadge+typeTag+dayBadgeEl+themeLabel+'</div>'
+      +'<div style="font-weight:600;color:var(--navy);font-size:15px;margin-bottom:2px">'+escHtml(e.brideName)+'</div>'
+      +'<div style="font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums">'+dateLabel+timeLabel+'</div>'
       +venueLabel
       +extraLabel
       +(e.note && !e.isFollowUp?'<div style="font-size:11px;color:var(--muted);margin-top:4px;font-style:italic">'+escHtml(e.note)+'</div>':'')
-      +followUpCta
-      +noShowCta
+      +ctaRow
       +'</div>'
       +'</div>';
   }
   
-  function section(title, list, sub){
+    function section(title, list, sub){
     if(!list.length) return '';
-    var subtxt = sub ? '<span style="font-size:11px;color:var(--muted);font-weight:500;margin-left:8px;letter-spacing:0;text-transform:none">'+sub+'</span>' : '';
-    return '<div style="margin-bottom:24px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:8px;border-bottom:1.5px solid var(--border)"><div style="font-family:Cinzel,serif;font-size:14px;letter-spacing:1.5px;color:var(--navy);font-weight:600;text-transform:uppercase">'+title+'</div>'+subtxt+'<div style="margin-left:auto;font-size:11px;color:var(--muted);font-weight:600">'+list.length+'</div></div>'+list.map(eventCard).join('')+'</div>';
+    var subtxt = sub ? '<span style="font-size:11px;color:var(--muted);font-weight:500;margin-left:8px">'+sub+'</span>' : '';
+    return '<div style="margin-bottom:24px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:11px;padding-bottom:8px;border-bottom:1px solid var(--border)"><div style="font-size:14px;color:var(--navy);font-weight:600;letter-spacing:-.1px">'+title+'</div>'+subtxt+'<div style="margin-left:auto;font-size:12px;color:var(--muted);font-weight:500;font-variant-numeric:tabular-nums">'+list.length+'</div></div>'+list.map(eventCard).join('')+'</div>';
   }
   
   // Mode toggle pill bar
-  function modeBtn(value, label){
-    var active = mode === value;
-    return '<button onclick="setSchedMode(\''+value+'\')" style="background:'+(active?'var(--surf)':'transparent')+';color:'+(active?'var(--navy)':'var(--muted)')+';font-size:11px;font-weight:600;padding:6px 12px;border-radius:6px;cursor:pointer;border:none;box-shadow:'+(active?'0 1px 2px rgba(27,43,75,0.08)':'none')+'">'+label+'</button>';
+    function modeBtn(value, label){
+    return '<button class="fpill'+(mode===value?' on':'')+'" onclick="setSchedMode(\''+value+'\')">'+label+'</button>';
   }
-  var toggleBar = '<div style="display:flex;align-items:center;gap:4px;background:var(--bg);border-radius:8px;padding:3px;margin-bottom:14px;width:fit-content">'
+  var toggleBar = '<div class="fpills">'
     +modeBtn('appts','Appointments')
     +modeBtn('followups','Follow-ups')
     +modeBtn('both','Both')
@@ -1996,8 +1985,8 @@ function rSchedule(){
       : 'Wedding dates, consultations, trials and pickups will appear here';
     body = '<div class="empty" style="padding:60px"><div class="et">'+emptyMsg+'</div><div style="font-size:12px;color:var(--muted);margin-top:6px">'+emptyHint+'</div></div>';
   } else {
-    body = section('This Week', weekly, 'next 7 days') 
-         + section('This Month', monthly, 'next 30 days')
+    body = section('This week', weekly, 'next 7 days') 
+         + section('This month', monthly, 'next 30 days')
          + section('Later', later, '');
   }
   
@@ -2005,14 +1994,14 @@ function rSchedule(){
   var legend = '';
   if(mode !== 'followups'){
     var legendItems = [
-      ['Wedding','#C8A55B'], ['Homecoming','#1A2B4A'], ['Going Away','#6B4FA0'],
-      ['Consultation','#2563EB'], ['Trial','#EA580C'], ['Final Trial','#DC2626'],
+      ['Wedding','#C77D8E'], ['Homecoming','#1A2B4A'], ['Going Away','#6B4FA0'],
+      ['Consultation','#2563EB'], ['Trial','#EA580C'], ['Final Trial','#8E2A4A'],
       ['Fabric','#0D9488'], ['Pickup','#6B7280']
     ];
     if(mode === 'both') legendItems.push(['Follow-up','#D69E2E']);
-    legend = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;padding:10px 12px;background:var(--bg);border-radius:10px;border:1px solid var(--border)">';
+    legend = '<div style="display:flex;flex-wrap:wrap;gap:10px 14px;margin-bottom:18px;padding:0 2px">';
     legendItems.forEach(function(li){
-      legend += '<div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text2);font-weight:600"><span style="width:8px;height:8px;background:'+li[1]+';border-radius:50%"></span>'+li[0]+'</div>';
+      legend += '<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);font-weight:500"><span style="width:8px;height:8px;background:'+li[1]+';border-radius:50%"></span>'+li[0]+'</span>';
     });
     legend += '</div>';
   }
