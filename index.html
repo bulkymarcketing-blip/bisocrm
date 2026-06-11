@@ -520,7 +520,6 @@ const NAV=[
   {id:'dailyBrief',lbl:'Daily Brief',ic:'<svg viewBox=\"0 0 24 24\"><path d=\"M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4\" stroke-width=\"1.5\"/><circle cx=\"12\" cy=\"12\" r=\"9\" stroke-width=\"1.5\" fill=\"none\"/></svg>',sec:'Today'},
   {id:'pipeline',lbl:'Pipeline',ic:'<svg viewBox=\"0 0 24 24\"><rect x=\"3\" y=\"4\" width=\"5\" height=\"16\" rx=\"1\"/><rect x=\"10\" y=\"4\" width=\"5\" height=\"10\" rx=\"1\"/><rect x=\"17\" y=\"4\" width=\"4\" height=\"7\" rx=\"1\"/></svg>',sec:'Sales'},
   {id:'analytics',lbl:'Analytics',ic:'<svg viewBox=\"0 0 24 24\"><line x1=\"18\" y1=\"20\" x2=\"18\" y2=\"10\"/><line x1=\"12\" y1=\"20\" x2=\"12\" y2=\"4\"/><line x1=\"6\" y1=\"20\" x2=\"6\" y2=\"14\"/></svg>',sec:null},
-  {id:'clients',lbl:'Confirmed',ic:'<svg viewBox=\"0 0 24 24\"><path d=\"M12 2 14 8h6l-5 4 2 7-5-4-5 4 2-7-5-4h6z\"/></svg>',sec:null},
   {id:'customers',lbl:'Profiles',ic:'<svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M4 21c0-4 4-7 8-7s8 3 8 7\"/></svg>',sec:null},
   {id:'schedule',lbl:'Schedule',ic:'<svg viewBox=\"0 0 24 24\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><line x1=\"3\" y1=\"10\" x2=\"21\" y2=\"10\"/><line x1=\"8\" y1=\"3\" x2=\"8\" y2=\"7\"/><line x1=\"16\" y1=\"3\" x2=\"16\" y2=\"7\"/></svg>',sec:'Schedule'},
   {id:'quotations',lbl:'Quotations',ic:'<svg viewBox=\"0 0 24 24\"><path d=\"M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z\"/><polyline points=\"14 3 14 9 20 9\"/><line x1=\"8\" y1=\"13\" x2=\"16\" y2=\"13\"/><line x1=\"8\" y1=\"17\" x2=\"13\" y2=\"17\"/></svg>',sec:'Finance'},
@@ -529,7 +528,7 @@ const NAV=[
   {id:'finance',lbl:'Finance',ic:'<svg viewBox=\"0 0 24 24\"><line x1=\"12\" y1=\"2\" x2=\"12\" y2=\"22\"/><path d=\"M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6\"/></svg>',sec:null},
   {id:'settings',lbl:'Settings',ic:'<svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z\"/></svg>',sec:'Settings'}
 ];
-const TITLES={dailyBrief:'Daily Brief',pipeline:'Pipeline',analytics:'Analytics',clients:'Confirmed Clients',customers:'Customer Profiles',schedule:'Schedule',quotations:'Quotations',invoices:'Invoices',finance:'Finance',settings:'Settings',messages:'Messages'};
+const TITLES={dailyBrief:'Daily Brief',pipeline:'Pipeline',analytics:'Analytics',customers:'Customer Profiles',schedule:'Schedule',quotations:'Quotations',invoices:'Invoices',finance:'Finance',settings:'Settings',messages:'Messages'};
 let leads={},custs={},view='dailyBrief',q='';
 let _cb=null;
 async function fbG(p){
@@ -909,7 +908,7 @@ function handleAdd(){
 function render(){
   // Defensive: if current view became restricted (e.g. role changed mid-session), bounce to brief
   if(!canViewPage(view)){view='dailyBrief';buildNav();setPT(view);}
-  var fn={dailyBrief:rDailyBrief,pipeline:rPipeline,analytics:rAnalytics,clients:rClients,customers:rCustomers,schedule:rSchedule,quotations:rQuotations,invoices:rInvoices,finance:rFinance,settings:rSettings,messages:rMessages};
+  var fn={dailyBrief:rDailyBrief,pipeline:rPipeline,analytics:rAnalytics,customers:rCustomers,schedule:rSchedule,quotations:rQuotations,invoices:rInvoices,finance:rFinance,settings:rSettings,messages:rMessages};
   setPT(view);
   if(fn[view])fn[view]();
 }
@@ -1737,6 +1736,7 @@ function leadNeedsAttention(l){
 window._pipeStage=window._pipeStage||0;
 function setPipeStage(i){window._pipeStage=i;render();}
 function toggleMetrics(){window._showMetrics=!window._showMetrics;render();}
+// RETIRED screen (Confirmed Clients) — unreferenced; delete in the Phase-9 dead-code sweep.
 function rClients(){
   var cl=lA().filter(function(l){return l.confirmed&&(q?l.name.toLowerCase().includes(q):true);});
   var rows='';
@@ -3690,7 +3690,7 @@ async function confirmC(id){
   await updL(id,{confirmed:true,stage:5});
   var ex=cA().find(function(c){return c.phone&&c.phone===l.phone;});
   if(!ex){var cid='cust-'+uid();var nc={id:cid,name:l.name,phone:l.phone||'',email:l.email||'',weddingDate:l.weddingDate||'',venue:l.venue||'',bridesmaids:l.bridesmaids||0,notes:'',anniversary:'',createdAt:new Date().toISOString(),quotes:{},invoices:{}};await fbS('/customers/'+cid,nc);custs[cid]=nc;}
-  CM('detail-modal');notif(l.name+' confirmed!');sv('clients');
+  CM('detail-modal');notif(l.name+' confirmed!');sv('schedule');
 }
 async function delLead(id){
   var br=leads[id]||custs[id]||(typeof brides!=='undefined'?brides[id]:null);
