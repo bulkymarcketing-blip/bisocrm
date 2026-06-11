@@ -110,7 +110,10 @@ console.log('\n=== Profiles (rCustomers) restyle sim ===');
   const added=[...wSet].filter(x=>!hSet.has(x)).sort();
   const removed=[...hSet].filter(x=>!wSet.has(x));
   ok(wSet.has('ini') && wSet.has('ts'),'[5] .ini + .ts classes present');
-  ok(added.every(function(x){return x==='ini'||x==='ts';}),'[5] no unexpected new CSS classes vs HEAD (added: '+JSON.stringify(added)+')');
+  // Allow-list of classes added by later redesign screens (extend as screens ship):
+  // Profiles added .ini/.ts; Finance added the .stats/.bars blocks.
+  var allowed={ini:1,ts:1,stats:1,stat:1,lab:1,val:1,amber:1,sub:1,bars:1,barwrap:1,bartrack:1,bar:1,cur:1,blab:1};
+  ok(added.every(function(x){return allowed[x]===1;}),'[5] no unexpected new CSS classes vs HEAD (added: '+JSON.stringify(added)+')');
   ok(removed.length===0,'[5] no CSS classes removed');
 })();
 
@@ -121,7 +124,7 @@ console.log('\n=== Profiles (rCustomers) restyle sim ===');
    '_briefWeddings','_briefAppointments','_briefSinceLastVisit','_briefNeedsAttention','_briefLastVisit','_humanAgo',
    '_briefSection','_briefList','_briefRow','_briefMain','_briefDot','_briefEmpty',
    'computeTodaysActions','rDailyBrief','renderTodaysActions','rPipeline','rSchedule','rQuotations',
-   'rClients','rAnalytics','rFinance','rSettings','rMessages','lCard','cardCTA','qTot'
+   'rClients','rAnalytics','rSettings','rMessages','lCard','cardCTA','qTot'
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[6] unchanged: '+n));
 })();
 
