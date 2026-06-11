@@ -2097,6 +2097,7 @@ function rQuotations(){
 // Session quote filter — mirrors setBriefFilter / setPipeStage (no storage; resets on reload).
 function setQuoteFilter(f){ window._quoteFilter=f; rQuotations(); }
 function rInvoices(){
+  var f = window._invFilter || 'all';
   var allI=[];
   // Read from brides directly
   Object.values(brides).forEach(function(b){
@@ -2105,24 +2106,51 @@ function rInvoices(){
     });
   });
   allI.sort(function(a,b){return new Date(b.date)-new Date(a.date);});
-  var filt=allI.filter(function(i){return q?i.sN.toLowerCase().includes(q):true;});
-  var rows='';
-  filt.forEach(function(inv){
-    var cancelled=!!(brides[inv.sId]&&brides[inv.sId].cancelled);
-    var tot=qTot(inv.items);
-    var paid=invPaid(inv);
-    var bal=cancelled?0:Math.max(0,tot-paid);
-    var pct=tot>0?Math.round(paid/tot*100):0;
-    var sc=cancelled?'var(--muted)':pct>=100?'var(--success)':pct>0?'var(--warn)':'var(--danger)';
-    var sl=cancelled?'CANCELLED':pct>=100?'PAID':pct>0?'PARTIAL':'UNPAID';
-    var ctag=cancelled?' <span style="font-size:9px;font-weight:700;letter-spacing:.5px;color:var(--muted);background:var(--surf);border:1px solid var(--border);border-radius:4px;padding:1px 6px;vertical-align:middle">CANCELLED</span>':'';
-    rows+='<div class="lr" onclick="openIDoc(\''+inv.src+'\',\''+inv.sId+'\',\''+inv.id+'\')">'
-      +'<div style="flex:1;min-width:0"><div class="lrn">'+escHtml(inv.sN)+ctag+'</div><div class="lrm">'+fmt(inv.date)+' · '+inv.id+'</div>'
-      +'<div style="margin-top:4px;display:flex;align-items:center;gap:6px"><span style="font-size:11px;font-weight:700;color:'+sc+'">'+sl+'</span>'+(bal>0?'<span style="font-size:11px;color:var(--muted)">Bal LKR '+Number(bal).toLocaleString()+'.00</span>':'')+'</div></div>'
-      +'<div style="text-align:right;flex-shrink:0"><div class="lra">LKR '+Number(tot).toLocaleString()+'.00</div><div class="lrc">›</div></div></div>';
+  function statusOf(inv){
+    if(brides[inv.sId]&&brides[inv.sId].cancelled)return 'cancelled';
+    var tot=qTot(inv.items);var paid=invPaid(inv);var pct=tot>0?Math.round(paid/tot*100):0;
+    return pct>=100?'paid':pct>0?'partial':'unpaid';
+  }
+  var filt=allI.filter(function(inv){
+    var st=statusOf(inv); // cancelled invoices only ever match 'all'
+    if(f==='unpaid'&&st!=='unpaid')return false;
+    if(f==='partial'&&st!=='partial')return false;
+    if(f==='paid'&&st!=='paid')return false;
+    return q?inv.sN.toLowerCase().includes(q):true;
   });
-  document.getElementById('MC').innerHTML='<div class="card"><div class="card-hdr"><div class="card-title">Invoices</div><div style="font-size:12px;color:var(--muted)">'+filt.length+' invoice'+(filt.length!==1?'s':'')+'</div></div>'+(filt.length?rows:'<div class="empty" style="padding:60px"><div class="et">No invoices yet</div></div>')+'</div>';
+  // Filter pills (session only; resets on reload) — reuse the Brief's wrapping .fpills row.
+  var PILLS=[['all','All'],['unpaid','Unpaid'],['partial','Partial'],['paid','Paid']];
+  var pills='<div class="fpills">';
+  PILLS.forEach(function(p){ pills+='<button class="fpill'+(f===p[0]?' on':'')+'" onclick="setInvFilter(\''+p[0]+'\')">'+p[1]+'</button>'; });
+  pills+='</div>';
+  var body;
+  if(filt.length){
+    var rows=filt.map(function(inv){
+      var cancelled=!!(brides[inv.sId]&&brides[inv.sId].cancelled);
+      var tot=qTot(inv.items);var paid=invPaid(inv);
+      var bal=cancelled?0:Math.max(0,tot-paid);
+      var pct=tot>0?Math.round(paid/tot*100):0;
+      var dot,tag;
+      if(cancelled){dot='var(--muted)';tag='<span class="tag ti">Cancelled</span>';}
+      else if(pct>=100){dot='var(--success)';tag='<span class="tag ts">Paid</span>';}
+      else if(pct>0){dot='var(--warn)';tag='<span class="tag twg">Partial</span>';}
+      else {dot='var(--muted)';tag='<span class="tag ti">Unpaid</span>';}
+      var sub=inv.id+' · '+fmt(inv.date)+(bal>0?' · Rs '+Math.round(bal).toLocaleString('en-US')+' due':'');
+      var right='<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">'
+        +'<div style="font-size:15px;font-weight:600;color:var(--navy);font-variant-numeric:tabular-nums">Rs '+Math.round(qTot(inv.items)).toLocaleString('en-US')+'</div>'
+        +tag
+        +'</div>';
+      return _briefRow(dot, _briefMain(escHtml(inv.sN), sub), right, "openIDoc('"+inv.src+"','"+inv.sId+"','"+inv.id+"')");
+    });
+    body=_briefList(rows);
+  } else {
+    var label={all:'All',unpaid:'Unpaid',partial:'Partial',paid:'Paid'}[f];
+    body=_briefEmpty(allI.length===0 ? 'No invoices yet' : 'Nothing under '+label);
+  }
+  document.getElementById('MC').innerHTML = pills + _briefSection('Invoices', {count:filt.length}, body);
 }
+// Session invoice filter — mirrors setQuoteFilter (no storage; resets on reload).
+function setInvFilter(f){ window._invFilter=f; rInvoices(); }
 function openQDoc(src,sId,qId){
   var obj=src==='lead'?leads[sId]:custs[sId];if(!obj)return;
   var qt=src==='lead'?(obj.quotations||{})[qId]:(obj.quotes||{})[qId];if(!qt)return;
