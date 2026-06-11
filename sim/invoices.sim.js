@@ -107,7 +107,7 @@ console.log('\n=== Invoices restyle sim ===');
    '_briefWeddings','_briefAppointments','_briefSinceLastVisit','_briefNeedsAttention','_briefLastVisit','_humanAgo',
    '_briefSection','_briefList','_briefRow','_briefRowLead','_briefMain','_briefDot','_briefEmpty',
    'computeTodaysActions','rDailyBrief','renderTodaysActions','rPipeline','rSchedule','rQuotations','rCustomers',
-   'rClients','rAnalytics','rSettings','rMessages','lCard','cardCTA'
+   'rClients','rSettings','rMessages','lCard','cardCTA'
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[6] unchanged: '+n));
 })();
 

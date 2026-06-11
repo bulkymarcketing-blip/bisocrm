@@ -5125,47 +5125,15 @@ function aLeadSourcePerf(from, to){
     return {src:src, label:srcLabels[src]||src, leads:s.leads, booked:s.booked, conv:conv, avgVal:avgVal, revenue:s.revenue};
   });
   rows.sort(function(a,b){return b.revenue - a.revenue;});
-  
-  if(rows.length === 0){
-    return '<div style="padding:30px;text-align:center;color:var(--muted);font-size:12px;font-style:italic">No leads in this period</div>';
-  }
-  
-  var maxRevenue = Math.max.apply(null, rows.map(function(r){return r.revenue;}).concat([1]));
-  var totalLeads = rows.reduce(function(s,r){return s+r.leads;},0);
-  
-  var html = '';
-  rows.forEach(function(r, idx){
-    var convColor = r.conv >= 30 ? 'var(--success)' : r.conv >= 15 ? 'var(--gold)' : r.conv > 0 ? 'var(--warn)' : 'var(--muted)';
-    var revBarPct = maxRevenue > 0 ? Math.round((r.revenue/maxRevenue)*100) : 0;
-    var leadShare = totalLeads > 0 ? Math.round((r.leads/totalLeads)*100) : 0;
-    var mb = idx < rows.length-1 ? 'margin-bottom:10px' : '';
-    
-    html += '<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;'+mb+'">';
-    // Header: source name + revenue
-    html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px">';
-    html += '<div style="flex:1;min-width:0">';
-    html += '<div style="font-size:14px;font-weight:700;color:var(--navy)">'+escHtml(r.label)+'</div>';
-    html += '<div style="font-size:10px;color:var(--muted);margin-top:2px">'+leadShare+'% of all leads</div>';
-    html += '</div>';
-    html += '<div style="text-align:right;flex-shrink:0">';
-    html += '<div style="font-family:Cinzel,serif;font-size:15px;color:var(--gold);font-weight:600">'+fRshort(r.revenue)+'</div>';
-    if(r.avgVal > 0){
-      html += '<div style="font-size:9px;color:var(--muted);margin-top:1px">avg '+fRshort(r.avgVal)+'</div>';
-    }
-    html += '</div>';
-    html += '</div>';
-    
-    // 3-column stats: Leads, Booked, Conv %
-    html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:10px;background:var(--surf);border-radius:8px">';
-    html += '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:3px">Leads</div><div style="font-size:14px;font-weight:700;color:var(--navy)">'+r.leads+'</div></div>';
-    html += '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:3px">Booked</div><div style="font-size:14px;font-weight:700;color:var(--text2)">'+r.booked+'</div></div>';
-    html += '<div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:3px">Conv</div><div style="font-size:14px;font-weight:700;color:'+convColor+'">'+r.conv+'%</div></div>';
-    html += '</div>';
-    
-    html += '</div>'; // end card
-  });
-  
-  return html;
+
+  // DATA function (only called from rAnalytics): return computed rows + totals, not HTML.
+  var totals = {
+    leads: rows.reduce(function(s,r){return s+r.leads;},0),
+    booked: rows.reduce(function(s,r){return s+r.booked;},0),
+    revenue: rows.reduce(function(s,r){return s+r.revenue;},0)
+  };
+  totals.conv = totals.leads > 0 ? Math.round((totals.booked/totals.leads)*100) : 0;
+  return {rows:rows, totals:totals};
 }
 
 // MODULE 2: Conversion Funnel
@@ -5191,13 +5159,13 @@ function aConversionFunnel(from, to){
     var ct = counts[i];
     var pct = Math.round((ct/max)*100);
     var dropFromPrev = i > 0 && counts[i-1] > 0 ? Math.round((1 - ct/counts[i-1]) * 100) : null;
-    var color = i === 5 ? 'var(--success)' : i >= 4 ? 'var(--gold)' : 'var(--navy)';
+    var color = i === 5 ? 'var(--success)' : 'var(--navy)';
     html += '<div style="margin-bottom:12px">';
     html += '<div style="display:flex;justify-content:space-between;align-items:baseline;font-size:12px;margin-bottom:5px">';
     html += '<span style="font-weight:600;color:var(--navy)">'+label+'</span>';
-    html += '<span style="display:flex;align-items:baseline;gap:6px"><strong style="font-family:Cinzel,serif;font-size:14px;color:var(--navy)">'+ct+'</strong> <span style="color:var(--muted);font-weight:500;font-size:10px">'+pct+'%</span>';
+    html += '<span style="display:flex;align-items:baseline;gap:6px"><strong style="font-weight:700;color:var(--navy);font-size:14px">'+ct+'</strong> <span style="color:var(--muted);font-weight:500;font-size:10px">'+pct+'%</span>';
     if(dropFromPrev !== null && dropFromPrev > 0){
-      html += ' <span style="color:var(--danger);font-size:10px;font-weight:600">↓'+dropFromPrev+'%</span>';
+      html += ' <span style="color:var(--muted);font-size:10px;font-weight:600">↓'+dropFromPrev+'%</span>';
     }
     html += '</span></div>';
     html += '<div style="background:var(--bg);height:18px;border-radius:5px;overflow:hidden;border:1px solid var(--border)">';
@@ -5372,56 +5340,51 @@ function rAnalytics(){
     {id:'12m',lbl:'12M'},
     {id:'all',lbl:'All'}
   ];
-  var presetBtns = presets.map(function(p){
-    var active = r.preset === p.id;
-    return '<button onclick="aSetPreset(\''+p.id+'\')" style="background:'+(active?'var(--navy)':'transparent')+';color:'+(active?'#fff':'var(--text2)')+';border:none;border-radius:6px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;letter-spacing:.3px">'+p.lbl+'</button>';
-  }).join('');
-  
+  // One cohort read feeds both the stat grid and the source split.
+  var lsp = aLeadSourcePerf(r.from, r.to);
+
   var html = '';
-  
-  // Date range card — compact
-  html += '<div class="card" style="padding:14px 16px;margin-bottom:14px">';
-  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
-  html += '<div style="font-family:Cinzel,serif;font-size:11px;color:var(--navy);letter-spacing:1px;font-weight:600;text-transform:uppercase">Date Range</div>';
-  html += '<div style="font-size:10px;color:var(--muted)">'+r.from+' → '+r.to+'</div>';
-  html += '</div>';
-  html += '<div style="display:flex;flex-wrap:wrap;gap:3px;background:var(--bg);border-radius:8px;padding:3px;margin-bottom:10px">'+presetBtns+'</div>';
-  html += '<div style="display:flex;gap:8px;align-items:center">';
-  html += '<input type="date" value="'+r.from+'" onchange="aSetCustomDate(\'from\',this.value)" style="flex:1;padding:6px 10px;font-size:12px;border:1.5px solid var(--border);border-radius:6px;background:var(--bg)"/>';
-  html += '<div style="color:var(--muted);font-size:11px">→</div>';
-  html += '<input type="date" value="'+r.to+'" onchange="aSetCustomDate(\'to\',this.value)" style="flex:1;padding:6px 10px;font-size:12px;border:1.5px solid var(--border);border-radius:6px;background:var(--bg)"/>';
+
+  // A) Date range — de-carded, de-Cinzel: preset pills + compact custom-range row.
+  html += '<div style="margin-bottom:22px">';
+  html += '<div class="fpills">'+presets.map(function(p){
+    return '<button class="fpill'+(r.preset===p.id?' on':'')+'" onclick="aSetPreset(\''+p.id+'\')">'+p.lbl+'</button>';
+  }).join('')+'</div>';
+  html += '<div style="display:flex;gap:8px;align-items:center;margin-top:6px">';
+  html += '<input type="date" value="'+r.from+'" onchange="aSetCustomDate(\'from\',this.value)" style="border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12px;background:var(--surf);font-family:Inter,sans-serif"/>';
+  html += '<div style="color:var(--muted);font-size:12px">→</div>';
+  html += '<input type="date" value="'+r.to+'" onchange="aSetCustomDate(\'to\',this.value)" style="border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12px;background:var(--surf);font-family:Inter,sans-serif"/>';
   html += '</div>';
   html += '</div>';
-  
-  // Module headers in matching style to Finance
-  function moduleHdr(title){
-    return '<div style="font-family:Cinzel,serif;font-size:13px;color:var(--navy);letter-spacing:1px;font-weight:600;margin-bottom:14px">'+title+'</div>';
+
+  // B) Overview — cohort stat grid (reuse Finance .stats/.stat).
+  var gridHtml = '<div class="stats">'
+    + '<div class="stat"><div class="lab">Leads</div><div class="val">'+lsp.totals.leads+'</div></div>'
+    + '<div class="stat"><div class="lab">Booked</div><div class="val">'+lsp.totals.booked+'</div></div>'
+    + '<div class="stat"><div class="lab">Conversion</div><div class="val">'+lsp.totals.conv+'%</div></div>'
+    + '<div class="stat"><div class="lab">Revenue</div><div class="val">'+fR(lsp.totals.revenue)+'</div></div>'
+    + '</div>';
+  html += _briefSection('Overview', {}, gridHtml);
+
+  // C) Conversion funnel.
+  html += _briefSection('Conversion funnel', {}, aConversionFunnel(r.from, r.to));
+
+  // D) By source — flat rows from lsp.rows.
+  var srcBody;
+  if(lsp.rows.length === 0){
+    srcBody = _briefEmpty('No leads in this period');
+  } else {
+    srcBody = _briefList(lsp.rows.map(function(row){
+      var tier = row.conv >= 30 ? 'ts' : row.conv >= 15 ? 'twg' : 'ti';
+      var right = '<div style="text-align:right">'
+        + '<div style="font-weight:600;font-variant-numeric:tabular-nums;color:var(--navy)">'+fR(row.revenue)+'</div>'
+        + '<div style="margin-top:3px"><span class="tag '+tier+'">'+row.conv+'%</span></div>'
+        + '</div>';
+      return _briefRow(null, _briefMain(escHtml(row.label), row.leads+' leads · '+row.booked+' booked'), right, null);
+    }));
   }
-  
-  // Module 1: Lead Source Performance
-  html += '<div class="card" style="padding:18px 20px;margin-bottom:14px">';
-  html += moduleHdr('Lead Source Performance');
-  html += aLeadSourcePerf(r.from, r.to);
-  html += '</div>';
-  
-  // Module 2: Conversion Funnel
-  html += '<div class="card" style="padding:18px 20px;margin-bottom:14px">';
-  html += moduleHdr('Conversion Funnel');
-  html += aConversionFunnel(r.from, r.to);
-  html += '</div>';
-  
-  // Module 3: Revenue Trends
-  html += '<div class="card" style="padding:18px 20px;margin-bottom:14px">';
-  html += moduleHdr('Revenue Trends');
-  html += aRevenueTrends(r.from, r.to);
-  html += '</div>';
-  
-  // Module 4: Time in Stage
-  html += '<div class="card" style="padding:18px 20px;margin-bottom:14px">';
-  html += moduleHdr('Time in Stage');
-  html += aTimeInStage(r.from, r.to);
-  html += '</div>';
-  
+  html += _briefSection('By source', (lsp.rows.length ? {meta: lsp.totals.leads+' leads'} : {}), srcBody);
+
   document.getElementById('MC').innerHTML = html;
 }
 

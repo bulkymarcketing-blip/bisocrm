@@ -146,7 +146,7 @@ const H=render(richBrides());
   ['fR','fRshort','invPaid','invInvoiced','invCollected','invOutstanding','qTot','cLine','fmt','escHtml','openDetail','setFinMonthWin',
    '_briefSection','_briefList','_briefRow','_briefRowLead','_briefMain','_briefDot','_briefEmpty','computeTodaysActions',
    'rDailyBrief','renderTodaysActions','rPipeline','rSchedule','rQuotations','rCustomers','rInvoices',
-   'rClients','rAnalytics','rSettings','rMessages','lCard','cardCTA'
+   'rClients','rSettings','rMessages','lCard','cardCTA'
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[7] unchanged: '+n));
 })();
 
