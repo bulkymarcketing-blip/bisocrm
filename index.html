@@ -165,7 +165,7 @@ input[type='radio'],input[type='checkbox']{width:auto;min-width:0;padding:0;back
 select{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%231B2B4B' stroke-width='2.5'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e");background-repeat:no-repeat;background-position:right 12px center;padding-right:34px}
 input:focus,select:focus,textarea:focus{border-color:var(--navy);background:#fff}
 textarea{resize:vertical;min-height:80px}
-.stitle{font-size:11px;font-weight:600;letter-spacing:.2px;color:var(--muted);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.stitle{font-size:13px;font-weight:600;letter-spacing:.1px;color:var(--navy);margin-bottom:11px}
 .tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px;overflow-x:auto}
 .tab{padding:10px 14px;cursor:pointer;font-size:12px;font-weight:500;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;letter-spacing:.2px}
 .tab.active{color:var(--navy);border-bottom-color:var(--navy)}
@@ -174,7 +174,7 @@ textarea{resize:vertical;min-height:80px}
 .dl{font-size:10px;letter-spacing:.2px;color:var(--muted);font-weight:600;margin-bottom:3px}
 .dv{font-size:13px;font-weight:500}.dv.hi{color:var(--navy);font-weight:700}
 .pb{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
-.pf{height:100%;background:linear-gradient(90deg,var(--navy),var(--gold));border-radius:3px;transition:width .4s}
+.pf{height:100%;background:var(--success);border-radius:3px;transition:width .4s}
 .qs{background:var(--surf);border:1px solid var(--border);border-radius:12px;margin-bottom:12px;overflow:hidden}
 .qsh{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg)}
 .qst{font-size:13px;font-weight:600;color:var(--navy)}
@@ -2846,7 +2846,7 @@ function buildOverviewTab(id,l,cancelled){
     if(l.refundAmount)lnParts.push('Refund issued: '+fR(l.refundAmount));
     var heldNow=netHeld(l);
     if(heldNow>0)lnParts.push('Still held: '+fR(heldNow));
-    lockNote='<div style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;color:var(--danger)">'+lnParts.join(' \u00b7 ')+'</div>';
+    lockNote='<div style="background:#F4F2EC;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;color:var(--text2)">'+lnParts.join(' \u00b7 ')+'</div>';
   }
   // Source dropdown
   var SRCS=getSources();
@@ -2858,7 +2858,7 @@ function buildOverviewTab(id,l,cancelled){
     var e=ev[k]||{};
     var checked=evTrue(e)?'checked':'';
     if(k==='wedding'&&l.confirmed)checked='checked'; // wedding always on if confirmed
-    evHtml+='<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px">';
+    evHtml+='<div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px">';
     evHtml+='<label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:600;color:var(--navy);text-transform:none;letter-spacing:0"><input type="checkbox" '+checked+dis+' onchange="toggleEvent(\''+id+'\',\''+k+'\',this.checked)" style="width:18px;height:18px;cursor:pointer"/> '+lbl+'</label>';
     if(checked){
       evHtml+='<div class="fg" style="margin-top:10px">';
@@ -2875,9 +2875,9 @@ function buildOverviewTab(id,l,cancelled){
     }
     evHtml+='</div>';
   });
-  var editBtn = cancelled ? '' : '<div style="margin-bottom:14px"><button class="btn btn-primary btn-sm" onclick="openOverviewForm(\''+id+'\')" style="width:100%">✎ Edit in Overview Form</button></div>';
+  var editBtn = cancelled ? '' : '<div style="margin-bottom:14px"><button class="btn btn-primary btn-sm" onclick="openOverviewForm(\''+id+'\')" style="width:100%">Edit in Overview Form</button></div>';
   return '<div id="tb-ov">'+lockNote+editBtn
-    +'<div class="stitle">Bride Info</div>'
+    +'<div class="stitle">Bride info</div>'
     +'<div class="fg">'
     +'<div class="fi"><label>Full Name</label><input type="text"'+dis+' value="'+(l.name||'')+'" onchange="updL(\''+id+'\',{name:this.value})"/></div>'
     +'<div class="fi"><label>WhatsApp Number</label><input type="text"'+dis+' value="'+(l.phone||'')+'" placeholder="+94 77 000 0000" onchange="updL(\''+id+'\',{phone:this.value})"/></div>'
@@ -2902,11 +2902,11 @@ function buildPaymentTab(id,l,cancelled,quots,invs){
     var bg='#FEF2F2',bd='#FECACA',col='var(--danger)',label='URGENT';
     if(dToWed<=7){bg='#FEF2F2';bd='#FCA5A5';col='var(--danger)';label='OVERDUE - PAY NOW';}
     else if(dToWed<=14){bg='#FFF7ED';bd='#FED7AA';col='#C2410C';label='DUE SOON';}
-    attention+='<div style="background:'+bg+';border:1.5px solid '+bd+';border-radius:10px;padding:14px;margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:'+col+';letter-spacing:1px;margin-bottom:4px">'+label+'</div><div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:3px">Final payment due</div><div style="font-size:13px;color:var(--text2)">Balance of '+fR(balance)+' is due on or before the final trial date. Wedding is '+dToWed+' days away.</div></div>';
+    attention+='<div style="background:'+bg+';border:1px solid '+bd+';border-radius:12px;padding:14px;margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:'+col+';letter-spacing:1px;margin-bottom:4px">'+label+'</div><div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:3px">Final payment due</div><div style="font-size:13px;color:var(--text2)">Balance of '+fR(balance)+' is due on or before the final trial date. Wedding is '+dToWed+' days away.</div></div>';
   } else if(!cancelled&&balance>0&&ft&&ft.date){
     var dToFt=dU(ft.date);
     if(dToFt!==null&&dToFt<=14){
-      attention+='<div style="background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:10px;padding:14px;margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:#C2410C;letter-spacing:1px;margin-bottom:4px">FINAL TRIAL IN '+dToFt+' DAYS</div><div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:3px">Collect final payment</div><div style="font-size:13px;color:var(--text2)">Balance '+fR(balance)+' is due on or before '+fmt(ft.date)+'.</div></div>';
+      attention+='<div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:12px;padding:14px;margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:#C2410C;letter-spacing:1px;margin-bottom:4px">FINAL TRIAL IN '+dToFt+' DAYS</div><div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:3px">Collect final payment</div><div style="font-size:13px;color:var(--text2)">Balance '+fR(balance)+' is due on or before '+fmt(ft.date)+'.</div></div>';
     }
   }
   // Payment summary
@@ -2914,13 +2914,13 @@ function buildPaymentTab(id,l,cancelled,quots,invs){
   var coll=brideCollected(l);
   var bal=brideOutstanding(l);
   var pct=tot>0?Math.round((coll/tot)*100):0;
-  var summary='<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><div><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase">Total</div><div style="font-size:18px;font-weight:700;color:var(--navy)">'+fR(tot)+'</div></div><div style="text-align:right"><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase">Balance</div><div style="font-size:18px;font-weight:700;color:'+(bal>0?'var(--warn)':'var(--success)')+'">'+fR(bal)+'</div></div></div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--muted)">Paid '+pct+'%</span><span style="color:var(--success);font-weight:600">'+fR(coll)+' collected</span></div><div class="pb"><div class="pf" style="width:'+pct+'%"></div></div></div>';
+  var summary='<div style="background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><div><div style="font-size:11px;color:var(--muted);font-weight:600">Total</div><div style="font-size:18px;font-weight:700;color:var(--navy)">'+fR(tot)+'</div></div><div style="text-align:right"><div style="font-size:11px;color:var(--muted);font-weight:600">Balance</div><div style="font-size:18px;font-weight:700;color:'+(bal>0?'var(--warn)':'var(--success)')+'">'+fR(bal)+'</div></div></div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--muted)">Paid '+pct+'%</span><span style="color:var(--success);font-weight:600">'+fR(coll)+' collected</span></div><div class="pb"><div class="pf" style="width:'+pct+'%"></div></div></div>';
   // Quotation & Invoice section (moved here from Documents)
   var qiHtml='<div class="stitle">Quotation & Invoice</div>';
   var qRows='';
   quots.forEach(function(qt){
-    var badge=qt.convertedToInvoice?'<span class="badge bi">Invoiced</span>':'<span class="badge bo">Open</span>';
-    qRows+='<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;margin-bottom:8px" onclick="openQDoc(\'lead\',\''+id+'\',\''+qt.id+'\')"><div><div style="font-size:13px;font-weight:600;color:var(--navy)">'+qt.id+'</div><div style="font-size:11px;color:var(--muted)">'+fmt(qt.date)+' · '+fR(qTot(qt.items))+'</div></div><div>'+badge+'</div></div>';
+    var badge=qt.convertedToInvoice?'<span class="tag ts">Invoiced</span>':'<span class="tag ti">Open</span>';
+    qRows+='<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surf);border:1px solid var(--border);border-radius:8px;margin-bottom:8px" onclick="openQDoc(\'lead\',\''+id+'\',\''+qt.id+'\')"><div><div style="font-size:13px;font-weight:600;color:var(--navy)">'+qt.id+'</div><div style="font-size:11px;color:var(--muted)">'+fmt(qt.date)+' · '+fR(qTot(qt.items))+'</div></div><div>'+badge+'</div></div>';
   });
   if(!qRows)qRows='<div style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:10px">No quotations</div>';
   qiHtml+=qRows;
@@ -2930,15 +2930,15 @@ function buildPaymentTab(id,l,cancelled,quots,invs){
     var pSum=(inv.advance||0)+Object.values(inv.payments||{}).reduce(function(s,p){return s+(parseFloat(p.amount)||0);},0);
     var b=t-pSum;
     var st=b<=0?'PAID':pSum>0?'PARTIAL':'UNPAID';
-    var stc=b<=0?'var(--success)':pSum>0?'var(--warn)':'var(--danger)';
-    iRows+='<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;margin-bottom:8px" onclick="openIDoc(\'lead\',\''+id+'\',\''+inv.id+'\')"><div><div style="font-size:13px;font-weight:600;color:var(--navy)">'+inv.id+'</div><div style="font-size:11px;color:var(--muted)">'+fmt(inv.date)+' · '+fR(t)+' · Bal '+fR(Math.max(0,b))+'</div></div><div><span class="badge" style="background:'+stc+'22;color:'+stc+'">'+st+'</span></div></div>';
+    var stTag=b<=0?'ts':pSum>0?'twg':'ti';
+    iRows+='<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surf);border:1px solid var(--border);border-radius:8px;margin-bottom:8px" onclick="openIDoc(\'lead\',\''+id+'\',\''+inv.id+'\')"><div><div style="font-size:13px;font-weight:600;color:var(--navy)">'+inv.id+'</div><div style="font-size:11px;color:var(--muted)">'+fmt(inv.date)+' · '+fR(t)+' · Bal '+fR(Math.max(0,b))+'</div></div><div><span class="tag '+stTag+'">'+st+'</span></div></div>';
   });
   if(!iRows)iRows='<div style="font-size:12px;color:var(--muted);font-style:italic">No invoices</div>';
   qiHtml+=iRows;
   // Quick action: add payment opens the first invoice
   var qa='';
   if(invs.length>0&&!cancelled){
-    qa='<button class="btn btn-primary btn-sm" style="margin-bottom:14px;width:100%" onclick="openAddPay(\'lead\',\''+id+'\',\''+invs[0].id+'\')">+ Add Payment</button>';
+    qa='<button class="btn btn-primary btn-sm" style="margin-bottom:14px;width:100%" onclick="openAddPay(\'lead\',\''+id+'\',\''+invs[0].id+'\')">+ Add payment</button>';
   }
   return '<div id="tb-pay" style="display:none">'+attention+summary+qa+qiHtml+'</div>';
 }
@@ -3090,7 +3090,7 @@ function buildStageCta(id,l){
   if(s===0){
     var ph=(l.phone||'').replace(/[^0-9]/g,'');
     var btns='';
-    if(ph)btns+='<button class="btn btn-gold btn-sm" onclick="window.open(\'https://wa.me/'+ph+'\',\'_blank\');advStage(\''+id+'\',1)">WhatsApp</button>';
+    if(ph)btns+='<button class="btn btn-primary btn-sm" onclick="window.open(\'https://wa.me/'+ph+'\',\'_blank\');advStage(\''+id+'\',1)">WhatsApp</button>';
     if(ph)btns+='<button class="btn btn-outline btn-sm" onclick="window.open(\'tel:+'+ph+'\');advStage(\''+id+'\',1)">Call</button>';
     if(l.email)btns+='<button class="btn btn-outline btn-sm" onclick="window.open(\'mailto:'+escAttr(l.email)+'\');advStage(\''+id+'\',1)">Email</button>';
     return btns||'<button class="btn btn-primary btn-sm" onclick="advStage(\''+id+'\',1)">Mark Contacted</button>';

@@ -191,12 +191,15 @@ console.log('\n=== Analytics (rAnalytics) restyle sim ===');
    'rDailyBrief','renderTodaysActions','rPipeline','rSchedule','rQuotations','rCustomers','rInvoices','rFinance',
    'rClients','rSettings','rMessages','lCard','cardCTA'
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[9] unchanged: '+n));
-  // .stats/.stat CSS unchanged from the Finance build
-  const reCss=/\.stats\{[^}]*\}\.?|\.stat\{[^}]*\}/;
+  // .stats/.stat CSS unchanged from the Finance build (Analytics added/changed no CSS).
+  // NOTE: assert the Finance stat-grid rules are byte-identical rather than the WHOLE <style>
+  // block — later screens (e.g. the detail restyle) legitimately edit unrelated rules
+  // (.stitle/.pf), and those are owned by their own sims.
+  function cssRule(css,sel){var i=css.indexOf(sel);if(i<0)return null;var j=css.indexOf('}',i);return j<0?null:css.slice(i,j+1);}
   ['.stats{','.stat{','.stat .lab{','.stat .val{','.stat .val.amber{'].forEach(sel=>{
-    ok(cssBlock(HEAD).indexOf(sel)>=0&&cssBlock(WORK).indexOf(sel)>=0,'[9] CSS rule present + unchanged: '+sel);
+    const hr=cssRule(cssBlock(HEAD),sel), wr=cssRule(cssBlock(WORK),sel);
+    ok(hr!==null&&hr===wr,'[9] Finance CSS rule byte-identical: '+sel);
   });
-  ok(cssBlock(HEAD)===cssBlock(WORK),'[9] entire <style> block byte-identical (no CSS touched)');
 })();
 
 console.log('\n=== '+(fails===0?'ALL PASS':fails+' FAILURE(S)')+' ===\n');
