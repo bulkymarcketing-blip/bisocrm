@@ -38,25 +38,44 @@ function paidUnpaid(){return {id:'lp',name:'Bride P',confirmed:true,weddingDate:
               q2:{id:'BQ-2',date:'2026-05-02',items:{a:{qty:1,unit:60000,disc:0}},convertedToInvoice:true}},
   invoices:{ip:{id:'BI-PAID',date:'2026-05-01',items:{a:{qty:1,unit:100000,disc:0}},advance:100000,payments:{}},
             iu:{id:'BI-UNPAID',date:'2026-05-02',items:{a:{qty:1,unit:80000,disc:0}},advance:0,payments:{}}}};}
+// Appts cover every bucket (distinct reasons); upcoming-soon vs PAST scheduled; notes incl. an edited one; docs of each type.
+function apptLead(){return {id:'la',name:'Appt Bride',stage:2,
+  appointments:{
+    kUp:{key:'kUp',reason:'Trial',date:iso(3)},                                  // upcoming (<=7d) -> amber
+    kPast:{key:'kPast',reason:'Final Trial',date:iso(-2)},                        // PAST un-actioned scheduled -> red
+    kNo:{key:'kNo',reason:'Fitting',date:iso(-5),noShow:true},
+    kDone:{key:'kDone',reason:'Pickup',date:iso(-10),done:true,doneAt:iso(-10)},
+    kResch:{key:'kResch',reason:'Consultation',date:iso(-3),rescheduled:true,rescheduledTo:'kUp',rescheduleReason:'Client busy'},
+    kCanc:{key:'kCanc',reason:'Fabric Appointment',date:iso(-7),cancelled:true,cancelledAt:iso(-7),cancelReason:'Not needed'}
+  },
+  notesLog:{n1:{id:'n1',body:'First note',createdAt:iso(-1)},
+            n2:{id:'n2',body:'Edited note',createdAt:iso(-2),editedAt:iso(-1)}},
+  documents:{d1:{id:'d1',name:'quote.pdf',type:'application/pdf',size:2048,uploadedAt:iso(-1)},
+             d2:{id:'d2',name:'photo.jpg',type:'image/jpeg',size:1024,uploadedAt:iso(-2)},
+             d3:{id:'d3',name:'misc.txt',type:'text/plain',size:512,uploadedAt:iso(-3)}}};}
+function onlyAppts(map){return {id:'la',name:'A',stage:2,appointments:map};}
 
 function ctxFor(){
   const sandbox={console,Date,Math,Number,String,Object,Array,JSON,parseFloat,parseInt,isNaN,
-    brides:{}, // _canon returns the passed object when brides[id] is absent
+    brides:{}, leads:{}, // _canon returns the passed object when brides[id] is absent; leads[id] used by the rescheduled lookup
     getSources(){return [{value:'whatsapp',label:'WhatsApp'},{value:'referral',label:'Referral'}];},
     document:{getElementById:function(id){return {innerHTML:''};}}
   };
   const ctx=vm.createContext(sandbox);
   ['cLine','qTot','invPaid','invInvoiced','invCollected','invOutstanding','_canon','netHeld',
    'brideTotal','brideCollected','brideOutstanding','dU','fmt','fR','escHtml','escAttr','escHtmlMultiline','evTrue',
-   'buildOverviewTab','buildPaymentTab','buildStageCta']
+   'buildOverviewTab','buildPaymentTab','buildStageCta','buildApptTab','buildNotesTab','buildDocsTab']
     .forEach(f=>vm.runInContext(extractFn(WORK,f),ctx));
   return ctx;
 }
 function ov(l,cancelled){const ctx=ctxFor();ctx.__l=l;ctx.__c=!!cancelled;return vm.runInContext('buildOverviewTab(__l.id,__l,__c)',ctx);}
 function pay(l){const ctx=ctxFor();ctx.__l=l;return vm.runInContext('buildPaymentTab(__l.id,__l,!!__l.cancelled,Object.values(__l.quotations||{}),Object.values(__l.invoices||{}))',ctx);}
 function cta(l){const ctx=ctxFor();ctx.__l=l;return vm.runInContext('buildStageCta(__l.id,__l)',ctx);}
+function appt(l,cancelled){const ctx=ctxFor();ctx.__l=l;ctx.__c=!!cancelled;ctx.leads[l.id]=l;return vm.runInContext('buildApptTab(__l.id,__l,__c,Object.values(__l.appointments||{}))',ctx);}
+function notesT(l,cancelled){const ctx=ctxFor();ctx.__l=l;ctx.__c=!!cancelled;return vm.runInContext('buildNotesTab(__l.id,__l,__c,Object.values(__l.notesLog||{}))',ctx);}
+function docsT(l,cancelled){const ctx=ctxFor();ctx.__l=l;ctx.__c=!!cancelled;return vm.runInContext('buildDocsTab(__l.id,__l,__c,Object.values(__l.documents||{}))',ctx);}
 
-console.log('\n=== Detail view restyle sim (Part 1) ===');
+console.log('\n=== Detail view restyle sim (Part 1 + Part 2) ===');
 
 // [1] buildOverviewTab
 (function(){
@@ -139,16 +158,86 @@ console.log('\n=== Detail view restyle sim (Part 1) ===');
   ok(ctaOf({id:'a',confirmed:true})==='','[5] confirmed -> no CTA');
 })();
 
-// [6] regression — Part-2 tabs, openDetail, helpers + every other r* byte-identical
+// [6] buildApptTab
 (function(){
-  console.log('\n[6] regression vs HEAD');
-  ['openDetail','buildApptTab','buildNotesTab','buildDocsTab','nextActionLabel','evTrue',
+  console.log('\n[6] buildApptTab');
+  const h=appt(apptLead(),false);
+  ok(h.indexOf('✓')<0 && h.indexOf('↻')<0 && h.indexOf('⚠')<0,'[6] no ✓/↻/⚠ glyphs anywhere');
+  ok(h.indexOf('1.5px')<0,'[6] no 1.5px borders remain');
+  // scheduled date proximity colour: red ONLY for past; amber (never red) for upcoming <=7d
+  const past=appt(onlyAppts({k:{key:'k',reason:'X',date:iso(-2)}}),false);
+  ok(past.indexOf('color:var(--danger)')>=0,'[6] PAST un-actioned scheduled date -> var(--danger)');
+  const up=appt(onlyAppts({k:{key:'k',reason:'X',date:iso(3)}}),false);
+  ok(up.indexOf('color:var(--warn)')>=0 && up.indexOf('var(--danger)')<0,'[6] upcoming <=7d -> var(--warn), never red');
+  // no-show: calm box + tag twg, no solid amber badge
+  ok(h.indexOf('<span class="tag twg">No-show</span>')>=0,'[6] no-show -> tag twg "No-show"');
+  ok(h.indexOf('#FEF7E5')<0 && h.indexOf('background:var(--warn);color:#fff')<0,'[6] no amber fill / solid NO-SHOW badge');
+  // completed: calm box + tag ts "Done", no ✓
+  ok(h.indexOf('<span class="tag ts">Done</span>')>=0,'[6] completed -> tag ts "Done"');
+  // action-button colour overrides dropped (Complete / Did come / No-show)
+  ok(h.indexOf('var(--success)')<0,'[6] no var(--success) literal (Complete/Did-come/Completed all de-coloured)');
+  ok(h.indexOf('border-color:var(--success)')<0,'[6] no green border-color override on buttons');
+  ok(h.indexOf('padding:4px 8px;color:var(--warn)')<0,'[6] No-show button has no amber colour override');
+  // add form
+  ok(h.indexOf('text-transform:uppercase')<0,'[6] add-form label not uppercase');
+  ok(h.indexOf('>Schedule appointment<')>=0 && h.indexOf('Schedule Appointment')<0,'[6] "Schedule appointment" sentence-case');
+  ok(h.indexOf('+ Add appointment')>=0 && h.indexOf('+ Add Appointment')<0,'[6] "+ Add appointment"');
+  ok(h.indexOf('>Needs attention<')>=0,'[6] "Needs attention" sentence-case (keeps amber)');
+  // every box is var(--surf)+1px
+  ok(h.indexOf('background:var(--bg);border:1px')<0 && h.indexOf('background:var(--bg);border:1.5px')<0,'[6] no var(--bg) boxes in appt tab');
+})();
+
+// [7] buildApptTab — bucket parity (each appt lands in its section)
+(function(){
+  console.log('\n[7] appt bucket parity');
+  const h=appt(apptLead(),false);
+  function between(s,a,b){const i=s.indexOf(a);const j=b?s.indexOf(b,i):s.length;return s.slice(i,j<0?s.length:j);}
+  const needs=between(h,'>Needs attention<','>Upcoming<');
+  const upc=between(h,'>Upcoming<','>Completed<');
+  const done=between(h,'>Completed<','>Rescheduled<');
+  const resch=between(h,'>Rescheduled<','>Cancelled');
+  const canc=between(h,'>Cancelled (record kept)<',null);
+  ok(needs.indexOf('Fitting')>=0,'[7] no-show "Fitting" under Needs attention');
+  ok(upc.indexOf('Trial')>=0 && upc.indexOf('Final Trial')>=0,'[7] both scheduled (upcoming + past) under Upcoming');
+  ok(done.indexOf('Pickup')>=0,'[7] completed "Pickup" under Completed');
+  ok(resch.indexOf('Consultation')>=0 && resch.indexOf('Moved to')>=0,'[7] rescheduled-source under Rescheduled (Moved to …)');
+  ok(canc.indexOf('Fabric Appointment')>=0,'[7] cancelled under Cancelled (record kept)');
+})();
+
+// [8] buildNotesTab
+(function(){
+  console.log('\n[8] buildNotesTab');
+  const h=notesT(apptLead(),false);
+  ok(h.indexOf('1.5px')<0,'[8] no 1.5px borders');
+  ok(h.indexOf('background:var(--surf);border:1px solid var(--border)')>=0,'[8] note + add boxes var(--surf)+1px');
+  ok(h.indexOf('background:var(--bg);border')<0,'[8] add box no longer var(--bg)');
+  ok(h.indexOf('style="color:var(--danger)" onclick="delNote(')>=0,'[8] Delete STILL red (intentional)');
+  ok(h.indexOf('+ Add note')>=0 && h.indexOf('+ Add Note')<0,'[8] "+ Add note"');
+  ok(h.indexOf('id="ne-t-n1"')>=0,'[8] inline edit textarea preserved');
+})();
+
+// [9] buildDocsTab
+(function(){
+  console.log('\n[9] buildDocsTab');
+  const h=docsT(apptLead(),false);
+  ok(h.indexOf('1.5px')<0,'[9] no 1.5px borders');
+  ok(h.indexOf('>PDF<')>=0 && h.indexOf('>IMG<')>=0 && h.indexOf('>FILE<')>=0,'[9] navy icon chips PDF/IMG/FILE kept');
+  ok(h.indexOf('background:var(--surf);border:1px dashed var(--border)')>=0,'[9] upload box var(--surf)+1px dashed');
+  ok(h.indexOf('style="color:var(--danger)" onclick="delDoc(')>=0,'[9] Delete STILL red (intentional)');
+  ok(h.indexOf('Choose file')>=0 && h.indexOf('Choose File')<0,'[9] "Choose file"');
+})();
+
+// [10] regression — Part-1 tabs, openDetail, helpers + every other r* byte-identical
+(function(){
+  console.log('\n[10] regression vs HEAD');
+  // Part 1's surfaces stay byte-identical; Part 2 owns buildApptTab/buildNotesTab/buildDocsTab now.
+  ['openDetail','buildOverviewTab','buildPaymentTab','buildStageCta','nextActionLabel','evTrue',
    'brideTotal','brideCollected','brideOutstanding','netHeld','qTot','invPaid','invInvoiced','invCollected','invOutstanding','cLine','_canon',
    'fR','fmt','dU','escHtml','escAttr','getSources',
    '_briefSection','_briefList','_briefRow','_briefRowLead','_briefMain','_briefDot','_briefEmpty','computeTodaysActions',
    'rDailyBrief','renderTodaysActions','rPipeline','rSchedule','rQuotations','rCustomers','rInvoices','rFinance','rAnalytics',
    'aLeadSourcePerf','aConversionFunnel','rClients','rSettings','rMessages','lCard','cardCTA'
-  ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[6] unchanged: '+n));
+  ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[10] unchanged: '+n));
 })();
 
 console.log('\n=== '+(fails===0?'ALL PASS':fails+' FAILURE(S)')+' ===\n');

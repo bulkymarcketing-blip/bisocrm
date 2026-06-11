@@ -2955,14 +2955,14 @@ function buildApptTab(id,l,cancelled,appts){
   // Upcoming scheduled appointments
   var schHtml='';
   scheduled.forEach(function(a){
-    var dToA=dU(a.date);var dCol=dToA!==null&&dToA<=3?'var(--danger)':dToA!==null&&dToA<=7?'var(--warn)':'var(--text2)';
-    schHtml+='<div style="background:var(--surf);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px">'
+    var dToA=dU(a.date);var dCol=dToA!==null&&dToA<0?'var(--danger)':dToA!==null&&dToA<=7?'var(--warn)':'var(--text2)';
+    schHtml+='<div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
       +'<div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--navy)">'+escHtml(a.reason||'Appointment')+'</div>'
       +'<div style="font-size:12px;color:'+dCol+';margin-top:2px">'+fmt(a.date)+(a.time?' at '+a.time:'')+(dToA!==null?' · in '+dToA+'d':'')+'</div>'
       +(a.note?'<div style="font-size:11px;color:var(--muted);margin-top:3px;font-style:italic">'+escHtml(a.note)+'</div>':'')
       +'</div>'
-      +(cancelled?'':'<div style="display:flex;flex-direction:column;gap:4px"><button class="btn btn-outline btn-xs" onclick="markApptDone(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px;color:var(--success);border-color:var(--success)">✓ Complete</button><button class="btn btn-ghost btn-xs" onclick="openResched(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px;color:var(--navy)">↻ Reschedule</button><button class="btn btn-ghost btn-xs" onclick="markApptNoShow(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px;color:var(--warn)">⚠ No-show</button><button class="btn btn-ghost btn-xs" onclick="cancelAppt(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px">Cancel</button></div>')
+      +(cancelled?'':'<div style="display:flex;flex-direction:column;gap:4px"><button class="btn btn-outline btn-xs" onclick="markApptDone(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px">Complete</button><button class="btn btn-ghost btn-xs" onclick="openResched(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px;color:var(--navy)">Reschedule</button><button class="btn btn-ghost btn-xs" onclick="markApptNoShow(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px">No-show</button><button class="btn btn-ghost btn-xs" onclick="cancelAppt(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px">Cancel</button></div>')
       +'</div></div>';
   });
   if(!schHtml)schHtml='<div style="font-size:12px;color:var(--muted);font-style:italic;padding:8px">No upcoming appointments</div>';
@@ -2972,25 +2972,25 @@ function buildApptTab(id,l,cancelled,appts){
   noShowA.forEach(function(a){
     var daysAgo=dU(a.date);
     var daysAgoTxt=daysAgo!==null?(daysAgo<0?Math.abs(daysAgo)+'d ago':daysAgo===0?'today':daysAgo+'d away'):'';
-    noShowHtml+='<div style="background:#FEF7E5;border:1.5px solid var(--warn);border-radius:8px;padding:10px 12px;margin-bottom:8px">'
+    noShowHtml+='<div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
-      +'<div style="flex:1"><div style="display:flex;align-items:center;gap:6px;margin-bottom:2px"><span style="background:var(--warn);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;letter-spacing:.5px">NO-SHOW</span><div style="font-size:13px;font-weight:700;color:var(--navy)">'+escHtml(a.reason||'Appointment')+'</div></div>'
+      +'<div style="flex:1"><div style="display:flex;align-items:center;gap:6px;margin-bottom:2px"><span class="tag twg">No-show</span><div style="font-size:13px;font-weight:700;color:var(--navy)">'+escHtml(a.reason||'Appointment')+'</div></div>'
       +'<div style="font-size:12px;color:var(--warn);margin-top:2px">'+fmt(a.date)+(a.time?' at '+a.time:'')+' · '+daysAgoTxt+'</div>'
       +(a.note?'<div style="font-size:11px;color:var(--muted);margin-top:3px;font-style:italic">'+escHtml(a.note)+'</div>':'')
       +'</div>'
-      +(cancelled?'':'<div style="display:flex;flex-direction:column;gap:4px"><button class="btn btn-outline btn-xs" onclick="openResched(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px;color:var(--navy)">↻ Reschedule</button><button class="btn btn-outline btn-xs" onclick="markApptDone(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px;color:var(--success);border-color:var(--success)">✓ Did come</button><button class="btn btn-ghost btn-xs" onclick="cancelAppt(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px;color:var(--danger)">Close</button></div>')
+      +(cancelled?'':'<div style="display:flex;flex-direction:column;gap:4px"><button class="btn btn-outline btn-xs" onclick="openResched(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px;color:var(--navy)">Reschedule</button><button class="btn btn-outline btn-xs" onclick="markApptDone(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px">Did come</button><button class="btn btn-ghost btn-xs" onclick="cancelAppt(\''+id+'\',\''+a.key+'\')" style="font-size:11px;padding:4px 8px">Close</button></div>')
       +'</div></div>';
   });
   
   // Completed appointments
   var doneHtml='';
   doneA.forEach(function(a){
-    doneHtml+='<div style="background:#F0FDF4;border:1.5px solid #BBF7D0;border-radius:8px;padding:10px 12px;margin-bottom:8px">'
+    doneHtml+='<div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'
-      +'<div><div style="font-size:13px;font-weight:600;color:var(--navy)">✓ '+escHtml(a.reason||'Appointment')+' · '+fmt(a.date)+(a.time?' at '+a.time:'')+'</div>'
-      +'<div style="font-size:11px;color:var(--success);margin-top:2px">Completed '+(a.doneAt?fmt(a.doneAt):'')+'</div>'
+      +'<div><div style="font-size:13px;font-weight:600;color:var(--navy)">'+escHtml(a.reason||'Appointment')+' · '+fmt(a.date)+(a.time?' at '+a.time:'')+'</div>'
+      +'<div style="font-size:11px;color:var(--muted);margin-top:2px">Completed '+(a.doneAt?fmt(a.doneAt):'')+'</div>'
       +(a.note?'<div style="font-size:11px;color:var(--muted);margin-top:3px;font-style:italic">'+escHtml(a.note)+'</div>':'')
-      +'</div></div>'
+      +'</div><span class="tag ts">Done</span></div>'
       +'</div>';
   });
   
@@ -3000,16 +3000,16 @@ function buildApptTab(id,l,cancelled,appts){
     var newKey=a.rescheduledTo;
     var newAppt=newKey && leads[id].appointments ? leads[id].appointments[newKey] : null;
     var newTxt = newAppt ? 'Moved to '+fmt(newAppt.date)+(newAppt.time?' at '+newAppt.time:'') : 'Moved';
-    reschHtml+='<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;opacity:.75">'
+    reschHtml+='<div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;opacity:.75">'
       +'<div style="font-size:13px;font-weight:600;color:var(--muted);text-decoration:line-through">'+escHtml(a.reason||'Appointment')+' · '+fmt(a.date)+(a.time?' at '+a.time:'')+'</div>'
-      +'<div style="font-size:11px;color:var(--navy);margin-top:2px">↻ '+newTxt+(a.rescheduleReason?' · '+escHtml(a.rescheduleReason):'')+'</div>'
+      +'<div style="font-size:11px;color:var(--navy);margin-top:2px">'+newTxt+(a.rescheduleReason?' · '+escHtml(a.rescheduleReason):'')+'</div>'
       +'</div>';
   });
   
   // Cancelled
   var canHtml='';
   cancelledA.forEach(function(a){
-    canHtml+='<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;opacity:.7">'
+    canHtml+='<div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;opacity:.7">'
       +'<div style="font-size:13px;font-weight:600;color:var(--muted);text-decoration:line-through">'+escHtml(a.reason||'Appointment')+' · '+fmt(a.date)+(a.time?' at '+a.time:'')+'</div>'
       +'<div style="font-size:11px;color:var(--muted);margin-top:2px">Cancelled '+(a.cancelledAt?fmt(a.cancelledAt):'')+(a.cancelReason?' · '+escHtml(a.cancelReason):'')+'</div>'
       +'</div>';
@@ -3017,19 +3017,19 @@ function buildApptTab(id,l,cancelled,appts){
   // Add appointment form
   var addForm='';
   if(!cancelled){
-    addForm='<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px">'
-      +'<div style="font-size:12px;font-weight:600;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Schedule Appointment</div>'
+    addForm='<div style="background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px">'
+      +'<div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:10px">Schedule appointment</div>'
       +'<div class="fg">'
       +'<div class="fi"><label>Date</label><input type="date" id="ap-d-'+id+'"/></div>'
       +'<div class="fi"><label>Time</label><input type="time" id="ap-t-'+id+'"/></div>'
       +'<div class="fi s2"><label>Reason</label><select id="ap-r-'+id+'"><option value="">— Select reason —</option><option>Consultation</option><option>Trial</option><option>Final Trial</option><option>Fabric Appointment</option><option>Pickup</option><option>Other</option></select></div>'
       +'<div class="fi s2"><label>Note (optional)</label><input type="text" id="ap-n-'+id+'" placeholder="Comments"/></div>'
       +'</div>'
-      +'<button class="btn btn-primary btn-sm" style="margin-top:10px;width:100%" onclick="addAppt2(\''+id+'\')">+ Add Appointment</button>'
+      +'<button class="btn btn-primary btn-sm" style="margin-top:10px;width:100%" onclick="addAppt2(\''+id+'\')">+ Add appointment</button>'
       +'</div>';
   }
   return '<div id="tb-appt" style="display:none">'+addForm
-    +(noShowHtml?'<div class="stitle" style="color:var(--warn)">Needs Attention</div>'+noShowHtml:'')
+    +(noShowHtml?'<div class="stitle" style="color:var(--warn)">Needs attention</div>'+noShowHtml:'')
     +'<div class="stitle"'+(noShowHtml?' style="margin-top:14px"':'')+'>Upcoming</div>'+schHtml
     +(doneHtml?'<div class="stitle" style="margin-top:14px">Completed</div>'+doneHtml:'')
     +(reschHtml?'<div class="stitle" style="margin-top:14px">Rescheduled</div>'+reschHtml:'')
@@ -3041,7 +3041,7 @@ function buildNotesTab(id,l,cancelled,notes){
   notes.sort(function(a,b){return new Date(b.createdAt||0)-new Date(a.createdAt||0);});
   var nHtml='';
   notes.forEach(function(n){
-    nHtml+='<div style="background:var(--surf);border:1.5px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px" id="note-'+n.id+'">'
+    nHtml+='<div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px" id="note-'+n.id+'">'
       +'<div id="nv-'+n.id+'">'
       +'<div style="font-size:13px;color:var(--text);white-space:pre-wrap;line-height:1.5">'+escHtml(n.body||'')+'</div>'
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">'
@@ -3056,9 +3056,9 @@ function buildNotesTab(id,l,cancelled,notes){
       +'</div>';
   });
   if(!nHtml)nHtml='<div style="font-size:12px;color:var(--muted);font-style:italic;padding:8px">No notes yet</div>';
-  var addBox=cancelled?'':'<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:14px">'
+  var addBox=cancelled?'':'<div style="background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:14px">'
     +'<textarea id="newNote-'+id+'" placeholder="Add a note..." style="min-height:60px"></textarea>'
-    +'<div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px"><button class="btn btn-ghost btn-xs" onclick="document.getElementById(\'newNote-'+id+'\').value=\'\'">Clear</button><button class="btn btn-primary btn-xs" onclick="addNote(\''+id+'\')">+ Add Note</button></div>'
+    +'<div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px"><button class="btn btn-ghost btn-xs" onclick="document.getElementById(\'newNote-'+id+'\').value=\'\'">Clear</button><button class="btn btn-primary btn-xs" onclick="addNote(\''+id+'\')">+ Add note</button></div>'
     +'</div>';
   return '<div id="tb-notes" style="display:none">'+addBox+nHtml+'</div>';
 }
@@ -3068,7 +3068,7 @@ function buildDocsTab(id,l,cancelled,docs){
   var dh='';
   docs.forEach(function(doc){
     var icon=doc.type==='application/pdf'?'PDF':doc.type&&doc.type.indexOf('image')>-1?'IMG':'FILE';
-    dh+='<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surf);border:1.5px solid var(--border);border-radius:8px;margin-bottom:8px">'
+    dh+='<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surf);border:1px solid var(--border);border-radius:8px;margin-bottom:8px">'
       +'<div style="width:36px;height:36px;background:var(--navy);color:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700">'+icon+'</div>'
       +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escHtml(doc.name)+'</div><div style="font-size:11px;color:var(--muted)">'+(doc.uploadedAt?fmt(doc.uploadedAt):'')+' · '+Math.round((doc.size||0)/1024)+' KB'+(doc.category?' · '+escHtml(doc.category):'')+'</div></div>'
       +'<button class="btn btn-ghost btn-xs" onclick="viewDoc(\''+id+'\',\''+doc.id+'\')">View</button>'
@@ -3076,9 +3076,9 @@ function buildDocsTab(id,l,cancelled,docs){
       +'</div>';
   });
   if(!dh)dh='<div style="font-size:12px;color:var(--muted);font-style:italic;padding:8px">No documents uploaded</div>';
-  var upBox=cancelled?'':'<div style="background:var(--bg);border:1.5px dashed var(--border);border-radius:10px;padding:14px;margin-bottom:14px;text-align:center">'
+  var upBox=cancelled?'':'<div style="background:var(--surf);border:1px dashed var(--border);border-radius:10px;padding:14px;margin-bottom:14px;text-align:center">'
     +'<input type="file" id="docFile-'+id+'" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" style="display:none" onchange="handleDocUpload(\''+id+'\',this)"/>'
-    +'<button class="btn btn-primary btn-sm" onclick="document.getElementById(\'docFile-'+id+'\').click()">Choose File</button>'
+    +'<button class="btn btn-primary btn-sm" onclick="document.getElementById(\'docFile-'+id+'\').click()">Choose file</button>'
     +'<div style="font-size:11px;color:var(--muted);margin-top:8px">PDF, JPG, PNG · Max 2 MB</div>'
     +'</div>';
   return '<div id="tb-docs" style="display:none">'+upBox+dh+'</div>';

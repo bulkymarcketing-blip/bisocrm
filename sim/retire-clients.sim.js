@@ -27,9 +27,7 @@ console.log('\n=== Retire Confirmed Clients (rClients) sim ===');
 (function(){
   console.log('\n[1] route map');
   const fnMapW=literal(WORK,'var fn={dailyBrief:rDailyBrief','};');
-  const fnMapH=literal(HEAD,'var fn={dailyBrief:rDailyBrief','};');
   ok(fnMapW!==null,'[1] located the fn={…} route map');
-  ok(fnMapH && fnMapH.indexOf('clients:rClients')>=0,'[1] HEAD route map HAD clients:rClients (sanity)');
   ok(fnMapW.indexOf('clients:rClients')<0,'[1] route map no longer maps clients:rClients');
   ok(fnMapW.indexOf('clients:')<0,'[1] route map has NO clients: key at all');
   ok(fnMapW.indexOf('customers:rCustomers')>=0,'[1] customers:rCustomers still present (Profiles route intact)');
@@ -38,7 +36,6 @@ console.log('\n=== Retire Confirmed Clients (rClients) sim ===');
 // [2] nav items array has no id:'clients'
 (function(){
   console.log('\n[2] nav items');
-  ok(HEAD.indexOf("{id:'clients',lbl:'Confirmed'")>=0,'[2] HEAD nav HAD the Confirmed item (sanity)');
   ok(WORK.indexOf("id:'clients'")<0,'[2] no nav item with id:'+"'clients'"+' anywhere');
   ok(WORK.indexOf("{id:'customers',lbl:'Profiles'")>=0,'[2] Profiles nav item still present');
 })();
