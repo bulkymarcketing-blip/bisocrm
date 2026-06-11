@@ -2263,7 +2263,7 @@ function openAddPay(src,sId,iId){
   var bal=Math.max(0,tot-paid);
   document.getElementById('pay-s').textContent=obj.name+' · '+iId;
   document.getElementById('pay-b').innerHTML=
-    '<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;display:flex;justify-content:space-between"><div><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:3px">Balance Due</div><div style="font-size:22px;font-weight:700;color:var(--warn)">'+fR(bal)+'</div></div><div style="text-align:right;font-size:11px;color:var(--muted);align-self:flex-end">Total '+fR(tot)+'<br/>Paid '+fR(paid)+'</div></div>'
+    '<div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;display:flex;justify-content:space-between"><div><div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:3px">Balance due</div><div style="font-size:22px;font-weight:700;color:var(--warn)">'+fR(bal)+'</div></div><div style="text-align:right;font-size:11px;color:var(--muted);align-self:flex-end">Total '+fR(tot)+'<br/>Paid '+fR(paid)+'</div></div>'
     +'<div class="fg"><div class="fi"><label>Amount (Rs) *</label><input type="text" inputmode="numeric" id="pay-amt" value="'+groupMoney(bal)+'" onblur="onMoneyBlur(this)"/></div><div class="fi"><label>Date</label><input type="date" id="pay-date" value="'+(new Date().toISOString().slice(0,10))+'"/></div><div class="fi s2"><label>Method</label><select id="pay-method"><option value="">— Select —</option><option>Cash</option><option>Bank Transfer</option><option>Card</option><option>Cheque</option><option>Other</option></select></div><div class="fi s2"><label>Note (optional)</label><input type="text" id="pay-note" placeholder="Reference, comments…"/></div></div>';
   document.getElementById('pay-f').innerHTML='<button class="btn btn-ghost" onclick="CM(\'pay-modal\')">Cancel</button><button class="btn btn-primary" onclick="addPay(\''+src+'\',\''+sId+'\',\''+iId+'\')" >Record Payment</button>';
   CM('doc-modal');OM('pay-modal');
@@ -2366,9 +2366,9 @@ function openEInv(src,sId,iId){
   var tot=qTot(inv.items);var bal=tot-(inv.advance||0);
   document.getElementById('einv-s').textContent=obj.name+' · '+iId;
   document.getElementById('einv-b').innerHTML=
-    '<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px"><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:3px">Invoice Total</div><div style="font-size:20px;font-weight:700;color:var(--gold)">'+fR(tot)+'</div></div>'
-    +'<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:3px">Bespeaking Fee</div><div style="font-size:16px;font-weight:700;color:var(--success)">'+fR(inv.advance||0)+'</div></div><span style="font-size:11px;color:var(--muted);background:var(--border);padding:3px 8px;border-radius:20px">Locked</span></div>'
-    +'<div class="fg"><div class="fi"><label>Invoice Date</label><input type="date" id="einv-date" value="'+(inv.date||'')+'"/></div><div class="fi"><label>Balance Due</label><input type="text" value="'+fR(Math.max(0,bal))+'" readonly style="background:var(--bg);color:var(--muted)"/></div><div class="fi s2"><label>Notes</label><textarea id="einv-notes">'+(inv.notes||'')+'</textarea></div></div>';
+    '<div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px"><div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:3px">Invoice total</div><div style="font-size:20px;font-weight:700;color:var(--navy)">'+fR(tot)+'</div></div>'
+    +'<div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:3px">Bespeaking fee</div><div style="font-size:16px;font-weight:700;color:var(--success)">'+fR(inv.advance||0)+'</div></div><span style="font-size:11px;color:var(--muted);background:var(--border);padding:3px 8px;border-radius:20px">Locked</span></div>'
+    +'<div class="fg"><div class="fi"><label>Invoice Date</label><input type="date" id="einv-date" value="'+(inv.date||'')+'"/></div><div class="fi"><label>Balance due</label><input type="text" value="'+fR(Math.max(0,bal))+'" readonly style="background:var(--canvas);color:var(--muted)"/></div><div class="fi s2"><label>Notes</label><textarea id="einv-notes">'+(inv.notes||'')+'</textarea></div></div>';
   document.getElementById('einv-f').innerHTML='<button class="btn btn-ghost" onclick="CM(\'einv-modal\')">Cancel</button><button class="btn btn-primary" onclick="saveEInv(\''+src+'\',\''+sId+'\',\''+iId+'\')" >Save</button>';
   CM('doc-modal');OM('einv-modal');
 }
@@ -2390,9 +2390,9 @@ function openAdv(src,sId,qId){
   var _defBesp=parseFloat(gSet().defaultBespeaking)||50000;
   document.getElementById('adv-s').textContent=obj.name;
   document.getElementById('adv-b').innerHTML=
-    '<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:13px;margin-bottom:14px;display:flex;justify-content:space-between"><div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600;margin-bottom:2px">Quote Total</div><div style="font-size:20px;font-weight:700;color:var(--gold)">'+fR(tot)+'</div></div><div style="font-size:11px;color:var(--muted);align-self:flex-end">'+qt.id+'</div></div>'
+    '<div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:13px;margin-bottom:14px;display:flex;justify-content:space-between"><div><div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:2px">Quote total</div><div style="font-size:20px;font-weight:700;color:var(--navy)">'+fR(tot)+'</div></div><div style="font-size:11px;color:var(--muted);align-self:flex-end">'+qt.id+'</div></div>'
     +'<div class="fg"><div class="fi"><label>Bespeaking Fee (Rs)</label><input type="text" inputmode="numeric" id="adv-amt" value="'+groupMoney(_defBesp)+'" onblur="onMoneyBlur(this)"/></div><div class="fi"><label>Invoice Date</label><input type="date" id="adv-date" value="'+(new Date().toISOString().slice(0,10))+'"/></div><div class="fi s2"><label>Notes</label><textarea id="adv-notes">'+defNotes()+'</textarea></div></div>'
-    +'<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--muted);margin-top:8px">Balance: <strong id="adv-bal" style="color:var(--navy)">'+fR(tot-_defBesp)+'</strong></div>';
+    +'<div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--muted);margin-top:8px">Balance: <strong id="adv-bal" style="color:var(--navy)">'+fR(tot-_defBesp)+'</strong></div>';
   document.getElementById('adv-f').innerHTML='<button class="btn btn-ghost" onclick="CM(\'adv-modal\')">Cancel</button><button class="btn btn-outline" onclick="prevAdv(\''+src+'\',\''+sId+'\',\''+qId+'\')" >Preview</button><button class="btn btn-primary" onclick="convInv(\''+src+'\',\''+sId+'\',\''+qId+'\')" >Save Invoice</button>';
   setTimeout(function(){var el=document.getElementById('adv-amt');if(el)el.oninput=function(){var b=document.getElementById('adv-bal');if(b)b.textContent=fR(tot-parseMoney(this.value));};},100);
   CM('doc-modal');OM('adv-modal');
@@ -3243,8 +3243,8 @@ function openResched(brideId, apptKey){
   var d = new Date(appt.date); d.setDate(d.getDate()+7);
   var defDate = d.toISOString().slice(0,10);
   var body = ''
-    +'<div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:14px">'
-    +'<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:3px">Original</div>'
+    +'<div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:14px">'
+    +'<div style="font-size:10px;color:var(--muted);font-weight:600;margin-bottom:3px">Original</div>'
     +'<div style="font-size:13px;font-weight:600;color:var(--navy)">'+escHtml(appt.reason||'Appointment')+'</div>'
     +'<div style="font-size:12px;color:var(--text2);margin-top:2px">'+fmt(appt.date)+(appt.time?' at '+escHtml(appt.time):'')+'</div>'
     +'</div>'
@@ -6448,14 +6448,14 @@ function renderDisp(){
       historyDetail = '<div style="font-size:11px;color:var(--muted);margin-bottom:14px">Last: '+escHtml(lastLabel)+' on '+fmt(lastAtt.at)+(lastAtt.note?' — "'+escHtml(lastAtt.note)+'"':'')+'</div>';
     }
     document.getElementById('disp-body').innerHTML =
-      '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:6px">'+historyTxt+'</div>'
+      '<div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:6px">'+historyTxt+'</div>'
       +historyDetail
       +'<div style="font-size:13px;color:var(--text);margin-bottom:14px;font-weight:600">What happened?</div>'
       +'<div style="display:flex;flex-direction:column;gap:8px">'
-      +'<button class="btn btn-outline" style="justify-content:flex-start;padding:14px;text-align:left" onclick="pickDisp(\'no_answer\')">📵 No answer</button>'
-      +'<button class="btn btn-outline" style="justify-content:flex-start;padding:14px;text-align:left" onclick="pickDisp(\'callback_later\')">📞 Reached — call back later</button>'
-      +'<button class="btn btn-outline" style="justify-content:flex-start;padding:14px;text-align:left" onclick="pickDisp(\'consult_booked\')">📅 Reached — book consultation</button>'
-      +'<button class="btn btn-outline" style="justify-content:flex-start;padding:14px;text-align:left;color:var(--danger);border-color:rgba(229,62,62,0.3)" onclick="pickDisp(\'not_interested\')">❌ Reached — not interested</button>'
+      +'<button class="btn btn-outline" style="justify-content:flex-start;padding:14px;text-align:left" onclick="pickDisp(\'no_answer\')">No answer</button>'
+      +'<button class="btn btn-outline" style="justify-content:flex-start;padding:14px;text-align:left" onclick="pickDisp(\'callback_later\')">Reached — call back later</button>'
+      +'<button class="btn btn-outline" style="justify-content:flex-start;padding:14px;text-align:left" onclick="pickDisp(\'consult_booked\')">Reached — book consultation</button>'
+      +'<button class="btn btn-outline" style="justify-content:flex-start;padding:14px;text-align:left" onclick="pickDisp(\'not_interested\')">Reached — not interested</button>'
       +'</div>';
     document.getElementById('disp-footer').innerHTML = '<button class="btn btn-ghost" onclick="closeDisp()">Cancel</button>';
     return;
@@ -6477,9 +6477,9 @@ function renderDisp(){
   }
   var body = '';
   if(DISP.outcome === 'no_answer'){
-    body += '<div style="background:#FEF7E5;border:1.5px solid #F0D285;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--navy)"><strong>📵 No answer</strong> · This will be attempt #'+attNum+'</div>';
+    body += '<div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--navy)"><strong>No answer</strong> · This will be attempt #'+attNum+'</div>';
     if(attNum >= 3){
-      body += '<div style="background:#FEE2E2;border:1.5px solid #FECACA;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--danger)"><strong>⚠ Final attempt</strong> · No more reminders. Lead auto-closes as unresponsive after 14 days if no reply.</div>';
+      body += '<div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--text2)"><strong style="color:var(--warn)">Final attempt</strong> · No more reminders. Lead auto-closes as unresponsive after 14 days if no reply.</div>';
     }
     body += '<div class="fi" style="margin-bottom:14px"><label>Channel used</label><select id="disp-channel"><option value="whatsapp">WhatsApp</option><option value="call">Phone Call</option><option value="both">Both</option></select></div>';
     if(attNum < 3){
@@ -6495,7 +6495,7 @@ function renderDisp(){
     }
     body += '<div class="fi"><label>Note (optional)</label><input type="text" id="disp-note" placeholder="Any context worth remembering"/></div>';
   } else if(DISP.outcome === 'callback_later'){
-    body += '<div style="background:#E0EBFE;border:1.5px solid #BFDBFE;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--navy)"><strong>📞 Call back later</strong></div>';
+    body += '<div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--navy)"><strong>Call back later</strong></div>';
     body += '<div class="fi" style="margin-bottom:14px"><label>Did they give a specific time?</label>'
       +'<div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">'
       +'<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;text-transform:none;letter-spacing:0;color:var(--text);font-weight:500"><input type="radio" name="disp-cb" value="specific" onchange="dispCbChange()" checked/> Yes, specific time</label>'
@@ -6505,14 +6505,14 @@ function renderDisp(){
     body += '<div class="fi"><label>Note (optional)</label><input type="text" id="disp-note" placeholder="What did they say?"/></div>';
   } else if(DISP.outcome === 'consult_booked'){
     var todayStr = new Date().toISOString().slice(0,10);
-    body += '<div style="background:#D1FAE5;border:1.5px solid #6EE7B7;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--navy)"><strong>📅 Booking consultation</strong> · Reminders for this lead will stop</div>';
+    body += '<div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--navy)"><strong>Booking consultation</strong> · Reminders for this lead will stop</div>';
     body += '<div class="fg" style="margin-bottom:14px">'
       +'<div class="fi"><label>Consultation Date *</label><input type="date" id="disp-cs-date" min="'+todayStr+'" value="'+todayStr+'"/></div>'
       +'<div class="fi"><label>Time</label><input type="time" id="disp-cs-time"/></div>'
       +'</div>';
     body += '<div class="fi"><label>Note (optional)</label><input type="text" id="disp-note" placeholder="Anything worth remembering"/></div>';
   } else if(DISP.outcome === 'not_interested'){
-    body += '<div style="background:#FEE2E2;border:1.5px solid #FECACA;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--danger)"><strong>❌ Closing as Lost</strong> · Lead will be hidden from active pipeline but kept for records</div>';
+    body += '<div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--text2)"><strong style="color:var(--warn)">Closing as Lost</strong> · Lead will be hidden from active pipeline but kept for records</div>';
     body += '<div class="fi" style="margin-bottom:14px"><label>Reason *</label>'
       +'<select id="disp-lost-reason" onchange="dispReasonChange()">'
       +'<option value="">— Select reason —</option>'
