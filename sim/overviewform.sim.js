@@ -107,7 +107,10 @@ console.log('\n=== Overview Form restyle sim (Part A) ===');
   ['buildQuoteSection','shouldShowQuoteSection',
    'ofMark','ofToggleEvent','ofSetEvent','ofSetTheme','ofSetThemeOther','ofCountChange','ofPhoneInput','ofPhoneBlur','ofValidate','ofSave','syncQuoteItems',
    'qiAddPackage','qiAddSubLine','qiSetPkgCeremony','ofScheduleAdd',
-   'openOverviewForm','closeOverview','countDropdown','initPhoneInput',
+   /* openOverviewForm intentionally NOT pinned here — the detail-modal layering bug fix
+      (CM('detail-modal') before OM('lead-modal')) legitimately edits it; sim/fix-overview-form.sim.js
+      is the authority for that change. This sim restyled renderOverviewForm, not openOverviewForm. */
+   'closeOverview','countDropdown','initPhoneInput',
    'escHtml','qTot','fR','fmt',
    'openDetail','buildOverviewTab','buildPaymentTab','buildStageCta','buildApptTab','buildNotesTab','buildDocsTab',
    'openAddPay','openEInv','openAdv','openResched','renderDisp','openCancelBooking',
