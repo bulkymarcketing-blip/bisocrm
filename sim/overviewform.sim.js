@@ -104,7 +104,10 @@ console.log('\n=== Overview Form restyle sim (Part A) ===');
 // [6] regression — quote builder + handlers + every other r* + helpers byte-identical
 (function(){
   console.log('\n[6] regression vs HEAD');
-  ['buildQuoteSection','shouldShowQuoteSection',
+  ['shouldShowQuoteSection',
+   /* buildQuoteSection intentionally NOT pinned here — the quote-builder warm-flat restyle
+      legitimately edits it (+ _qiRowHtml/_qiPackageHtml/_qiScheduleHtml); sim/quoteItems.sim.js
+      is the authority for those four renderers. This sim restyled renderOverviewForm. */
    'ofMark','ofToggleEvent','ofSetEvent','ofSetTheme','ofSetThemeOther','ofCountChange','ofPhoneInput','ofPhoneBlur','ofValidate','ofSave','syncQuoteItems',
    'qiAddPackage','qiAddSubLine','qiSetPkgCeremony','ofScheduleAdd',
    /* openOverviewForm intentionally NOT pinned here — the detail-modal layering bug fix

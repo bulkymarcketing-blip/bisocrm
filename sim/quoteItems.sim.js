@@ -170,8 +170,10 @@ const work=mount(WORK,DOC_FNS_W,VARS);
   ].forEach(function(f){vm.runInContext(extractFn(WORK,f),ctx);});
   ctx.OF.draft.quoteItems={
     W:{key:'W',desc:'Bridal',qty:1,unit:125000,disc:0,linkedTo:'wedding'},
+    CUS:{key:'CUS',desc:'Hair trial',qty:1,unit:15000,disc:0,custom:true},
     P:{key:'P',isPackage:true,desc:'Glam Add-ons',qty:1,unit:0,disc:0,custom:true,pkgCeremony:'wedding'},
-    C1:{key:'C1',parentKey:'P',desc:'Hair',qty:1,unit:20000,disc:0,custom:true}
+    C1:{key:'C1',parentKey:'P',desc:'Hair',qty:1,unit:20000,disc:0,custom:true},
+    D:{key:'D',orderDiscount:true,discType:'rs',discValue:30000,desc:'Discount',qty:1,unit:0,disc:0}
   };
   ctx.OF.draft.quoteSchedule={mode:'custom',installments:[{id:'s1',label:'Deposit',amount:50000,due:{type:'confirmation'}}]};
   let html='';let threw=false;
@@ -184,6 +186,23 @@ const work=mount(WORK,DOC_FNS_W,VARS);
   ok(html.indexOf('qiSetPkgCeremony')>=0,'package ceremony selector wired');
   ok(html.indexOf('Payment schedule')>=0&&html.indexOf('Reset to automatic')>=0,'custom schedule editor renders');
   ok(html.indexOf('Total')>=0,'totals render');
+
+  // ---- warm-flat look: quoteItems.sim is the authority for the 4 renderers ----
+  console.log('\n[5b] quote-builder warm-flat look');
+  ['var(--bg)','1.5px','var(--gold)','text-transform:uppercase','⚓','📦','var(--danger)'].forEach(function(bad){
+    ok(html.indexOf(bad)<0,'[5b] no "'+bad+'" in buildQuoteSection markup');
+  });
+  ok(html.indexOf('class="tag ti" style="margin-left:6px">Linked')>=0,'[5b] linked line uses the neutral tag ti "Linked" badge');
+  ok(html.indexOf('border:1px solid var(--navy)')>=0,'[5b] package box border is var(--navy) 1px');
+  ok(html.indexOf('background:var(--navy)')>=0,'[5b] navy Total box present');
+  ok(html.indexOf('>Order discount<')>=0 && html.indexOf('Order Discount')<0,'[5b] "Order discount" sentence-case (no uppercase label)');
+  ok(html.indexOf('var(--text2)')>=0,'[5b] discount summary line de-golded to var(--text2)');
+  ok(html.indexOf('color:var(--warn)')>=0,'[5b] schedule mismatch emits var(--warn)');
+  // matching installments → var(--success); confirm the warn/success validation survives
+  var g=vm.runInContext('ofScheduleGrand()',ctx);
+  ctx.OF.draft.quoteSchedule={mode:'custom',installments:[{id:'m',label:'Full',amount:g,due:{type:'confirmation'}}]};
+  var html2=vm.runInContext('buildQuoteSection()',ctx);
+  ok(html2.indexOf('color:var(--success)')>=0,'[5b] schedule match emits var(--success)');
 })();
 
 // [6] REGRESSION DIFF — untouched compute/binding fns byte-identical vs HEAD
