@@ -67,6 +67,7 @@ A quote/invoice keeps its shape: `{ id, date, expiry?, items, notes, convertedTo
   - **Token minting:** the share button's `shareToken` must be URL-safe `[A-Za-z0-9_-]`, **16–128 chars**, or `getBrideQuote`/`acceptBrideQuote` reject it **`400 bad_token`**.
   - **Page fetch handling** (`bride-portal.html` branches on the HTTP contract): `getBrideQuote` **`200` = the sanitized payload object DIRECTLY** (no `{ok}` wrapper); an **expired** quote still returns **`200` with `expired:true`** (a gentle state — Accept disabled, NOT a 4xx); **`404`** = invalid link; **`429`** = "try again shortly". `acceptBrideQuote`: **`200 {ok:true,…}`** (`justAccepted` or `alreadyAccepted`); **`409 {error:"expired"}`**; **`429`**.
   - **Notifications:** `acceptBrideQuote` writes `/notifications/{uid}` `type:'quote_accepted'` (carries `brideId`) for **every staff uid** → shows in the CRM bell/feed. No special handling needed — just be aware the new feed type exists.
+  - **Payload shapes (post-Cycle-C — `bride-portal.html` must render both variants before any package / custom-schedule quote is shared; flat/auto quotes are unchanged):** a section `rows[]` entry is EITHER a line `{desc, qtyNote, amount}` OR a package group `{package:'<label>', lines:[{desc, qtyNote, amount}]}`; `schedule` is EITHER `{mode:'auto', depositLabel, depositNote, deposit, balanceNote, balance}` OR `{mode:'custom', installments:[{label, note, amount}]}` (both carry a `mode` field).
 
 ## Open frontend items (pre-existing)
 
