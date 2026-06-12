@@ -188,7 +188,7 @@ console.log('\n=== Analytics (rAnalytics) restyle sim ===');
   ['aGetRange','aSetPreset','aSetCustomDate','aInRange','qTot','fR','fRshort','escHtml',
    'aRevenueTrends','aTimeInStage',
    '_briefSection','_briefList','_briefRow','_briefRowLead','_briefMain','_briefDot','_briefEmpty','computeTodaysActions',
-   'rDailyBrief','renderTodaysActions','rSchedule','rQuotations','rInvoices','rFinance',
+   'renderTodaysActions','rSchedule','rQuotations','rInvoices','rFinance',
    'rClients','rMessages','lCard','cardCTA'
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[9] unchanged: '+n));
   // .stats/.stat CSS unchanged from the Finance build (Analytics added/changed no CSS).

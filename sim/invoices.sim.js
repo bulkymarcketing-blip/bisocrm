@@ -104,9 +104,9 @@ console.log('\n=== Invoices restyle sim ===');
 (function(){
   console.log('\n[6] regression vs HEAD');
   ['qTot','invPaid','invInvoiced','invCollected','invOutstanding','openIDoc',
-   '_briefWeddings','_briefAppointments','_briefSinceLastVisit','_briefNeedsAttention','_briefLastVisit','_humanAgo',
+   '_briefAppointments','_briefSinceLastVisit','_briefNeedsAttention','_briefLastVisit','_humanAgo',
    '_briefSection','_briefList','_briefRow','_briefRowLead','_briefMain','_briefDot','_briefEmpty',
-   'computeTodaysActions','rDailyBrief','renderTodaysActions','rSchedule','rQuotations',
+   'computeTodaysActions','renderTodaysActions','rSchedule','rQuotations',
    'rClients','rMessages','lCard','cardCTA'
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[6] unchanged: '+n));
 })();

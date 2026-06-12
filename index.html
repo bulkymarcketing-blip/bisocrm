@@ -5639,14 +5639,14 @@ function _humanAgo(date){
   return fmt(date.toISOString());
 }
 
-// Section 2: weddings in next 7 days (confirmed brides only)
+// Section 2: weddings in next 60 days (confirmed brides only)
 function _briefWeddings(){
   var weddings = [];
   Object.values(brides).forEach(function(b){
     if(!b.confirmed || b.cancelled || b.lost) return;
     if(!b.weddingDate) return;
     var d = dU(b.weddingDate);
-    if(d === null || d < 0 || d > 7) return;
+    if(d === null || d < 0 || d > 60) return;
     // Compute balance using shared invPaid helper
     var totalDue = 0, totalPaid = 0;
     Object.values(b.invoices||{}).forEach(function(inv){
@@ -5670,12 +5670,15 @@ function _briefWeddings(){
     var ev = b.events || {};
     var theme = (ev.wedding && ev.wedding.theme) || '';
     var bmCount = (ev.wedding && ev.wedding.bridesmaids) || 0;
+    var wBand = d<=7?'week':d<=14?'2w':d<=30?'1m':'2m';
+    var wOutstanding = (!finalTrial) || (balance>0);
     weddings.push({
       id:b.id, name:b.name||'(no name)',
       weddingDate:b.weddingDate, daysAway:d,
       balance:balance, paidInFull:balance<=0 && totalDue>0,
       finalTrial:finalTrial, finalTrialMissing:!finalTrial,
-      theme:theme, bmCount:bmCount
+      theme:theme, bmCount:bmCount,
+      outstanding:wOutstanding, band:wBand
     });
   });
   weddings.sort(function(a,b){return a.daysAway - b.daysAway;});
@@ -5970,25 +5973,27 @@ function rDailyBrief(){
   var actionsHtml = renderTodaysActions(actions, f);
   if(actionsHtml) body += actionsHtml;
 
-  // --- This week's weddings ---
+  // --- Upcoming weddings (confirmed; <=60d; >7d shown only if outstanding) ---
   var fWed = searching ? weddings.filter(function(w){return _briefMatchesQ(w.name);}) : weddings;
+  fWed = fWed.filter(function(w){return w.daysAway<=7 || w.outstanding;});
   if(fWed.length > 0 && (f==='all'||f==='visits')){
     var wedRows = fWed.map(function(w){
       var dayLabel = w.daysAway===0 ? 'Today' : w.daysAway===1 ? 'Tomorrow' : 'in '+w.daysAway+' days';
       var dayColor = w.daysAway<=2 ? 'var(--danger)' : w.daysAway<=5 ? 'var(--warn)' : '#5B7FA6';
       var wdate = new Date(w.weddingDate).toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short'});
       var bits = [wdate];
-      if(w.balance > 0) bits.push('<span style="color:var(--danger)">Balance '+fR(w.balance)+'</span>');
+      if(w.balance > 0) bits.push('<span style="color:'+(w.daysAway<=7?'var(--danger)':'var(--warn)')+'">Balance '+fR(w.balance)+'</span>');
       else if(w.paidInFull) bits.push('<span style="color:var(--success)">Paid in full</span>');
       else bits.push('No invoice yet');
       if(w.finalTrial) bits.push('Final trial '+fmt(w.finalTrial.date)+(w.finalTrial.time?' at '+w.finalTrial.time:''));
       else bits.push('<span style="color:var(--warn)">Final trial not booked</span>');
       if(w.theme) bits.push(escHtml(w.theme));
       if(w.bmCount) bits.push(w.bmCount+' BM'+(w.bmCount!==1?'s':''));
-      var right = '<span style="font-size:11px;font-weight:600;color:'+dayColor+';white-space:nowrap">'+dayLabel+'</span>';
+      var bandLbl = ({week:'This week','2w':'2 weeks','1m':'1 month','2m':'2 months'})[w.band] || '';
+      var right = '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px"><span style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">'+bandLbl+'</span><span style="font-size:11px;font-weight:600;color:'+dayColor+';white-space:nowrap">'+dayLabel+'</span></div>';
       return _briefRow(dayColor, _briefMain(escHtml(w.name), bits.join(' · ')), right, "openDetail('"+escAttr(w.id)+"')");
     });
-    body += _briefSection('This week’s weddings', {count:fWed.length}, _briefList(wedRows));
+    body += _briefSection('Upcoming weddings', {count:fWed.length}, _briefList(wedRows));
   }
 
   // --- This week's appointments (event-type dot) ---

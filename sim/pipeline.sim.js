@@ -129,7 +129,7 @@ console.log('\n=== Pipeline redesign sim ===');
 // [6] regression (a) — compute/data untouched
 (function(){
   console.log('\n[6] regression (a): compute/data byte-identical vs HEAD');
-  ['computeTodaysActions','_briefWeddings','_briefAppointments','_briefSinceLastVisit','_briefNeedsAttention','_briefLastVisit','_humanAgo','pipelineMetrics']
+  ['computeTodaysActions','_briefAppointments','_briefSinceLastVisit','_briefNeedsAttention','_briefLastVisit','_humanAgo','pipelineMetrics']
     .forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[6] unchanged: '+n));
 })();
 
@@ -152,7 +152,8 @@ console.log('\n=== Pipeline redesign sim ===');
 // [8] regression (b) — Daily Brief untouched this branch (shared .fpills unchanged)
 (function(){
   console.log('\n[8] regression (b): Daily Brief untouched (shared .fpills)');
-  ok(extractFn(HEAD,'rDailyBrief')===extractFn(WORK,'rDailyBrief'), '[8] rDailyBrief byte-identical to HEAD');
+  // rDailyBrief intentionally NOT byte-pinned here — the wedding-nears feature legitimately
+  // edits it + _briefWeddings; dailyBrief.sim is the authority for the Brief now.
   ok(extractFn(HEAD,'renderTodaysActions')===extractFn(WORK,'renderTodaysActions'), '[8] renderTodaysActions byte-identical to HEAD');
   ok(WORK.indexOf('.fpills{display:flex;gap:8px;margin:2px 0 18px;flex-wrap:wrap}')>=0, '[8] Brief .fpills rule unchanged (filter pills still wrap)');
 })();

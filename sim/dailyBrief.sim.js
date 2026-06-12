@@ -174,7 +174,7 @@ const SRC = buildSource(WORK);
   const html = render(ctx, SRC);
   sane(html, 'A');
   ok(html.indexOf('caught up') >= 0, 'A: "You’re all caught up" summary');
-  ok(html.indexOf('This week’s weddings') < 0, 'A: empty weddings section hidden');
+  ok(html.indexOf('Upcoming weddings') < 0, 'A: empty weddings section hidden');
   ok(html.indexOf('This week’s appointments') < 0, 'A: empty appointments section hidden');
   // flat list primitives: rows sit on the canvas, no card surf/shadow/radius
   var lst = vm.runInContext("_briefList(['<div>x</div>','<div>y</div>'])", ctx);
@@ -200,7 +200,7 @@ const SRC = buildSource(WORK);
   ok(html.indexOf('Appointments to confirm') >= 0 && html.indexOf('Bianca Silva') >= 0, 'B: Appointments to confirm');
   ok(html.indexOf('Quotes to send') >= 0 && html.indexOf('Carol Fernando') >= 0, 'B: Quotes to send');
   ok(html.indexOf('Payments') >= 0 && html.indexOf('Dilini Jay') >= 0, 'B: Payments task section');
-  ok(html.indexOf('This week’s weddings') >= 0, 'B: weddings section header');
+  ok(html.indexOf('Upcoming weddings') >= 0, 'B: weddings section header');
   ok(html.indexOf('Needs attention') >= 0 && html.indexOf('Fiona Soon') >= 0, 'B: Needs attention');
   ok(html.indexOf('#5B7FA6') >= 0, 'B: appointment event-type dot colour present');
   ok(html.indexOf('openDetail(') >= 0 && html.indexOf('openDisp(') >= 0, 'B: row onclick actions wired');
@@ -298,11 +298,11 @@ const SRC = buildSource(WORK);
   ok(all.indexOf('class="fpill') >= 0, 'H: filter pills render');
   ['All','Leads','Quotes','Visits'].forEach(function(l){ ok(all.indexOf('>'+l+'</button>') >= 0, 'H: pill '+l+' present'); });
   ok(all.indexOf('class="fpill on" onclick="setBriefFilter(\'all\')"') >= 0, 'H: default All pill is active (.on)');
-  ok(all.indexOf('Follow-ups')>=0 && all.indexOf('Quotes to send')>=0 && all.indexOf('Payments')>=0 && all.indexOf('This week’s weddings')>=0 && all.indexOf('New enquiries')>=0 && all.indexOf('Since last visit')>=0, 'H: All shows every section');
+  ok(all.indexOf('Follow-ups')>=0 && all.indexOf('Quotes to send')>=0 && all.indexOf('Payments')>=0 && all.indexOf('Upcoming weddings')>=0 && all.indexOf('New enquiries')>=0 && all.indexOf('Since last visit')>=0, 'H: All shows every section');
 
   const q = r('quotes');
   ok(q.indexOf('Quotes to send') >= 0, 'H: quotes shows Quotes to send');
-  ok(q.indexOf('Follow-ups')<0 && q.indexOf('Appointments to confirm')<0 && q.indexOf('Payments')<0 && q.indexOf('New enquiries')<0 && q.indexOf('Needs attention')<0 && q.indexOf('This week’s weddings')<0 && q.indexOf('This week’s appointments')<0 && q.indexOf('Since last visit')<0, 'H: quotes hides every non-Quotes section');
+  ok(q.indexOf('Follow-ups')<0 && q.indexOf('Appointments to confirm')<0 && q.indexOf('Payments')<0 && q.indexOf('New enquiries')<0 && q.indexOf('Needs attention')<0 && q.indexOf('Upcoming weddings')<0 && q.indexOf('This week’s appointments')<0 && q.indexOf('Since last visit')<0, 'H: quotes hides every non-Quotes section');
   ok(q.indexOf('class="fpill on" onclick="setBriefFilter(\'quotes\')"') >= 0, 'H: Quotes pill is the active (gold) one');
 
   const ld = r('leads');
@@ -336,9 +336,53 @@ const SRC = buildSource(WORK);
   ok(out[1] === relabel(out[2]), "I: renderTodaysActions(actions,'all') === HEAD after stage relabel");
 })();
 
+// W — wedding-nears feature: 60d window, surface only when outstanding, milestone band, balance colour.
+(function(){
+  console.log('\n[W] upcoming weddings (60d window + outstanding gate + bands)');
+  var paidInv  = {i:{items:[{amount:100000}],payments:{p:{amount:100000}}}}; // due 100k, paid 100k -> balance 0
+  var oweInv   = {i:{items:[{amount:100000}],payments:{p:{amount:40000}}}};   // balance 60k
+  var ftAppt   = {t:{reason:'Final Trial',date:isoDay(2)}};
+  function bride(id,off,inv,appts){return {id:id,name:id,confirmed:true,weddingDate:isoDay(off),invoices:inv,appointments:appts||{}};}
+  function wHtml(b){ const ctx=makeSandbox(); ctx.brides={x:b}; return render(ctx, SRC); }
+  // Slice ONLY the "Upcoming weddings" section (it precedes "This week’s appointments")
+  // so a Final-Trial appt surfacing the bride in the appointments section can't false-match.
+  function wSec(b){ var h=wHtml(b); var i=h.indexOf('Upcoming weddings'); if(i<0) return ''; var j=h.indexOf('This week’s appointments', i); return h.slice(i, j<0?h.length:j); }
+
+  // included / excluded (scoped to the weddings section)
+  ok(wSec(bride('W5paid',5,paidInv,ftAppt)).indexOf('W5paid')>=0,'[W] 5d paid+trial INCLUDED (<=7 always)');
+  ok(wSec(bride('W13paid',13,paidInv,ftAppt)).indexOf('W13paid')<0,'[W] 13d paid+trial EXCLUDED (nothing outstanding)');
+  ok(wSec(bride('W13bal',13,oweInv,ftAppt)).indexOf('W13bal')>=0,'[W] 13d balance>0 INCLUDED');
+  ok(wSec(bride('W28nt',28,paidInv,{})).indexOf('W28nt')>=0,'[W] 28d trial MISSING INCLUDED');
+  ok(wSec(bride('W55bal',55,oweInv,ftAppt)).indexOf('W55bal')>=0,'[W] 55d balance>0 INCLUDED');
+  ok(wSec(bride('W50paid',50,paidInv,ftAppt)).indexOf('W50paid')<0,'[W] 50d paid+trial EXCLUDED');
+  ok(wSec(bride('W65bal',65,oweInv,ftAppt)).indexOf('W65bal')<0,'[W] 65d EXCLUDED (outside 60d window)');
+
+  // band labels (within the weddings section)
+  ok(wSec(bride('W5paid',5,paidInv,ftAppt)).indexOf('This week')>=0,'[W] 5d band "This week"');
+  ok(wSec(bride('W13bal',13,oweInv,ftAppt)).indexOf('2 weeks')>=0,'[W] 13d band "2 weeks"');
+  ok(wSec(bride('W28nt',28,paidInv,{})).indexOf('1 month')>=0,'[W] 28d band "1 month"');
+  ok(wSec(bride('W55bal',55,oweInv,ftAppt)).indexOf('2 months')>=0,'[W] 55d band "2 months"');
+
+  // balance colour: red only when imminent (<=7d), amber otherwise
+  ok(wSec(bride('W5bal',5,oweInv,ftAppt)).indexOf('color:var(--danger)">Balance')>=0,'[W] 5d balance shown RED (<=7d)');
+  var s13=wSec(bride('W13bal',13,oweInv,ftAppt));
+  ok(s13.indexOf('color:var(--warn)">Balance')>=0,'[W] 13d balance shown AMBER (>7d)');
+  ok(s13.indexOf('color:var(--danger)">Balance')<0,'[W] 13d balance NOT red');
+  ok(wSec(bride('W55bal',55,oweInv,ftAppt)).indexOf('color:var(--warn)">Balance')>=0,'[W] 55d balance shown AMBER');
+
+  // section title + guard
+  ok(wHtml(bride('W5paid',5,paidInv,ftAppt)).indexOf('Upcoming weddings')>=0,'[W] section title "Upcoming weddings"');
+  var canc={id:'Wcanc',name:'Wcanc',confirmed:true,cancelled:true,weddingDate:isoDay(10),invoices:oweInv,appointments:{}};
+  ok(wSec(canc).indexOf('Wcanc')<0,'[W] cancelled bride never appears');
+  var unconf={id:'Wunc',name:'Wunc',confirmed:false,weddingDate:isoDay(10),invoices:oweInv,appointments:{}};
+  ok(wSec(unconf).indexOf('Wunc')<0,'[W] unconfirmed bride never appears');
+})();
+
 console.log('\n[REGRESSION] untouched functions vs git HEAD');
 const UNTOUCHED = [
-  'computeTodaysActions', '_briefWeddings', '_briefAppointments', '_briefSinceLastVisit',
+  // _briefWeddings intentionally NOT pinned — the wedding-nears feature (60d window + outstanding/band)
+  // legitimately edits it; the [W] scenarios below are its behavioral authority.
+  'computeTodaysActions', '_briefAppointments', '_briefSinceLastVisit',
   '_briefNeedsAttention', '_briefLastVisit', '_humanAgo', 'isQuietMode', 'setQuietMode',
   'toggleActionGroup', 'openQuietPicker', 'applyQuiet', 'resumeReminders',
   'listIntake', 'listPendingRequests', 'describeRequest', '_intakeEvents', '_intakeWhenLabel',
