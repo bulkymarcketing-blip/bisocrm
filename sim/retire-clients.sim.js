@@ -62,7 +62,8 @@ console.log('\n=== Retire Confirmed Clients (rClients) sim ===');
   const rc=extractFn(WORK,'rCustomers');
   ok(rc.indexOf("['clients','Clients']")>=0,'[5] rCustomers still has the [clients,Clients] pill');
   ok(rc.indexOf("f==='clients'")>=0,'[5] rCustomers still has the f===clients filter logic');
-  ok(extractFn(HEAD,'rCustomers')===rc,'[5] rCustomers byte-identical to HEAD');
+  // (rCustomers byte-identical-to-HEAD dropped — profiles.sim owns rCustomers; the phone-format
+  //  fix legitimately edits it. The pill + filter checks above still prove the clients-filter survives.)
 })();
 
 // [6] rClients orphaned: body byte-identical, comment added above
@@ -75,7 +76,7 @@ console.log('\n=== Retire Confirmed Clients (rClients) sim ===');
 // [7] regression — every other r* render + helpers byte-identical
 (function(){
   console.log('\n[7] regression vs HEAD');
-  ['rDailyBrief','renderTodaysActions','rPipeline','rSchedule','rQuotations','rCustomers','rInvoices','rFinance','rAnalytics',
+  ['rDailyBrief','renderTodaysActions','rPipeline','rSchedule','rQuotations','rInvoices','rFinance','rAnalytics',
    'rClients','rMessages','lCard','cardCTA','aLeadSourcePerf','aConversionFunnel',
    'buildOverviewTab','buildPaymentTab','buildStageCta','openDetail','computeTodaysActions',
    '_briefSection','_briefList','_briefRow','_briefRowLead','_briefMain','_briefDot','_briefEmpty',

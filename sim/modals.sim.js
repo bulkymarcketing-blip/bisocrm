@@ -162,7 +162,7 @@ console.log('\n=== Action-modal restyle sim ===');
    'saveDisp','pickDisp','closeDisp','openDisp','dispRemChange','dispCbChange','dispReasonChange',
    'qTot','cLine','invPaid','fR','fmt','escHtml','brideTotal','brideCollected','brideOutstanding',
    'openDetail','buildOverviewTab','buildPaymentTab','buildStageCta','buildApptTab','buildNotesTab','buildDocsTab',
-   'rDailyBrief','renderTodaysActions','rPipeline','rSchedule','rQuotations','rCustomers','rInvoices','rFinance','rAnalytics',
+   'rDailyBrief','renderTodaysActions','rPipeline','rSchedule','rQuotations','rInvoices','rFinance','rAnalytics',
    'rClients','rMessages','lCard','cardCTA'
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[7] unchanged: '+n));
 })();

@@ -1776,7 +1776,7 @@ function rCustomers(){
     var rows=all.map(function(c){
       var isClient=Object.keys(c.invoices||{}).length>0;
       var tagHtml=isClient ? '<span class="tag ts">Client</span>' : '<span class="tag ti">Lead</span>';
-      return _briefRowLead('<span class="ini">'+_initials(c.name)+'</span>', _briefMain(escHtml(c.name||'(no name)'), escHtml(c.phone||'—')), tagHtml, "openCust('"+c.id+"')");
+      return _briefRowLead('<span class="ini">'+_initials(c.name)+'</span>', _briefMain(escHtml(c.name||'(no name)'), (c.phone?escHtml(fmtPhone(c.phone)):'—')), tagHtml, "openCust('"+c.id+"')");
     });
     body=_briefList(rows);
   } else {

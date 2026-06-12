@@ -235,7 +235,7 @@ console.log('\n=== Detail view restyle sim (Part 1 + Part 2) ===');
    'brideTotal','brideCollected','brideOutstanding','netHeld','qTot','invPaid','invInvoiced','invCollected','invOutstanding','cLine','_canon',
    'fR','fmt','dU','escHtml','escAttr','getSources',
    '_briefSection','_briefList','_briefRow','_briefRowLead','_briefMain','_briefDot','_briefEmpty','computeTodaysActions',
-   'rDailyBrief','renderTodaysActions','rPipeline','rSchedule','rQuotations','rCustomers','rInvoices','rFinance','rAnalytics',
+   'rDailyBrief','renderTodaysActions','rPipeline','rSchedule','rQuotations','rInvoices','rFinance','rAnalytics',
    'aLeadSourcePerf','aConversionFunnel','rClients','rMessages','lCard','cardCTA'
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[10] unchanged: '+n));
 })();

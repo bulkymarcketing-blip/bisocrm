@@ -33,17 +33,16 @@ const W=navArr(WORK), H=navArr(HEAD);
   ok(W.find(n=>n.id==='messages').sec!=='Finance','[1] Messages no longer under Finance');
 })();
 
-// [2] every other entry unchanged vs HEAD; only messages moved + its sec changed
+// [2] NAV byte-identical vs HEAD (the Messages→Communication move is now baked into HEAD;
+//     later tasks must not perturb NAV).
 (function(){
-  console.log('\n[2] other entries byte-identical vs HEAD');
+  console.log('\n[2] NAV byte-identical vs HEAD');
   ok(W.length===H.length,'[2] same entry count ('+W.length+')');
+  ok(JSON.stringify(W)===JSON.stringify(H),'[2] full NAV array byte-identical to HEAD');
   W.forEach(function(n){
     const h=H.find(x=>x.id===n.id);
-    ok(h && n.lbl===h.lbl && n.ic===h.ic,'[2] '+n.id+' lbl + ic unchanged');
-    if(n.id!=='messages') ok(n.sec===h.sec,'[2] '+n.id+' sec unchanged');
+    ok(h && n.lbl===h.lbl && n.ic===h.ic && n.sec===h.sec,'[2] '+n.id+' lbl + ic + sec unchanged');
   });
-  const hm=H.find(x=>x.id==='messages');
-  ok(hm.sec===null && W[1].sec==='Communication','[2] messages sec null → Communication (only change to messages)');
 })();
 
 // [3] buildNav renders a Communication header with Messages beneath

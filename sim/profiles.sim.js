@@ -41,7 +41,7 @@ function render(filter,q){
   };
   sandbox.cA=function(){return Object.values(sandbox.custs);};
   const ctx=vm.createContext(sandbox);
-  ['_briefMain','_briefList','_briefEmpty','_briefSection','_initials','_briefRowLead','rCustomers']
+  ['_briefMain','_briefList','_briefEmpty','_briefSection','_initials','_briefRowLead','fmtPhone','rCustomers']
     .forEach(f=>vm.runInContext(extractFn(WORK,f),ctx));
   vm.runInContext('rCustomers();',ctx);
   return store['MC'].innerHTML;
@@ -57,8 +57,19 @@ console.log('\n=== Profiles (rCustomers) restyle sim ===');
   ['<table','<thead','class="card"','openNC(','+ New'].forEach(bad=>ok(h.indexOf(bad)<0,'[1] no legacy "'+bad+'"'));
   ok(h.indexOf('>Directory<')>=0,'[1] _briefSection title "Directory"');
   ok(h.indexOf('class="ini">')>=0,'[1] rows use the .ini avatar');
-  ok(h.indexOf('Alice Perera')>=0 && h.indexOf('94771234567')>=0,'[1] avatar row shows name + phone');
+  ok(h.indexOf('Alice Perera')>=0,'[1] avatar row shows name');
   ok(h.indexOf('openCust(')>=0,'[1] row onclick openCust');
+})();
+
+// [1b] phone formatted via fmtPhone (not raw 94…); blank phone -> em-dash
+(function(){
+  console.log('\n[1b] phone formatting');
+  const h=render('all');
+  ok(h.indexOf('+94 77 123 4567')>=0,'[1b] Alice phone shown formatted (+94 77 123 4567)');
+  ok(h.indexOf('94771234567')<0,'[1b] raw "94771234567" digits no longer shown');
+  ok(h.indexOf('+94 77 222 3333')>=0,'[1b] Bianca phone formatted too');
+  // Carol Anne Fernando has a blank phone -> em-dash sub-line
+  ok(h.indexOf('>—</div>')>=0,'[1b] blank phone renders the em-dash');
 })();
 
 // [2] pills + tags + initials
@@ -94,7 +105,7 @@ console.log('\n=== Profiles (rCustomers) restyle sim ===');
       escHtml(s){return s==null?'':String(s);},document:{getElementById:function(id){return store[id]||(store[id]={innerHTML:''});}}};
     sb.cA=function(){return Object.values(sb.custs);};
     const ctx=vm.createContext(sb);
-    ['_briefMain','_briefList','_briefEmpty','_briefSection','_initials','_briefRowLead','rCustomers'].forEach(f=>vm.runInContext(extractFn(WORK,f),ctx));
+    ['_briefMain','_briefList','_briefEmpty','_briefSection','_initials','_briefRowLead','fmtPhone','rCustomers'].forEach(f=>vm.runInContext(extractFn(WORK,f),ctx));
     vm.runInContext('rCustomers();',ctx);return store['MC'].innerHTML;
   }
   ok(emptyRender({},'all').indexOf('No profiles yet')>=0,'[4] none at all -> "No profiles yet"');
