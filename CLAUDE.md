@@ -102,11 +102,12 @@ White-background modern productivity app — “warm minimalism” (Linear / Thi
 - **Phase 7 — Data screens — COMPLETE: Quotations + Profiles + Invoices + Finance + Analytics all shipped.** Built on the Phase-4 `_brief*` vocabulary + the Phase-5/6 `.fpill` pill + flat-card patterns (see below).
 - **Phase 8 — Overview Form / bride detail & modals — COMPLETE:** bride detail view, action modals, Overview Form capture, AND the embedded quote builder restyle (this entry). The screen-by-screen pass now covers every main workflow screen. Printed documents (`openQDoc`/`openIDoc`/`buildReceipt`) remain **OUT** of the redesign lane (engineering/documents chat, keep Cinzel).
 - **Cinzel-on-screen cleanup + notification-panel calm — SHIPPED** (this entry; see the redesign log below).
-- **Remaining design work:** the **Settings screen (`rSettings`)** restyle — still old-look (`var(--bg)` boxes, 1.5px borders); plus the **Phase 9 polish tail** (Customer Profiles → Profiles title, raw phone formatting, the consultation→visit wording sweep).
+- **Settings restyle + the Profiles title — SHIPPED** (this entry; see the redesign log below).
+- **Remaining design work:** phone formatting (the raw "94…" display), then the consultation→visit wording sweep (display-only — "Consultation" stays as the stored `appt.reason` value).
 - **Confirmed Clients screen (`rClients`) RETIRED** — removed from the nav / route / TITLES, and the post-confirm redirect now lands on Schedule. Its job is covered by Schedule (weddings) + Profiles-Clients (directory) + Invoices/detail (payment).
 - **Phase-9 dead-code sweep now covers:** the orphaned `rClients` body, plus `aRevenueTrends` + `aTimeInStage`.
 - **Redesign progress: Phases 1–7 done.**
-- **Next: the Settings restyle.**
+- **Next: phone formatting.**
 - **CONFIRMED page is DROPPED** from the redesign and from nav — Schedule is the chronological home for committed weddings, Profiles is the client directory, and the bride detail (`openDetail`) holds the full record.
 
 ### The token system AS SHIPPED — do NOT revert
@@ -158,6 +159,7 @@ In `:root` inside the app `<style>` at the top of `index.html`:
    - **KEPT for their own future pass:** the `rMessages` "WhatsApp Inbox" stub (Cycle E), `aRevenueTrends`/`aTimeInStage` (uncalled, Phase-9 dead-code), and `.card-title` (used only in the retired `rClients`).
    - The avatar's gold ring kept as a deliberate brand accent (not de-golded).
    - **Sim:** `sim/notif-titles.sim.js` (37 checks). `sim/docRedesign.sim.js` had a pre-existing stale constant refreshed.
+1. **Settings restyle (+ Profiles title) — DONE.** `rSettings` restyled to the warm-flat look (presentation only — every handler and the tab/field structure byte-identical). The price-override rows, custom-service rows, and source rows → flat `var(--surf)` boxes with 1px borders; the price input → grey `var(--bg)` field matching the global inputs; the Data tab "Backfill" card de-blued (`#EFF6FF`/`#BFDBFE` → `var(--surf)` + 1px); the two "Remove" buttons de-redded (`var(--danger)` → `var(--muted)`, config-row removal being recoverable). The tabs, `.card`, `.fi`, and global inputs were already on-system and left untouched. **`TITLES.customers`:** `'Customer Profiles'` → `'Profiles'`. **Sim:** `sim/settings.sim.js` (50 checks). `rSettings` dropped from 9 prior sims' pin lists; `retire-clients.sim`'s TITLES check updated to `customers:'Profiles'`.
 1. **Login decision + final polish & consistency sweep.**
 
 ### Phase 4 — component vocabulary (introduced in `rDailyBrief`, REUSE in Phases 5–6)
