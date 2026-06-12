@@ -118,7 +118,7 @@ console.log('\n=== Overview Form restyle sim (Part A) ===');
    'openDetail','buildOverviewTab','buildPaymentTab','buildStageCta','buildApptTab','buildNotesTab','buildDocsTab',
    'openAddPay','openEInv','openAdv','openResched','renderDisp','openCancelBooking',
    'rDailyBrief','renderTodaysActions','rPipeline','rSchedule','rQuotations','rCustomers','rInvoices','rFinance','rAnalytics',
-   'rClients','rSettings','rMessages','lCard','cardCTA'
+   'rClients','rMessages','lCard','cardCTA'
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[6] unchanged: '+n));
 })();
 

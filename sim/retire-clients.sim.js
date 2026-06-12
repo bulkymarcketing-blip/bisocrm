@@ -45,7 +45,7 @@ console.log('\n=== Retire Confirmed Clients (rClients) sim ===');
   console.log('\n[3] TITLES');
   const tW=literal(WORK,'const TITLES={','};');
   ok(tW!==null && tW.indexOf("clients:'Confirmed Clients'")<0 && tW.indexOf('clients:')<0,'[3] TITLES has no clients key');
-  ok(tW.indexOf("customers:'Customer Profiles'")>=0,'[3] TITLES still has customers');
+  ok(tW.indexOf("customers:'Profiles'")>=0,'[3] TITLES still has customers (now Profiles)');
 })();
 
 // [4] post-confirm redirect moved to Schedule
@@ -76,7 +76,7 @@ console.log('\n=== Retire Confirmed Clients (rClients) sim ===');
 (function(){
   console.log('\n[7] regression vs HEAD');
   ['rDailyBrief','renderTodaysActions','rPipeline','rSchedule','rQuotations','rCustomers','rInvoices','rFinance','rAnalytics',
-   'rClients','rSettings','rMessages','lCard','cardCTA','aLeadSourcePerf','aConversionFunnel',
+   'rClients','rMessages','lCard','cardCTA','aLeadSourcePerf','aConversionFunnel',
    'buildOverviewTab','buildPaymentTab','buildStageCta','openDetail','computeTodaysActions',
    '_briefSection','_briefList','_briefRow','_briefRowLead','_briefMain','_briefDot','_briefEmpty',
    'qTot','fR','fmt','dU','escHtml','brideTotal','brideCollected','brideOutstanding','setCustFilter'

@@ -189,7 +189,7 @@ console.log('\n=== Analytics (rAnalytics) restyle sim ===');
    'aRevenueTrends','aTimeInStage',
    '_briefSection','_briefList','_briefRow','_briefRowLead','_briefMain','_briefDot','_briefEmpty','computeTodaysActions',
    'rDailyBrief','renderTodaysActions','rPipeline','rSchedule','rQuotations','rCustomers','rInvoices','rFinance',
-   'rClients','rSettings','rMessages','lCard','cardCTA'
+   'rClients','rMessages','lCard','cardCTA'
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[9] unchanged: '+n));
   // .stats/.stat CSS unchanged from the Finance build (Analytics added/changed no CSS).
   // NOTE: assert the Finance stat-grid rules are byte-identical rather than the WHOLE <style>

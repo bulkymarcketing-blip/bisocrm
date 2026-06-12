@@ -528,7 +528,7 @@ const NAV=[
   {id:'finance',lbl:'Finance',ic:'<svg viewBox=\"0 0 24 24\"><line x1=\"12\" y1=\"2\" x2=\"12\" y2=\"22\"/><path d=\"M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6\"/></svg>',sec:null},
   {id:'settings',lbl:'Settings',ic:'<svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z\"/></svg>',sec:'Settings'}
 ];
-const TITLES={dailyBrief:'Daily Brief',pipeline:'Pipeline',analytics:'Analytics',customers:'Customer Profiles',schedule:'Schedule',quotations:'Quotations',invoices:'Invoices',finance:'Finance',settings:'Settings',messages:'Messages'};
+const TITLES={dailyBrief:'Daily Brief',pipeline:'Pipeline',analytics:'Analytics',customers:'Profiles',schedule:'Schedule',quotations:'Quotations',invoices:'Invoices',finance:'Finance',settings:'Settings',messages:'Messages'};
 let leads={},custs={},view='dailyBrief',q='';
 let _cb=null;
 async function fbG(p){
@@ -5394,7 +5394,7 @@ function rSettings(tab){
   var pi='';
   SVCS.filter(function(sv){return sv.aA||sv.b>0;}).forEach(function(sv){
     var pid='p-'+sv.d.replace(/[^a-z0-9]/gi,'_');
-    pi+='<div style="display:flex;align-items:center;gap:10px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 13px"><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+sv.d+'</div><div style="font-size:11px;color:var(--muted)">'+sv.c+' · Default Rs '+sv.b.toLocaleString()+'</div></div><input type="text" inputmode="numeric" id="'+pid+'" value="'+groupMoney(lp[sv.d]||'')+'" placeholder="'+sv.b+'" onblur="onMoneyBlur(this)" style="width:110px;text-align:right;background:#fff;border:1.5px solid var(--border);border-radius:6px;padding:6px 9px;font-size:13px;font-family:Inter,sans-serif;color:var(--text);outline:none"/></div>';
+    pi+='<div style="display:flex;align-items:center;gap:10px;background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:10px 13px"><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+sv.d+'</div><div style="font-size:11px;color:var(--muted)">'+sv.c+' · Default Rs '+sv.b.toLocaleString()+'</div></div><input type="text" inputmode="numeric" id="'+pid+'" value="'+groupMoney(lp[sv.d]||'')+'" placeholder="'+sv.b+'" onblur="onMoneyBlur(this)" style="width:110px;text-align:right;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 9px;font-size:13px;font-family:Inter,sans-serif;color:var(--text);outline:none"/></div>';
   });
   var it='<div class="fi" style="margin-bottom:18px"><label>Default Notes / Terms</label><textarea id="s-notes" style="min-height:130px">'+escHtml(s.defaultNotes||defNotes())+'</textarea></div><div class="fi" style="margin-bottom:18px"><label>Default Bespeaking Fee (Rs)</label><input type="text" inputmode="numeric" id="s-besp" value="'+groupMoney(parseFloat(s.defaultBespeaking)||50000)+'" onblur="onMoneyBlur(this)"/></div><div class="fi" style="margin-bottom:18px"><label>Company Logo URL</label><input type="text" id="s-logo" value="'+escHtml(s.logoUrl||'')+'" placeholder="https://... image URL"/></div><div class="fi" style="margin-bottom:18px"><label>Balance Due (days before wedding)</label><input type="text" inputmode="numeric" id="s-baldays" value="'+(parseInt(s.balanceDueDays,10)||14)+'"/></div><div class="fi" style="margin-bottom:18px"><label>Bank Details (shown on documents)</label><textarea id="s-bank" placeholder="Bank · Account name · Account no · Branch">'+escHtml(s.bankDetails||'')+'</textarea></div><button class="btn btn-primary" onclick="saveInvS()">Save Invoice Settings</button>';
   var pt='<div style="margin-bottom:12px;font-size:13px;color:var(--muted)">Override defaults. Leave blank to use default.</div><div style="display:flex;flex-direction:column;gap:8px">'+pi+'</div><button class="btn btn-primary" style="margin-top:14px" onclick="savePriceS()">Save Prices</button>';
@@ -5402,10 +5402,10 @@ function rSettings(tab){
   var csList=getCustomSvcs();
   var csRows='';
   csList.forEach(function(cs,idx){
-    csRows+='<div style="display:flex;align-items:center;gap:8px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:6px">'
+    csRows+='<div style="display:flex;align-items:center;gap:8px;background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:6px">'
       +'<input type="text" value="'+escHtml(cs.d)+'" data-cidx="'+idx+'" class="cs-name" placeholder="Service name" style="flex:1;min-width:0"/>'
       +'<input type="number" value="'+(Number(cs.b)||0)+'" data-cidx="'+idx+'" class="cs-price" placeholder="Rs" style="width:100px;text-align:right"/>'
-      +'<button class="btn btn-ghost btn-xs" style="color:var(--danger)" onclick="removeCustomSvc('+idx+')">Remove</button>'
+      +'<button class="btn btn-ghost btn-xs" style="color:var(--muted)" onclick="removeCustomSvc('+idx+')">Remove</button>'
       +'</div>';
   });
   pt+='<div style="margin-top:26px;border-top:1px solid var(--border);padding-top:18px"><div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:4px">Your Custom Services</div>'
@@ -5413,14 +5413,14 @@ function rSettings(tab){
     +(csRows||'<div style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:8px">No custom services yet.</div>')
     +'<div style="display:flex;gap:8px;margin-top:10px"><input type="text" id="newCsName" placeholder="New service name" style="flex:1;min-width:0"/><input type="text" inputmode="numeric" id="newCsPrice" placeholder="Rs" onblur="onMoneyBlur(this)" style="width:100px;text-align:right"/><button class="btn btn-outline btn-sm" onclick="addCustomSvc()">+ Add</button></div>'
     +'<button class="btn btn-primary" style="margin-top:14px" onclick="saveCustomSvcs()">Save Custom Services</button></div>';
-  var dt='<div style="background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:10px;padding:18px;margin-bottom:14px"><div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:7px">Backfill Missing Leads</div><div style="font-size:13px;color:var(--text2);margin-bottom:14px">Creates lead records for any customer who has quotes or invoices but no matching lead. Use this if customers have quotes but the pipeline shows empty.</div><button class="btn btn-primary" onclick="backfillLeads()">Backfill Leads from Customers</button></div>';
+  var dt='<div style="background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:14px"><div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:7px">Backfill Missing Leads</div><div style="font-size:13px;color:var(--text2);margin-bottom:14px">Creates lead records for any customer who has quotes or invoices but no matching lead. Use this if customers have quotes but the pipeline shows empty.</div><button class="btn btn-primary" onclick="backfillLeads()">Backfill Leads from Customers</button></div>';
   // Sources tab
   var srcs=getSources();
   var srcRows='';
   srcs.forEach(function(s,idx){
-    srcRows+='<div style="display:flex;align-items:center;gap:8px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:6px">'
+    srcRows+='<div style="display:flex;align-items:center;gap:8px;background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:6px">'
       +'<input type="text" value="'+escHtml(s.label)+'" data-idx="'+idx+'" class="src-lbl" style="flex:1"/>'
-      +'<button class="btn btn-ghost btn-xs" style="color:var(--danger)" onclick="removeSrc('+idx+')">Remove</button>'
+      +'<button class="btn btn-ghost btn-xs" style="color:var(--muted)" onclick="removeSrc('+idx+')">Remove</button>'
       +'</div>';
   });
   var st='<div style="font-size:13px;color:var(--muted);margin-bottom:14px">Lead sources for the New Lead form and source filters.</div>'

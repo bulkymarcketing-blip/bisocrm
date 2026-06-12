@@ -163,7 +163,7 @@ console.log('\n=== Action-modal restyle sim ===');
    'qTot','cLine','invPaid','fR','fmt','escHtml','brideTotal','brideCollected','brideOutstanding',
    'openDetail','buildOverviewTab','buildPaymentTab','buildStageCta','buildApptTab','buildNotesTab','buildDocsTab',
    'rDailyBrief','renderTodaysActions','rPipeline','rSchedule','rQuotations','rCustomers','rInvoices','rFinance','rAnalytics',
-   'rClients','rSettings','rMessages','lCard','cardCTA'
+   'rClients','rMessages','lCard','cardCTA'
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[7] unchanged: '+n));
 })();
 
