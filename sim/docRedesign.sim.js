@@ -47,7 +47,7 @@ console.log('\n=== Document v4 redesign sim ===');
     '.bdoc .subtot{display:flex;justify-content:space-between;padding:8px 2px 0}', // no border-top
     '.bdoc .trow.grand .lq{','.bdoc .trow.grand .vq{font-family:\\\'Cinzel\\\',serif;font-size:23px',
     '.bdoc .nh{font-size:11.5px;letter-spacing:1.5px;text-transform:uppercase;color:#586374',
-    '.bdoc .nb{font-size:13px;color:#3D4758;line-height:1.5',
+    '.bdoc .nb{font-size:11px;color:#3D4758;line-height:1.4', // refreshed to the deployed value (prior print-doc tweak; stale sim constant)
     '.bdoc .ftag{font-style:italic;font-size:14px;color:#8A6D24',
     // preserved live-only classes still present
     '.bdoc .pbadge{','.bdoc .amt{','.bdoc .fbank{','.bdoc .pkglabel{'
