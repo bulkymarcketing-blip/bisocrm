@@ -134,7 +134,7 @@ console.log('\n=== Profiles (rCustomers) restyle sim ===');
   ['cA','openCust','openNC','openDetail',
    '_briefWeddings','_briefAppointments','_briefSinceLastVisit','_briefNeedsAttention','_briefLastVisit','_humanAgo',
    '_briefSection','_briefList','_briefRow','_briefMain','_briefDot','_briefEmpty',
-   'computeTodaysActions','rDailyBrief','renderTodaysActions','rPipeline','rSchedule','rQuotations',
+   'computeTodaysActions','rDailyBrief','renderTodaysActions','rSchedule','rQuotations',
    'rClients','rMessages','lCard','cardCTA','qTot'
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[6] unchanged: '+n));
 })();

@@ -76,7 +76,7 @@ console.log('\n=== Retire Confirmed Clients (rClients) sim ===');
 // [7] regression — every other r* render + helpers byte-identical
 (function(){
   console.log('\n[7] regression vs HEAD');
-  ['rDailyBrief','renderTodaysActions','rPipeline','rSchedule','rQuotations','rInvoices','rFinance','rAnalytics',
+  ['rDailyBrief','renderTodaysActions','rSchedule','rQuotations','rInvoices','rFinance','rAnalytics',
    'rClients','rMessages','lCard','cardCTA','aLeadSourcePerf','aConversionFunnel',
    'buildOverviewTab','buildPaymentTab','buildStageCta','openDetail','computeTodaysActions',
    '_briefSection','_briefList','_briefRow','_briefRowLead','_briefMain','_briefDot','_briefEmpty',

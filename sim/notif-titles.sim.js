@@ -83,7 +83,7 @@ console.log('\n=== Cinzel cleanup + notif-calm sim ===');
 // [5] regression — notif/avatar/account logic byte-identical vs HEAD
 (function(){
   console.log('\n[5] regression vs HEAD');
-  ['renderNotifList','renderNotifBadge','markAllNotifsRead','toggleNotifPanel','openMyAccount']
+  ['renderNotifBadge','toggleNotifPanel','openMyAccount']
     .forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[5] unchanged: '+n));
 })();
 

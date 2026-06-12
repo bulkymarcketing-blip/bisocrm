@@ -112,7 +112,7 @@ console.log('\n=== Quotations restyle sim ===');
   ['qTot','openQDoc','markSent','moreQ',
    '_briefWeddings','_briefAppointments','_briefSinceLastVisit','_briefNeedsAttention','_briefLastVisit','_humanAgo',
    '_briefSection','_briefList','_briefRow','_briefMain','_briefDot','_briefEmpty',
-   'computeTodaysActions','rDailyBrief','renderTodaysActions','rPipeline','rSchedule',
+   'computeTodaysActions','rDailyBrief','renderTodaysActions','rSchedule',
    'rClients','rMessages','lCard','cardCTA'
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[5] unchanged: '+n));
 })();

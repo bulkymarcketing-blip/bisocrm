@@ -734,7 +734,14 @@ function projectViews(){
       documents:b.documents||{},
       _history:b._history||{},
       createdAt:b.createdAt,
-      lastActivity:b.lastActivity||b.createdAt
+      lastActivity:b.lastActivity||b.createdAt,
+      lost:!!b.lost,
+      lostReason:b.lostReason||'',
+      lostReasonNote:b.lostReasonNote||'',
+      lostAt:b.lostAt||'',
+      remindersStopped:!!b.remindersStopped,
+      nextReminderAt:b.nextReminderAt||null,
+      contactAttempts:b.contactAttempts||{}
     };
     leads[b.id]=lead;
     // customer view: same data but customer-shaped
@@ -1507,7 +1514,21 @@ function rPipeline(){
   if(typeof setTimeout!=='undefined')setTimeout(function(){try{var _ap=document.getElementById('pipe-pill-on');if(_ap&&_ap.scrollIntoView)_ap.scrollIntoView({block:'nearest',inline:'center'});}catch(e){}},0);
   // Selected stage's leads — flat stack of cards.
   var cols=pl.filter(function(l){return Number(l.stage||0)===sel;});
-  cols.sort(function(a,b){var ta=leadWedTs(a),tb=leadWedTs(b);if(ta!==tb)return ta-tb;return new Date(b.lastActivity||b.createdAt||0)-new Date(a.lastActivity||a.createdAt||0);});
+  var sortFns={
+    wedding:function(a,b){var ta=leadWedTs(a),tb=leadWedTs(b);if(ta!==tb)return ta-tb;return new Date(b.lastActivity||b.createdAt||0)-new Date(a.lastActivity||a.createdAt||0);},
+    active:function(a,b){return new Date(b.lastActivity||b.createdAt||0)-new Date(a.lastActivity||a.createdAt||0);},
+    newest:function(a,b){return new Date(b.createdAt||0)-new Date(a.createdAt||0);},
+    oldest:function(a,b){return new Date(a.createdAt||0)-new Date(b.createdAt||0);},
+    name:function(a,b){return String(a.name||'').localeCompare(String(b.name||''));}
+  };
+  cols.sort(sortFns[window._pipeSort]||sortFns.wedding);
+  if(pl.length){
+    var SORTS=[['wedding','Wedding date'],['active','Recently active'],['newest','Newest first'],['oldest','Oldest first'],['name','Name (A-Z)']];
+    var curSort=window._pipeSort||'wedding';
+    h+='<div style="display:flex;align-items:center;gap:8px;margin:14px 2px 4px"><span style="font-size:11px;color:var(--muted);font-weight:600">Sort</span><select onchange="setPipeSort(this.value)" style="font-size:12px;font-weight:600;color:var(--navy);background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:6px 10px">';
+    SORTS.forEach(function(s){h+='<option value="'+s[0]+'"'+(curSort===s[0]?' selected':'')+'>'+s[1]+'</option>';});
+    h+='</select></div>';
+  }
   h+='<div class="plist">';
   if(cols.length)cols.forEach(function(l){h+=lCard(l);});
   else h+='<div style="padding:16px 2px;color:var(--muted);font-size:12.5px">No leads in '+escHtml(STAGES[sel])+'</div>';
@@ -1735,6 +1756,7 @@ function leadNeedsAttention(l){
 // Session-scoped (default first stage); resets to New Lead on page reload.
 window._pipeStage=window._pipeStage||0;
 function setPipeStage(i){window._pipeStage=i;render();}
+function setPipeSort(v){window._pipeSort=v;render();}
 function toggleMetrics(){window._showMetrics=!window._showMetrics;render();}
 // RETIRED screen (Confirmed Clients) — unreferenced; delete in the Phase-9 dead-code sweep.
 function rClients(){
@@ -7212,7 +7234,7 @@ async function registerFcmToken(){
    Feed entries and push are both written by Cloud Functions in Phase C.
    This module renders the bell, the feed, and per-user preferences, and holds
    the token-registration entry point (enablePush) that Phase C will activate. */
-window._notif={items:{},prefs:null,_iv:null};
+window._notif={items:{},prefs:null,_iv:null,_readIds:{}};
 function notifUid(){
   if(!window._auth||!window._auth.enabled||!window._auth.user)return null;
   return window._auth.user.uid||null;
@@ -7265,6 +7287,8 @@ async function refreshNotifs(){
     var data=await fbG('/notifications/'+u);
     window._notif.items=(data&&typeof data==='object')?data:{};
   }catch(e){/* best-effort; keep last-known items */}
+  var _ri=window._notif._readIds||{};
+  Object.keys(_ri).forEach(function(id){if(window._notif.items[id])window._notif.items[id].read=true;});
   renderNotifBadge();
   var panel=document.getElementById('NT-m');
   if(panel&&panel.classList.contains('show'))renderNotifList();
@@ -7288,8 +7312,8 @@ function notifSorted(){
 }
 function renderNotifList(){
   var box=document.getElementById('NT-list');if(!box)return;
-  var list=notifSorted();
-  if(!list.length){box.innerHTML='<div class="nt-empty">No notifications yet.</div>';return;}
+  var list=notifSorted().filter(function(n){return n.read!==true;});
+  if(!list.length){box.innerHTML='<div class="nt-empty">No new notifications.</div>';return;}
   var h='';
   list.forEach(function(n){
     var unread=n.read!==true;
@@ -7311,20 +7335,23 @@ async function onNotifTap(id,brideId){
 }
 async function markNotifRead(id){
   var u=notifUid();if(!u||!id)return;
+  window._notif._readIds=window._notif._readIds||{};
+  window._notif._readIds[id]=true;
   if(window._notif.items[id])window._notif.items[id].read=true;
   renderNotifBadge();renderNotifList();
-  try{await fbP('/notifications/'+u+'/'+id,{read:true});}catch(e){}
+  try{await fbP('/notifications/'+u+'/'+id,{read:true});}catch(e){console.error('[notif] markRead write failed:',e);}
 }
 async function markAllNotifsRead(){
   var u=notifUid();if(!u)return;
   var items=window._notif.items||{};var any=false;
-  Object.keys(items).forEach(function(k){if(items[k]&&items[k].read!==true){items[k].read=true;any=true;}});
+  window._notif._readIds=window._notif._readIds||{};
+  Object.keys(items).forEach(function(k){if(items[k]&&items[k].read!==true){items[k].read=true;window._notif._readIds[k]=true;any=true;}});
   if(!any)return;
   renderNotifBadge();renderNotifList();
   try{
     var patch={};Object.keys(items).forEach(function(k){patch[k+'/read']=true;});
     await fbP('/notifications/'+u,patch);
-  }catch(e){}
+  }catch(e){console.error('[notif] markAll write failed:',e);}
 }
 function toggleNotifPanel(ev){
   if(ev)ev.stopPropagation();

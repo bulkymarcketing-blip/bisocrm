@@ -108,7 +108,7 @@ console.log('\n=== Schedule restyle sim ===');
 (function(){
   console.log('\n[6] regression: untouched fns byte-identical vs HEAD');
   ['computeTodaysActions','_briefWeddings','_briefAppointments','_briefSinceLastVisit','_briefNeedsAttention',
-   'rDailyBrief','renderTodaysActions','rPipeline','lCard','cardCTA','setSchedMode']
+   'rDailyBrief','renderTodaysActions','lCard','cardCTA','setSchedMode']
     .forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[6] unchanged: '+n));
 })();
 
