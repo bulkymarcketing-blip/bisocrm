@@ -104,11 +104,13 @@ White-background modern productivity app — “warm minimalism” (Linear / Thi
 - **Cinzel-on-screen cleanup + notification-panel calm — SHIPPED** (this entry; see the redesign log below).
 - **Settings restyle + the Profiles title — SHIPPED** (this entry; see the redesign log below).
 - **Sidebar nav IA fix — SHIPPED** (this entry): Messages relocated to its own "Communication" section.
-- **Remaining design work:** phone formatting (the raw "94…" display), then the consultation→visit wording sweep (display-only — "Consultation" stays as the stored `appt.reason` value).
+- **Screen-by-screen redesign + polish — COMPLETE.** No design work remaining.
+- **CORRECTION — the "consultation→visit wording sweep" is DROPPED (not wanted).** Decision (Kushan): **"Consultation" is the canonical term and stays throughout the app.** "Visit" appears only in the leads-page filter pills as a deliberate space-saving abbreviation (the full word didn't fit) — it is intentional, not an inconsistency, and must NOT be propagated elsewhere. Do not re-open this as a task.
+- **Remaining work is non-design / engineering hygiene only:** the **Phase 9 dead-code sweep** — delete the retired `rClients` (orphaned) and the uncalled `aRevenueTrends` / `aTimeInStage` functions.
 - **Confirmed Clients screen (`rClients`) RETIRED** — removed from the nav / route / TITLES, and the post-confirm redirect now lands on Schedule. Its job is covered by Schedule (weddings) + Profiles-Clients (directory) + Invoices/detail (payment).
 - **Phase-9 dead-code sweep now covers:** the orphaned `rClients` body, plus `aRevenueTrends` + `aTimeInStage`.
 - **Redesign progress: Phases 1–7 done.**
-- **Next: phone formatting.**
+- **Next: the Phase 9 dead-code cleanup (engineering, whenever desired).**
 - **CONFIRMED page is DROPPED** from the redesign and from nav — Schedule is the chronological home for committed weddings, Profiles is the client directory, and the bride detail (`openDetail`) holds the full record.
 
 ### The token system AS SHIPPED — do NOT revert
