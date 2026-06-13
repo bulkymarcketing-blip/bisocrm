@@ -9,7 +9,7 @@
  *  - Conversion funnel: all stages + counts, drop deltas var(--muted) not red, bars navy + Confirmed green + no gold,
  *    "Consult Booked"/"Consult Done" labels still present (wording deferred);
  *  - By source: flat _briefRow sorted revenue-desc, escaped names, conv tier tag ts/twg/ti, fR revenue, no onclick;
- *  - aLeadSourcePerf is a DATA fn ({rows,totals}); aRevenueTrends + aTimeInStage still exist but are NOT called;
+ *  - aLeadSourcePerf is a DATA fn ({rows,totals}); aRevenueTrends + aTimeInStage REMOVED (Phase 9 dead-code sweep);
  *  - regression: range engine + helpers + every other r* byte-identical; fRshort still defined; .stats/.stat CSS unchanged.
  *
  * Run: node sim/analytics.sim.js   (exit 0 = pass)
@@ -173,25 +173,27 @@ console.log('\n=== Analytics (rAnalytics) restyle sim ===');
   ok(h.indexOf('No leads in this period')>=0,'[7] funnel + by-source show "No leads in this period"');
 })();
 
-// [8] aRevenueTrends + aTimeInStage exist but are NOT called by rAnalytics
+// [8] aRevenueTrends + aTimeInStage REMOVED (Phase 9 dead-code sweep) — gone, nothing references them
 (function(){
-  console.log('\n[8] dead-but-present modules');
-  ok(extractFn(WORK,'aRevenueTrends').length>0,'[8] aRevenueTrends still defined');
-  ok(extractFn(WORK,'aTimeInStage').length>0,'[8] aTimeInStage still defined');
+  console.log('\n[8] dead modules removed (Phase 9)');
+  ok(WORK.indexOf('function aRevenueTrends(')<0,'[8] aRevenueTrends definition removed');
+  ok(WORK.indexOf('function aTimeInStage(')<0,'[8] aTimeInStage definition removed');
+  ok(WORK.indexOf('aRevenueTrends')<0 && WORK.indexOf('aTimeInStage')<0,'[8] zero references to either symbol anywhere');
   const rA=extractFn(WORK,'rAnalytics');
-  ok(rA.indexOf('aRevenueTrends')<0&&rA.indexOf('aTimeInStage')<0,'[8] rAnalytics no longer calls them');
+  ok(rA.indexOf('aRevenueTrends')<0&&rA.indexOf('aTimeInStage')<0,'[8] rAnalytics references neither');
 })();
 
 // [9] regression — range engine + helpers + every OTHER r* byte-identical; modules unchanged; fRshort defined; CSS unchanged
 (function(){
   console.log('\n[9] regression vs HEAD');
   ['aGetRange','aSetPreset','aSetCustomDate','aInRange','qTot','fR','fRshort','escHtml',
-   'aRevenueTrends','aTimeInStage',
+   /* aRevenueTrends + aTimeInStage removed (Phase 9 dead-code sweep) — asserted gone in [8]. */
    '_briefSection','_briefList','_briefRow','_briefRowLead','_briefMain','_briefDot','_briefEmpty','computeTodaysActions',
    'renderTodaysActions','rSchedule','rQuotations',
    /* rInvoices NOT pinned — P2-8 (overpayment credit) edits it; sim/p2-8.sim.js is the authority.
-      rFinance NOT pinned — P2-7 (monthly cash-collected) edits it; sim/finance.sim.js + sim/cycle-d-p1-3-p2-7.sim.js are the authority. */
-   'rClients','rMessages','lCard','cardCTA'
+      rFinance NOT pinned — P2-7 (monthly cash-collected) edits it; sim/finance.sim.js + sim/cycle-d-p1-3-p2-7.sim.js are the authority.
+      rClients removed (Phase 9 dead-code sweep). */
+   'rMessages','lCard','cardCTA'
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[9] unchanged: '+n));
   // .stats/.stat CSS unchanged from the Finance build (Analytics added/changed no CSS).
   // NOTE: assert the Finance stat-grid rules are byte-identical rather than the WHOLE <style>

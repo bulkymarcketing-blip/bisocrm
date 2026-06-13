@@ -7,7 +7,7 @@
  *  - the fn={…} route map has NO 'clients' key; nav items array has NO id:'clients'; TITLES has no 'clients' key;
  *  - the confirm handler calls sv('schedule') (not sv('clients'));
  *  - rCustomers STILL has the ['clients','Clients'] pill + the f==='clients' filter (Profiles untouched);
- *  - rClients body byte-identical (only a RETIRED comment added above it);
+ *  - rClients (and its dBadge-only helper) DELETED in the Phase 9 dead-code sweep — both gone, zero references;
  *  - regression: rCustomers, every other r* render, and the helpers byte-for-byte unchanged.
  *
  * Run: node sim/retire-clients.sim.js   (exit 0 = pass)
@@ -66,11 +66,12 @@ console.log('\n=== Retire Confirmed Clients (rClients) sim ===');
   //  fix legitimately edits it. The pill + filter checks above still prove the clients-filter survives.)
 })();
 
-// [6] rClients orphaned: body byte-identical, comment added above
+// [6] rClients DELETED (Phase 9 dead-code sweep) — fn gone, and its only dBadge caller went with it
 (function(){
-  console.log('\n[6] rClients orphaned but intact');
-  ok(extractFn(HEAD,'rClients')===extractFn(WORK,'rClients'),'[6] rClients body byte-identical (comment is above the fn)');
-  ok(WORK.indexOf('// RETIRED screen (Confirmed Clients) — unreferenced; delete in the Phase-9 dead-code sweep.')>=0,'[6] RETIRED comment present');
+  console.log('\n[6] rClients removed (Phase 9)');
+  ok(WORK.indexOf('function rClients(')<0,'[6] rClients definition removed');
+  ok(WORK.indexOf('rClients')<0,'[6] zero references to rClients anywhere');
+  ok(WORK.indexOf('function dBadge(')<0 && WORK.indexOf('dBadge')<0,'[6] dBadge (rClients-only helper) removed too');
 })();
 
 // [7] regression — every other r* render + helpers byte-identical
@@ -79,7 +80,7 @@ console.log('\n=== Retire Confirmed Clients (rClients) sim ===');
   // rInvoices + buildPaymentTab NOT pinned — P2-8 (overpayment credit) edits both; sim/p2-8.sim.js is the authority.
   // rFinance NOT pinned — P2-7 (Cycle D, monthly cash-collected) edits it; finance.sim + cycle-d-p1-3-p2-7.sim are the authority.
   ['renderTodaysActions','rSchedule','rQuotations','rAnalytics',
-   'rClients','rMessages','lCard','cardCTA','aLeadSourcePerf','aConversionFunnel',
+   'rMessages','lCard','cardCTA','aLeadSourcePerf','aConversionFunnel',  // rClients removed (Phase 9 dead-code sweep)
    'buildOverviewTab','buildStageCta','openDetail','computeTodaysActions',
    '_briefSection','_briefList','_briefRow','_briefRowLead','_briefMain','_briefDot','_briefEmpty',
    'qTot','fR','fmt','dU','escHtml','brideTotal','brideCollected','brideOutstanding','setCustFilter'
