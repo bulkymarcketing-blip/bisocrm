@@ -237,7 +237,8 @@ console.log('\n=== Detail view restyle sim (Part 1 + Part 2) ===');
    'brideTotal','brideCollected','brideOutstanding','netHeld','qTot','invPaid','invInvoiced','invCollected','invOutstanding','cLine','_canon',
    'fR','fmt','dU','escHtml','escAttr','getSources',
    '_briefSection','_briefList','_briefRow','_briefRowLead','_briefMain','_briefDot','_briefEmpty','computeTodaysActions',
-   'renderTodaysActions','rSchedule','rQuotations','rFinance','rAnalytics',
+   /* rFinance NOT pinned — P2-7 (monthly cash-collected) edits it; finance.sim + cycle-d-p1-3-p2-7.sim are the authority. */
+   'renderTodaysActions','rSchedule','rQuotations','rAnalytics',
    'aLeadSourcePerf','aConversionFunnel','rClients','rMessages','lCard','cardCTA'
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[10] unchanged: '+n));
 })();

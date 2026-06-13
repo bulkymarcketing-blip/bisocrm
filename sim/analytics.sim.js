@@ -188,8 +188,9 @@ console.log('\n=== Analytics (rAnalytics) restyle sim ===');
   ['aGetRange','aSetPreset','aSetCustomDate','aInRange','qTot','fR','fRshort','escHtml',
    'aRevenueTrends','aTimeInStage',
    '_briefSection','_briefList','_briefRow','_briefRowLead','_briefMain','_briefDot','_briefEmpty','computeTodaysActions',
-   'renderTodaysActions','rSchedule','rQuotations','rFinance',
-   /* rInvoices NOT pinned — P2-8 (overpayment credit) edits it; sim/p2-8.sim.js is the authority. */
+   'renderTodaysActions','rSchedule','rQuotations',
+   /* rInvoices NOT pinned — P2-8 (overpayment credit) edits it; sim/p2-8.sim.js is the authority.
+      rFinance NOT pinned — P2-7 (monthly cash-collected) edits it; sim/finance.sim.js + sim/cycle-d-p1-3-p2-7.sim.js are the authority. */
    'rClients','rMessages','lCard','cardCTA'
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[9] unchanged: '+n));
   // .stats/.stat CSS unchanged from the Finance build (Analytics added/changed no CSS).
