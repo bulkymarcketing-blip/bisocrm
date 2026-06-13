@@ -85,8 +85,12 @@ const H=render(richBrides());
   ok(H.indexOf(rate+'% of invoiced')>=0,'[2] collection-rate sub (parity)');
   const thisMonthRev=100000+80000+8036; // this-month invoiced bucket (Alice+Clara+Dora; Bob retained excluded? no — Bob cancelled retains 20000, date THIS)
   // NOTE: Bob's cancelled invoice is dated THIS month and invInvoiced(cancelled)=retained 20000 — include it.
-  const thisRev=thisMonthRev+20000;
-  ok(H.indexOf(fRs(thisRev))>=0,'[2] This month = '+fRs(thisRev)+' (month-bucket parity)');
+  // P2-7: "This month" is now CASH COLLECTED in THIS month, bucketed by payment date (advance counts
+  // in the invoice's issue month). Alice: adv30000(THIS-05)+20000(THIS-06)−10000(THIS-07)=40000;
+  // Bob: adv20000(THIS-01)=20000; Clara: 40000(THIS-03)+40000(THIS-04)=80000; Dora's 8 pays + Eve's
+  // advance are dated LAST month → excluded from THIS. So This month = 140000 (was the 208,036 invoiced bucket).
+  const thisRev=40000+20000+80000; // =140000 cash collected this month
+  ok(H.indexOf(fRs(thisRev))>=0,'[2] This month (cash collected) = '+fRs(thisRev)+' (P2-7 parity)');
 })();
 
 // [3] monthly bars + toggle + trend de-red
@@ -101,7 +105,7 @@ const H=render(richBrides());
   ok((H.split('fpill on').length-1)===1,'[3] exactly one toggle is .on');
   const H6=render(richBrides(),6);
   ok(H6.indexOf('class="fpill on" onclick="setFinMonthWin(6)"')>=0,'[3] window override -> 6M active');
-  // trend DOWN: this month (208,036) < last month (300,000) -> muted, not red
+  // trend DOWN (P2-7 cash basis): this month (140,000) < last month (308,036: Dora's 8,036 + Eve's 300,000 adv) -> muted, not red
   ok(/color:var\(--muted\)">↘/.test(H),'[3] DOWN trend rendered var(--muted), not red');
 })();
 

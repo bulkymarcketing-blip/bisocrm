@@ -1096,14 +1096,8 @@ async function executeRequest(req){
     if(refund>maxR){throw new Error('Refund '+fR(refund)+' now exceeds amount held ('+fR(maxR)+'). Reject and re-request.');}
     var now=new Date().toISOString();
     var patch={cancelled:true,cancelledAt:now,cancelReason:reason,refundAmount:refund};
-    var firstInv=Object.values(l.invoices||{})[0];
-    if(refund>0&&firstInv){
-      var pid='p-'+uid();
-      var pay={id:pid,amount:-refund,date:now.slice(0,10),method:'Refund',note:'Cancellation refund: '+reason,createdAt:now};
-      var pp={};pp[pid]=pay;
-      await fbP('/leads/'+lid+'/invoices/'+firstInv.id+'/payments',pp);
-      l.invoices[firstInv.id].payments=l.invoices[firstInv.id].payments||{};
-      l.invoices[firstInv.id].payments[pid]=pay;
+    if(refund>0){
+      await postRefundSpread(lid,l,refund,now,reason);
       patch.advance=Math.max(0,(l.advance||0)-refund);
       patch.balance=(l.balance||0)+refund;
     }
@@ -1191,6 +1185,26 @@ function invPaid(inv){
 function netHeld(l){
   if(!l)return 0;
   return Object.values(l.invoices||{}).reduce(function(s,inv){return s+invPaid(inv);},0);
+}
+// P1-3: post a cancellation refund SPREAD across the bride's invoices (largest paid first) so no
+// single invoice's paid amount goes negative — keeps per-invoice + lifetime Finance correct for
+// multi-invoice brides. refund is always <= netHeld, so it always distributes fully.
+async function postRefundSpread(bid,l,refund,now,reason){
+  if(!(refund>0))return;
+  var invs=Object.values(l.invoices||{}).filter(function(inv){return invPaid(inv)>0;}).sort(function(a,b){return invPaid(b)-invPaid(a);});
+  var remaining=refund;
+  for(var i=0;i<invs.length&&remaining>0.009;i++){
+    var inv=invs[i];
+    var alloc=Math.min(remaining,invPaid(inv));
+    if(alloc<=0)continue;
+    var pid='p-'+uid();
+    var pay={id:pid,amount:-alloc,date:now.slice(0,10),method:'Refund',note:'Cancellation refund: '+reason,createdAt:now};
+    var pp={};pp[pid]=pay;
+    await fbP('/leads/'+bid+'/invoices/'+inv.id+'/payments',pp);
+    l.invoices[inv.id].payments=l.invoices[inv.id].payments||{};
+    l.invoices[inv.id].payments[pid]=pay;
+    remaining-=alloc;
+  }
 }
 // CANCELLED-AWARE financial figures for one invoice belonging to a given bride.
 // Rule (agreed): a cancelled booking counts as exactly what was retained (netHeld) for BOTH
@@ -3589,14 +3603,8 @@ async function openCancelBooking(id){
   try{
     var patch={cancelled:true,cancelledAt:now,cancelReason:reason,refundAmount:refund};
     // If refund > 0, log as negative payment on first invoice
-    var firstInv=Object.values(l.invoices||{})[0];
-    if(refund>0&&firstInv){
-      var pid='p-'+uid();
-      var pay={id:pid,amount:-refund,date:now.slice(0,10),method:'Refund',note:'Cancellation refund: '+reason,createdAt:now};
-      var pp={};pp[pid]=pay;
-      await fbP('/leads/'+id+'/invoices/'+firstInv.id+'/payments',pp);
-      l.invoices[firstInv.id].payments=l.invoices[firstInv.id].payments||{};
-      l.invoices[firstInv.id].payments[pid]=pay;
+    if(refund>0){
+      await postRefundSpread(id,l,refund,now,reason);
       patch.advance=Math.max(0,(l.advance||0)-refund);
       patch.balance=(l.balance||0)+refund;
     }
@@ -4944,21 +4952,26 @@ function rFinance(){
     monthKeys.push(d.toISOString().slice(0,7));
   }
   var monthData = {};
-  monthKeys.forEach(function(m){ monthData[m] = {invoiced:0, collected:0, count:0}; });
-  allI.forEach(function(inv){
-    if(!inv.date) return;
-    var m = inv.date.slice(0,7);
-    if(monthData[m]){
-      monthData[m].invoiced += invInvoiced(brides[inv.brideId],inv);
-      monthData[m].collected += invCollected(brides[inv.brideId],inv);
-      monthData[m].count++;
-    }
+  monthKeys.forEach(function(m){ monthData[m] = {collected:0, count:0}; });
+  // P2-7: Monthly revenue = CASH COLLECTED per month. The bespeaking advance counts in the invoice's
+  // issue month; every payment (incl. negative refunds) counts in ITS OWN payment-date month. So a
+  // cancellation never rewrites a past month — a refund simply dips the month it actually occurs in.
+  Object.values(brides).forEach(function(b){
+    Object.values(b.invoices||{}).forEach(function(inv){
+      var adv=parseFloat(inv.advance||0)||0;
+      var im=(inv.date||'').slice(0,7);
+      if(adv&&monthData[im]){ monthData[im].collected+=adv; monthData[im].count++; }
+      Object.values(inv.payments||{}).forEach(function(p){
+        var amt=parseFloat(p.amount)||0; var pm=(p.date||'').slice(0,7);
+        if(pm&&monthData[pm]){ monthData[pm].collected+=amt; monthData[pm].count++; }
+      });
+    });
   });
-  var maxMonthVal = Math.max.apply(null, monthKeys.map(function(m){return monthData[m].invoiced;}).concat([1]));
+  var maxMonthVal = Math.max.apply(null, monthKeys.map(function(m){return Math.max(0,monthData[m].collected);}).concat([1]));
   var thisMonth = monthKeys[monthKeys.length-1];
   var lastMonth = monthKeys[monthKeys.length-2];
-  var thisMonthRev = monthData[thisMonth] ? monthData[thisMonth].invoiced : 0;
-  var lastMonthRev = (lastMonth && monthData[lastMonth]) ? monthData[lastMonth].invoiced : 0;
+  var thisMonthRev = monthData[thisMonth] ? monthData[thisMonth].collected : 0;
+  var lastMonthRev = (lastMonth && monthData[lastMonth]) ? monthData[lastMonth].collected : 0;
   var trendTxt = '', trendColor = 'var(--muted)';
   if(lastMonthRev === 0 && thisMonthRev > 0){ trendTxt = '↗ New'; trendColor = 'var(--success)'; }
   else if(thisMonthRev > lastMonthRev){ var pct = Math.round((thisMonthRev/lastMonthRev - 1)*100); trendTxt = '↗ +'+pct+'%'; trendColor = 'var(--success)'; }
@@ -5006,7 +5019,7 @@ function rFinance(){
   // ── SECTION 2: Monthly revenue — calm navy bars (custom header so the toggle sits inline) ──
   html += '<div style="margin-bottom:20px">';
   html += '<div style="display:flex;align-items:center;justify-content:space-between;margin:0 2px 12px">';
-  html += '<div style="font-size:13px;font-weight:600;color:var(--navy);letter-spacing:.2px">Monthly revenue</div>';
+  html += '<div style="font-size:13px;font-weight:600;color:var(--navy);letter-spacing:.2px">Monthly collections</div>';
   html += '<div style="display:flex;gap:6px">';
   [3,6,12].forEach(function(w){
     html += '<button class="fpill'+(monthWin===w?' on':'')+'" onclick="setFinMonthWin('+w+')">'+w+'M</button>';
@@ -5019,7 +5032,7 @@ function rFinance(){
     html += '<div class="bars">';
     monthKeys.forEach(function(m){
       var d = monthData[m];
-      var hPct = maxMonthVal > 0 ? Math.max(2, Math.round((d.invoiced/maxMonthVal)*100)) : 2;
+      var hPct = maxMonthVal > 0 ? Math.max(2, Math.round((Math.max(0,d.collected)/maxMonthVal)*100)) : 2;
       var isCurrent = m === thisMonth;
       var lbl = new Date(m+'-01').toLocaleDateString('en-GB',{month:'short'});
       html += '<div class="barwrap"><div class="bartrack"><div class="bar'+(isCurrent?' cur':'')+'" style="height:'+hPct+'%"></div></div><div class="blab'+(isCurrent?' cur':'')+'">'+lbl+'</div></div>';

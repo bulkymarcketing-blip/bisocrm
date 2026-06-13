@@ -149,13 +149,13 @@ console.log('\n=== P2-8 overpayment-as-credit sim ===');
 // [F] additive proof — out-of-scope helpers + documents byte-identical to HEAD
 (function(){
   console.log('\n[F] out-of-scope byte-identical vs HEAD');
+  // invCredit/brideCredit are now ON HEAD (P2-8 shipped) and untouched by later work — pin them byte-identical.
   ['invInvoiced','invCollected','invOutstanding','invPaid','qTot','cLine','netHeld',
-   'brideTotal','brideCollected','brideOutstanding','_canon',
-   'rFinance','buildReceipt','buildPDF','rQuotations','rAnalytics'
+   'brideTotal','brideCollected','brideOutstanding','_canon','invCredit','brideCredit',
+   /* rFinance NOT pinned — P2-7 (Cycle D, monthly cash-collected) edits it; finance.sim + cycle-d-p1-3-p2-7.sim are the authority. */
+   'buildReceipt','buildPDF','rQuotations','rAnalytics'
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[F] unchanged: '+n));
-  // and the two new helpers exist only in WORK
-  ok(HEAD.indexOf('function invCredit(')<0 && WORK.indexOf('function invCredit(')>=0,'[F] invCredit is NEW (additive)');
-  ok(HEAD.indexOf('function brideCredit(')<0 && WORK.indexOf('function brideCredit(')>=0,'[F] brideCredit is NEW (additive)');
+  ok(WORK.indexOf('function invCredit(')>=0 && WORK.indexOf('function brideCredit(')>=0,'[F] invCredit + brideCredit present');
 })();
 
 console.log('\n=== '+(fails===0?'ALL PASS':fails+' FAILURE(S)')+' ===\n');
