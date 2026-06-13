@@ -103,7 +103,8 @@ console.log('\n=== Invoices restyle sim ===');
 // [6] regression
 (function(){
   console.log('\n[6] regression vs HEAD');
-  ['qTot','invPaid','invInvoiced','invCollected','invOutstanding','openIDoc',
+  ['qTot','invPaid','invInvoiced','invCollected','invOutstanding',
+   /* openIDoc NOT pinned — P2-8 (overpayment credit) edits it; sim/p2-8.sim.js is the authority. */
    '_briefAppointments','_briefSinceLastVisit','_briefNeedsAttention','_briefLastVisit','_humanAgo',
    '_briefSection','_briefList','_briefRow','_briefRowLead','_briefMain','_briefDot','_briefEmpty',
    'computeTodaysActions','renderTodaysActions','rSchedule','rQuotations',

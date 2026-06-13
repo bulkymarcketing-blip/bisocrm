@@ -161,8 +161,9 @@ console.log('\n=== Action-modal restyle sim ===');
   ['addPay','delPay','saveEInv','convInv','prevAdv','saveResched','closeResched','openCancelBooking',
    'saveDisp','pickDisp','closeDisp','openDisp','dispRemChange','dispCbChange','dispReasonChange',
    'qTot','cLine','invPaid','fR','fmt','escHtml','brideTotal','brideCollected','brideOutstanding',
-   'openDetail','buildOverviewTab','buildPaymentTab','buildStageCta','buildApptTab','buildNotesTab','buildDocsTab',
-   'renderTodaysActions','rSchedule','rQuotations','rInvoices','rFinance','rAnalytics',
+   'openDetail','buildOverviewTab','buildStageCta','buildApptTab','buildNotesTab','buildDocsTab',
+   /* buildPaymentTab + rInvoices NOT pinned — P2-8 (overpayment credit) edits both; sim/p2-8.sim.js is the authority. */
+   'renderTodaysActions','rSchedule','rQuotations','rFinance','rAnalytics',
    'rClients','rMessages','lCard','cardCTA'
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[7] unchanged: '+n));
 })();

@@ -115,9 +115,10 @@ console.log('\n=== Overview Form restyle sim (Part A) ===');
       is the authority for that change. This sim restyled renderOverviewForm, not openOverviewForm. */
    'closeOverview','countDropdown','initPhoneInput',
    'escHtml','qTot','fR','fmt',
-   'openDetail','buildOverviewTab','buildPaymentTab','buildStageCta','buildApptTab','buildNotesTab','buildDocsTab',
-   'openAddPay','openEInv','openAdv','openResched','renderDisp','openCancelBooking',
-   'renderTodaysActions','rSchedule','rQuotations','rInvoices','rFinance','rAnalytics',
+   'openDetail','buildOverviewTab','buildStageCta','buildApptTab','buildNotesTab','buildDocsTab',
+   'openEInv','openAdv','openResched','renderDisp','openCancelBooking',
+   /* buildPaymentTab + openAddPay + rInvoices NOT pinned — P2-8 (overpayment credit) edits all three; sim/p2-8.sim.js is the authority. */
+   'renderTodaysActions','rSchedule','rQuotations','rFinance','rAnalytics',
    'rClients','rMessages','lCard','cardCTA'
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[6] unchanged: '+n));
 })();
