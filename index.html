@@ -2164,15 +2164,27 @@ function rInvoices(){
     var tot=qTot(inv.items);var paid=invPaid(inv);var pct=tot>0?Math.round(paid/tot*100):0;
     return pct>=100?'paid':pct>0?'partial':'unpaid';
   }
+  // P1-5: an invoice is OVERDUE when it has a balance and today is past its due date — the balance
+  // is due balanceDueDays before the wedding (the same rule the PDF payment schedule already uses).
+  function isOverdue(inv){
+    var b=brides[inv.sId]; if(!b||b.cancelled) return false;
+    if(Math.max(0,qTot(inv.items)-invPaid(inv))<=0) return false;
+    if(!b.weddingDate) return false;
+    var off=parseInt(gSet().balanceDueDays,10); if(isNaN(off)) off=14;
+    var wd=new Date(b.weddingDate); if(isNaN(wd.getTime())) return false;
+    wd.setDate(wd.getDate()-off);
+    return new Date().toISOString().slice(0,10) > wd.toISOString().slice(0,10);
+  }
   var filt=allI.filter(function(inv){
     var st=statusOf(inv); // cancelled invoices only ever match 'all'
+    if(f==='overdue'&&!isOverdue(inv))return false;
     if(f==='unpaid'&&st!=='unpaid')return false;
     if(f==='partial'&&st!=='partial')return false;
     if(f==='paid'&&st!=='paid')return false;
     return q?inv.sN.toLowerCase().includes(q):true;
   });
   // Filter pills (session only; resets on reload) — reuse the Brief's wrapping .fpills row.
-  var PILLS=[['all','All'],['unpaid','Unpaid'],['partial','Partial'],['paid','Paid']];
+  var PILLS=[['all','All'],['overdue','Overdue'],['unpaid','Unpaid'],['partial','Partial'],['paid','Paid']];
   var pills='<div class="fpills">';
   PILLS.forEach(function(p){ pills+='<button class="fpill'+(f===p[0]?' on':'')+'" onclick="setInvFilter(\''+p[0]+'\')">'+p[1]+'</button>'; });
   pills+='</div>';
@@ -2189,16 +2201,19 @@ function rInvoices(){
       else if(pct>=100){dot='var(--success)';tag='<span class="tag ts">Paid</span>';}
       else if(pct>0){dot='var(--warn)';tag='<span class="tag twg">Partial</span>';}
       else {dot='var(--muted)';tag='<span class="tag ti">Unpaid</span>';}
+      var od=isOverdue(inv);
+      var odTag=od?'<span class="tag" style="color:#fff;background:var(--danger);border-color:var(--danger)">Overdue</span>':'';
+      if(od)dot='var(--danger)';
       var sub=inv.id+' · '+fmt(inv.date)+(bal>0?' · Rs '+Math.round(bal).toLocaleString('en-US')+' due':(credit>0?' · Rs '+Math.round(credit).toLocaleString('en-US')+' credit':''));
       var right='<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">'
         +'<div style="font-size:15px;font-weight:600;color:var(--navy);font-variant-numeric:tabular-nums">Rs '+Math.round(qTot(inv.items)).toLocaleString('en-US')+'</div>'
-        +tag
+        +tag+odTag
         +'</div>';
       return _briefRow(dot, _briefMain(escHtml(inv.sN), sub), right, "openIDoc('"+inv.src+"','"+inv.sId+"','"+inv.id+"')");
     });
     body=_briefList(rows);
   } else {
-    var label={all:'All',unpaid:'Unpaid',partial:'Partial',paid:'Paid'}[f];
+    var label={all:'All',overdue:'Overdue',unpaid:'Unpaid',partial:'Partial',paid:'Paid'}[f];
     body=_briefEmpty(allI.length===0 ? 'No invoices yet' : 'Nothing under '+label);
   }
   document.getElementById('MC').innerHTML = pills + _briefSection('Invoices', {count:filt.length}, body);
