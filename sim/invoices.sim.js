@@ -26,10 +26,11 @@ function brideData(){return {
   bc:{id:'bc',name:'Cancelled Bride',cancelled:true,invoices:{i:{id:'BI-2026-1004',date:'2026-06-02',items:[{amount:100000}],advance:50000,payments:{}}}}
 };}
 
-function render(filter,q,brides){
+function render(filter,q,brides,settings){
   const store={};
-  const sandbox={console,Date,Math,Number,String,Object,Array,JSON,parseFloat,
+  const sandbox={console,Date,Math,Number,String,Object,Array,JSON,parseFloat,parseInt,isNaN,
     q:q||'', brides:brides||brideData(), window:{_invFilter:filter},
+    gSet(){return settings||{};},  // P1-5: isOverdue reads gSet().balanceDueDays (default 14)
     qTot(items){return (items||[]).reduce(function(s,i){return s+(Number(i.amount)||0);},0);},
     invPaid(inv){return (parseFloat(inv.advance||0)||0)+Object.values(inv.payments||{}).reduce(function(s,p){return s+(Number(p.amount)||0);},0);},
     escHtml(s){return s==null?'':String(s);},
@@ -65,7 +66,7 @@ console.log('\n=== Invoices restyle sim ===');
   ok(h.indexOf('class="tag twg">Partial')>=0,'[2] Partial -> tag twg (amber)');
   ok(h.indexOf('class="tag ti">Unpaid')>=0,'[2] Unpaid -> tag ti (neutral)');
   ok(h.indexOf('class="tag ti">Cancelled')>=0,'[2] Cancelled -> tag ti (neutral)');
-  ok(h.indexOf('var(--danger)')<0 && h.indexOf('#DC2626')<0 && h.indexOf('#E53E3E')<0,'[2] NO red anywhere (act-now red reserved; Overdue deferred)');
+  ok(h.indexOf('var(--danger)')<0 && h.indexOf('#DC2626')<0 && h.indexOf('#E53E3E')<0,'[2] NO red on the default fixtures (none overdue — they carry no weddingDate; P1-5 red is act-now-only, see [7]/[8])');
   ok(h.indexOf('background:var(--success)')>=0 && h.indexOf('background:var(--warn)')>=0,'[2] status dots use success/warn');
 })();
 
@@ -98,6 +99,65 @@ console.log('\n=== Invoices restyle sim ===');
   console.log('\n[5] empty states');
   ok(render('all','',{}).indexOf('No invoices yet')>=0,'[5] none at all -> "No invoices yet"');
   ok(render('paid','',{b:{id:'b',name:'Only Unpaid',invoices:{i:{id:'X',date:'2026-06-01',items:[{amount:1000}],advance:0,payments:{}}}}}).indexOf('Nothing under Paid')>=0,'[5] filtered-empty -> "Nothing under Paid"');
+})();
+
+// [7] P1-5 — isOverdue truth table (real extracted nested fn)
+(function(){
+  console.log('\n[7] P1-5 isOverdue truth table');
+  // weddingDate built so that (weddingDate − off) lands at a known offset from today; off defaults to 14.
+  function dayStr(off){const d=new Date();d.setDate(d.getDate()+off);return d.toISOString().slice(0,10);}
+  function isOd(inv,brides,settings){
+    const sb={console,Date,Math,Number,String,Object,Array,parseFloat,parseInt,isNaN,
+      brides:brides, gSet(){return settings||{};},
+      qTot(items){return (items||[]).reduce(function(s,i){return s+(Number(i.amount)||0);},0);},
+      invPaid(inv){return (parseFloat(inv.advance||0)||0)+Object.values(inv.payments||{}).reduce(function(s,p){return s+(Number(p.amount)||0);},0);}};
+    const ctx=vm.createContext(sb);
+    vm.runInContext(extractFn(WORK,'isOverdue'),ctx);
+    sb.__inv=inv;
+    return vm.runInContext('isOverdue(__inv)',ctx);
+  }
+  const inv={id:'i',sId:'b',items:[{amount:100000}],advance:40000,payments:{}}; // balance 60k
+  // past-due with balance: wedding today+5 => due today−9 => overdue (off 14)
+  ok(isOd(inv,{b:{id:'b',weddingDate:dayStr(5)}})===true,'[7] past-due + balance => true');
+  // before-due: wedding today+60 => due today+46 => not overdue
+  ok(isOd(inv,{b:{id:'b',weddingDate:dayStr(60)}})===false,'[7] before due date => false');
+  // exactly-on-due-date: wedding today+14 => due today => strict > => false
+  ok(isOd(inv,{b:{id:'b',weddingDate:dayStr(14)}})===false,'[7] exactly on due date => false (strict >)');
+  // fully paid: no balance => false even if past due
+  ok(isOd({id:'i',sId:'b',items:[{amount:100000}],advance:100000,payments:{}},{b:{id:'b',weddingDate:dayStr(5)}})===false,'[7] fully paid => false');
+  // no weddingDate => false
+  ok(isOd(inv,{b:{id:'b'}})===false,'[7] missing weddingDate => false');
+  // cancelled => false even when past-due with balance
+  ok(isOd(inv,{b:{id:'b',cancelled:true,weddingDate:dayStr(5)}})===false,'[7] cancelled => false');
+  // custom balanceDueDays widens the window: off=30, wedding today+20 => due today−10 => overdue
+  ok(isOd(inv,{b:{id:'b',weddingDate:dayStr(20)}},{balanceDueDays:30})===true,'[7] honours gSet().balanceDueDays (30) => true');
+})();
+
+// [8] P1-5 — Overdue pill, filter set, and the red overlay (tag NOT replaced)
+(function(){
+  console.log('\n[8] P1-5 overdue pill + filter + overlay');
+  function dayStr(off){const d=new Date();d.setDate(d.getDate()+off);return d.toISOString().slice(0,10);}
+  const brides={
+    odpart:{id:'odpart',name:'Overdue Partial',weddingDate:dayStr(5),invoices:{i:{id:'BI-OD-1',date:'2026-05-01',items:[{amount:100000}],advance:40000,payments:{}}}}, // partial + overdue
+    odunp:{id:'odunp',name:'Overdue Unpaid',weddingDate:dayStr(5),invoices:{i:{id:'BI-OD-2',date:'2026-05-02',items:[{amount:100000}],advance:0,payments:{}}}},   // unpaid + overdue
+    safe:{id:'safe',name:'Safe Partial',weddingDate:dayStr(90),invoices:{i:{id:'BI-OK-1',date:'2026-05-03',items:[{amount:100000}],advance:40000,payments:{}}}},   // partial, not overdue
+    paid:{id:'paid',name:'Paid Far',weddingDate:dayStr(5),invoices:{i:{id:'BI-OK-2',date:'2026-05-04',items:[{amount:100000}],advance:100000,payments:{}}}}        // paid (never overdue)
+  };
+  const all=render('all','',brides);
+  ok(all.indexOf('>Overdue</button>')>=0,'[8] Overdue pill present (between All and Unpaid)');
+  ok(all.indexOf('class="fpills"><button class="fpill on" onclick="setInvFilter(\'all\')">All</button><button class="fpill" onclick="setInvFilter(\'overdue\')">Overdue</button>')>=0,'[8] pill order: All, then Overdue');
+  // overlay on the overdue PARTIAL row: keeps the Partial tag AND adds the red Overdue flag + red dot
+  ok(all.indexOf('class="tag twg">Partial</span><span class="tag" style="color:#fff;background:var(--danger);border-color:var(--danger)">Overdue</span>')>=0,'[8] overdue partial keeps "Partial" tag PLUS red "Overdue" flag (overlay, not replacement)');
+  ok((all.match(/>Overdue<\/span>/g)||[]).length===2,'[8] exactly two red Overdue flags (the two overdue rows; safe + paid have none)');
+  ok(all.indexOf('background:var(--danger)')>=0,'[8] red dot/flag present for overdue rows');
+  // the overdue filter returns exactly the overdue set
+  const od=render('overdue','',brides);
+  ok(od.indexOf('Overdue Partial')>=0 && od.indexOf('Overdue Unpaid')>=0,'[8] overdue filter includes both overdue invoices');
+  ok(od.indexOf('Safe Partial')<0 && od.indexOf('Paid Far')<0,'[8] overdue filter excludes the not-overdue + paid invoices');
+  ok((od.match(/openIDoc\(/g)||[]).length===2,'[8] overdue filter set size == 2');
+  // a wedding-less / not-overdue world: Overdue filter empty-state label
+  const noneOd=render('overdue','',{x:{id:'x',name:'No Wedding',invoices:{i:{id:'BI-Z',date:'2026-05-01',items:[{amount:100000}],advance:0,payments:{}}}}});
+  ok(noneOd.indexOf('Nothing under Overdue')>=0,'[8] empty Overdue filter -> "Nothing under Overdue"');
 })();
 
 // [6] regression
