@@ -145,7 +145,8 @@ const H=render(richBrides());
   console.log('\n[7] regression vs HEAD');
   ['fR','fRshort','invPaid','invInvoiced','invCollected','invOutstanding','qTot','cLine','fmt','escHtml','openDetail','setFinMonthWin',
    '_briefSection','_briefList','_briefRow','_briefRowLead','_briefMain','_briefDot','_briefEmpty','computeTodaysActions',
-   'renderTodaysActions','rSchedule','rQuotations','rInvoices',
+   'renderTodaysActions','rSchedule','rQuotations',
+   /* rInvoices NOT pinned — P2-8 (overpayment credit) edits it; sim/p2-8.sim.js is the authority. */
    'rClients','rMessages','lCard','cardCTA'
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[7] unchanged: '+n));
 })();

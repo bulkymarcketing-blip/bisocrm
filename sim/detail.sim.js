@@ -63,7 +63,7 @@ function ctxFor(){
   };
   const ctx=vm.createContext(sandbox);
   ['cLine','qTot','invPaid','invInvoiced','invCollected','invOutstanding','_canon','netHeld',
-   'brideTotal','brideCollected','brideOutstanding','dU','fmt','fR','escHtml','escAttr','escHtmlMultiline','evTrue',
+   'brideTotal','brideCollected','brideOutstanding','invCredit','brideCredit','dU','fmt','fR','escHtml','escAttr','escHtmlMultiline','evTrue',
    'buildOverviewTab','buildPaymentTab','buildStageCta','buildApptTab','buildNotesTab','buildDocsTab']
     .forEach(f=>vm.runInContext(extractFn(WORK,f),ctx));
   return ctx;
@@ -231,11 +231,13 @@ console.log('\n=== Detail view restyle sim (Part 1 + Part 2) ===');
 (function(){
   console.log('\n[10] regression vs HEAD');
   // Part 1's surfaces stay byte-identical; Part 2 owns buildApptTab/buildNotesTab/buildDocsTab now.
-  ['openDetail','buildOverviewTab','buildPaymentTab','buildStageCta','nextActionLabel','evTrue',
+  // buildPaymentTab + rInvoices intentionally NOT pinned here — P2-8 (overpayment-as-credit)
+  // legitimately edits both; sim/p2-8.sim.js is the authority for those (detail.sim still RENDERS buildPaymentTab above).
+  ['openDetail','buildOverviewTab','buildStageCta','nextActionLabel','evTrue',
    'brideTotal','brideCollected','brideOutstanding','netHeld','qTot','invPaid','invInvoiced','invCollected','invOutstanding','cLine','_canon',
    'fR','fmt','dU','escHtml','escAttr','getSources',
    '_briefSection','_briefList','_briefRow','_briefRowLead','_briefMain','_briefDot','_briefEmpty','computeTodaysActions',
-   'renderTodaysActions','rSchedule','rQuotations','rInvoices','rFinance','rAnalytics',
+   'renderTodaysActions','rSchedule','rQuotations','rFinance','rAnalytics',
    'aLeadSourcePerf','aConversionFunnel','rClients','rMessages','lCard','cardCTA'
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[10] unchanged: '+n));
 })();

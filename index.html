@@ -1215,6 +1215,8 @@ function _canon(o){return (o&&o.id&&brides[o.id])?brides[o.id]:o;}
 function brideTotal(o){var b=_canon(o);return Object.values((b&&b.invoices)||{}).reduce(function(s,inv){return s+invInvoiced(b,inv);},0);}
 function brideCollected(o){var b=_canon(o);return Object.values((b&&b.invoices)||{}).reduce(function(s,inv){return s+invCollected(b,inv);},0);}
 function brideOutstanding(o){var b=_canon(o);return Object.values((b&&b.invoices)||{}).reduce(function(s,inv){return s+invOutstanding(b,inv);},0);}
+function invCredit(b,inv){if(b&&b.cancelled)return 0;return Math.max(0,invPaid(inv)-qTot(inv.items));}
+function brideCredit(o){var b=_canon(o);return Object.values((b&&b.invoices)||{}).reduce(function(s,inv){return s+invCredit(b,inv);},0);}
 function inits(n){return(n||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();}
 function expD(){var d=new Date();d.setMonth(11);d.setDate(31);return d.toISOString().slice(0,10);}
 // P0-1: sequential document numbering. Counters at /counters/invoiceSeq + /counters/quoteSeq
@@ -2166,13 +2168,14 @@ function rInvoices(){
       var cancelled=!!(brides[inv.sId]&&brides[inv.sId].cancelled);
       var tot=qTot(inv.items);var paid=invPaid(inv);
       var bal=cancelled?0:Math.max(0,tot-paid);
+      var credit=cancelled?0:Math.max(0,paid-tot);
       var pct=tot>0?Math.round(paid/tot*100):0;
       var dot,tag;
       if(cancelled){dot='var(--muted)';tag='<span class="tag ti">Cancelled</span>';}
       else if(pct>=100){dot='var(--success)';tag='<span class="tag ts">Paid</span>';}
       else if(pct>0){dot='var(--warn)';tag='<span class="tag twg">Partial</span>';}
       else {dot='var(--muted)';tag='<span class="tag ti">Unpaid</span>';}
-      var sub=inv.id+' · '+fmt(inv.date)+(bal>0?' · Rs '+Math.round(bal).toLocaleString('en-US')+' due':'');
+      var sub=inv.id+' · '+fmt(inv.date)+(bal>0?' · Rs '+Math.round(bal).toLocaleString('en-US')+' due':(credit>0?' · Rs '+Math.round(credit).toLocaleString('en-US')+' credit':''));
       var right='<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">'
         +'<div style="font-size:15px;font-weight:600;color:var(--navy);font-variant-numeric:tabular-nums">Rs '+Math.round(qTot(inv.items)).toLocaleString('en-US')+'</div>'
         +tag
@@ -2238,6 +2241,8 @@ function openIDoc(src,sId,iId){
   var paid=invPaid(inv);
   var cancelled=!!obj.cancelled;
   var bal=cancelled?0:(tot-paid);
+  var credit=cancelled?0:Math.max(0,paid-tot);
+  var balRow=credit>0?'<div class="ifr" style="font-size:15px;font-weight:700;color:var(--success);border-top:1px solid var(--border);padding-top:5px;margin-top:3px"><span>Credit Balance</span><span>LKR '+Number(credit).toLocaleString()+'.00</span></div>':'<div class="ifr" style="font-size:15px;font-weight:700;color:var(--navy);border-top:1px solid var(--border);padding-top:5px;margin-top:3px"><span>Balance Due</span><span>LKR '+Number(Math.max(0,bal)).toLocaleString()+'.00</span></div>';
   var items=Object.values(inv.items||{});
   var pct=tot>0?Math.round(paid/tot*100):0;
   var sc=cancelled?'var(--muted)':pct>=100?'var(--success)':pct>0?'var(--warn)':'var(--danger)';
@@ -2268,7 +2273,7 @@ function openIDoc(src,sId,iId){
     +'<button class="dab" onclick="viewPDF(\'I\',\''+src+'\',\''+sId+'\',\''+iId+'\')" ><span class="dai">PDF</span>PDF</button>'
     +'<button class="dab" onclick="openEInv(\''+src+'\',\''+sId+'\',\''+iId+'\')" ><span class="dai">Edit</span>Notes</button>'
     +'</div>'
-    +'<div class="ic">'+ih+'<div class="ifoot"><div class="ifr"><span style="color:var(--muted)">Sub Total</span><span>LKR '+Number(tot).toLocaleString()+'.00</span></div>'+bpr+ph+'<div class="ifr" style="font-size:15px;font-weight:700;color:var(--navy);border-top:1px solid var(--border);padding-top:5px;margin-top:3px"><span>Balance Due</span><span>LKR '+Number(Math.max(0,bal)).toLocaleString()+'.00</span></div></div></div>'
+    +'<div class="ic">'+ih+'<div class="ifoot"><div class="ifr"><span style="color:var(--muted)">Sub Total</span><span>LKR '+Number(tot).toLocaleString()+'.00</span></div>'+bpr+ph+balRow+'</div></div>'
     +payLog
     +nh;
   document.getElementById('doc-f').innerHTML='<button class="btn btn-ghost" onclick="CM(\'doc-modal\')">Close</button>';
@@ -2283,9 +2288,10 @@ function openAddPay(src,sId,iId){
   var paid=invPaid(inv);
   var paySum=paid-bp;
   var bal=Math.max(0,tot-paid);
+  var credit=Math.max(0,paid-tot);
   document.getElementById('pay-s').textContent=obj.name+' · '+iId;
   document.getElementById('pay-b').innerHTML=
-    '<div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;display:flex;justify-content:space-between"><div><div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:3px">Balance due</div><div style="font-size:22px;font-weight:700;color:var(--warn)">'+fR(bal)+'</div></div><div style="text-align:right;font-size:11px;color:var(--muted);align-self:flex-end">Total '+fR(tot)+'<br/>Paid '+fR(paid)+'</div></div>'
+    '<div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;display:flex;justify-content:space-between"><div><div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:3px">'+(credit>0?'Credit':'Balance due')+'</div><div style="font-size:22px;font-weight:700;color:'+(credit>0?'var(--success)':'var(--warn)')+'">'+fR(credit>0?credit:bal)+'</div></div><div style="text-align:right;font-size:11px;color:var(--muted);align-self:flex-end">Total '+fR(tot)+'<br/>Paid '+fR(paid)+'</div></div>'
     +'<div class="fg"><div class="fi"><label>Amount (Rs) *</label><input type="text" inputmode="numeric" id="pay-amt" value="'+groupMoney(bal)+'" onblur="onMoneyBlur(this)"/></div><div class="fi"><label>Date</label><input type="date" id="pay-date" value="'+(new Date().toISOString().slice(0,10))+'"/></div><div class="fi s2"><label>Method</label><select id="pay-method"><option value="">— Select —</option><option>Cash</option><option>Bank Transfer</option><option>Card</option><option>Cheque</option><option>Other</option></select></div><div class="fi s2"><label>Note (optional)</label><input type="text" id="pay-note" placeholder="Reference, comments…"/></div></div>';
   document.getElementById('pay-f').innerHTML='<button class="btn btn-ghost" onclick="CM(\'pay-modal\')">Cancel</button><button class="btn btn-primary" onclick="addPay(\''+src+'\',\''+sId+'\',\''+iId+'\')" >Record Payment</button>';
   CM('doc-modal');OM('pay-modal');
@@ -2935,8 +2941,9 @@ function buildPaymentTab(id,l,cancelled,quots,invs){
   var tot=brideTotal(l);
   var coll=brideCollected(l);
   var bal=brideOutstanding(l);
+  var credit=brideCredit(l);
   var pct=tot>0?Math.round((coll/tot)*100):0;
-  var summary='<div style="background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><div><div style="font-size:11px;color:var(--muted);font-weight:600">Total</div><div style="font-size:18px;font-weight:700;color:var(--navy)">'+fR(tot)+'</div></div><div style="text-align:right"><div style="font-size:11px;color:var(--muted);font-weight:600">Balance</div><div style="font-size:18px;font-weight:700;color:'+(bal>0?'var(--warn)':'var(--success)')+'">'+fR(bal)+'</div></div></div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--muted)">Paid '+pct+'%</span><span style="color:var(--success);font-weight:600">'+fR(coll)+' collected</span></div><div class="pb"><div class="pf" style="width:'+pct+'%"></div></div></div>';
+  var summary='<div style="background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><div><div style="font-size:11px;color:var(--muted);font-weight:600">Total</div><div style="font-size:18px;font-weight:700;color:var(--navy)">'+fR(tot)+'</div></div><div style="text-align:right"><div style="font-size:11px;color:var(--muted);font-weight:600">'+((bal<=0&&credit>0)?'Credit':'Balance')+'</div><div style="font-size:18px;font-weight:700;color:'+(bal>0?'var(--warn)':'var(--success)')+'">'+fR((bal<=0&&credit>0)?credit:bal)+'</div></div></div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--muted)">Paid '+pct+'%</span><span style="color:var(--success);font-weight:600">'+fR(coll)+' collected</span></div><div class="pb"><div class="pf" style="width:'+pct+'%"></div></div></div>';
   // Quotation & Invoice section (moved here from Documents)
   var qiHtml='<div class="stitle">Quotation & Invoice</div>';
   var qRows='';

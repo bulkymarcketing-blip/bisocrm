@@ -76,9 +76,10 @@ console.log('\n=== Retire Confirmed Clients (rClients) sim ===');
 // [7] regression — every other r* render + helpers byte-identical
 (function(){
   console.log('\n[7] regression vs HEAD');
-  ['renderTodaysActions','rSchedule','rQuotations','rInvoices','rFinance','rAnalytics',
+  // rInvoices + buildPaymentTab NOT pinned — P2-8 (overpayment credit) edits both; sim/p2-8.sim.js is the authority.
+  ['renderTodaysActions','rSchedule','rQuotations','rFinance','rAnalytics',
    'rClients','rMessages','lCard','cardCTA','aLeadSourcePerf','aConversionFunnel',
-   'buildOverviewTab','buildPaymentTab','buildStageCta','openDetail','computeTodaysActions',
+   'buildOverviewTab','buildStageCta','openDetail','computeTodaysActions',
    '_briefSection','_briefList','_briefRow','_briefRowLead','_briefMain','_briefDot','_briefEmpty',
    'qTot','fR','fmt','dU','escHtml','brideTotal','brideCollected','brideOutstanding','setCustFilter'
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[7] unchanged: '+n));
