@@ -5916,21 +5916,20 @@ function rDailyBrief(){
 // ============================================================
 
 // Quiet mode (manually pauses all action surfacing for today)
+function quietUntilVal(){ return (window._notif&&window._notif.prefs&&window._notif.prefs.quietUntil)||null; }
 function isQuietMode(){
-  var s = gSet();
-  if(!s.quietUntil) return false;
-  return new Date(s.quietUntil) > new Date();
+  var q = quietUntilVal();
+  if(!q) return false;
+  return new Date(q) > new Date();
 }
 
 function setQuietMode(hoursFromNow){
-  var s = gSet();
   if(hoursFromNow > 0){
     var until = new Date(); until.setHours(until.getHours() + hoursFromNow);
-    s.quietUntil = until.toISOString();
+    saveNotifPref('quietUntil', until.toISOString());
   } else {
-    delete s.quietUntil;
+    saveNotifPref('quietUntil', null);
   }
-  sSet(s);
 }
 
 // Compute today's actionable items, grouped by type
@@ -6191,8 +6190,7 @@ function renderTodaysActions(actions, filter){
   filter = filter || 'all';
   // Quiet mode: flat neutral banner with resume button only.
   if(actions.quietMode){
-    var s = gSet();
-    var until = new Date(s.quietUntil);
+    var until = new Date(quietUntilVal());
     var hrs = Math.max(0, Math.round((until - new Date()) / 3600000));
     return '<div style="background:var(--surf);border:1px solid var(--border);border-radius:12px;box-shadow:var(--sh);padding:12px 14px;margin-bottom:20px;display:flex;align-items:center;gap:11px">'
       +'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'
@@ -7131,7 +7129,8 @@ async function loadNotifPrefs(){
       window._notif.prefs={
         push:p.push===true,
         newLead:p.newLead!==false,
-        apptReminders:(p.apptReminders!==undefined)?(p.apptReminders===true):def.apptReminders
+        apptReminders:(p.apptReminders!==undefined)?(p.apptReminders===true):def.apptReminders,
+        quietUntil:(p.quietUntil||null)
       };
     }else{window._notif.prefs=def;}
   }catch(e){window._notif.prefs=def;}

@@ -189,7 +189,7 @@ console.log('\n=== Analytics (rAnalytics) restyle sim ===');
   ['aGetRange','aSetPreset','aSetCustomDate','aInRange','qTot','fR','fRshort','escHtml',
    /* aRevenueTrends + aTimeInStage removed (Phase 9 dead-code sweep) — asserted gone in [8]. */
    '_briefSection','_briefList','_briefRow','_briefRowLead','_briefMain','_briefDot','_briefEmpty','computeTodaysActions',
-   'renderTodaysActions','rSchedule','rQuotations',
+   'rSchedule','rQuotations',  // renderTodaysActions NOT pinned — quiet-mode per-user-path fix (dailyBrief.sim/quiet-mode.sim own it)
    /* rInvoices NOT pinned — P2-8 (overpayment credit) edits it; sim/p2-8.sim.js is the authority.
       rFinance NOT pinned — P2-7 (monthly cash-collected) edits it; sim/finance.sim.js + sim/cycle-d-p1-3-p2-7.sim.js are the authority.
       rClients removed (Phase 9 dead-code sweep). */

@@ -149,7 +149,7 @@ const H=render(richBrides());
   console.log('\n[7] regression vs HEAD');
   ['fR','fRshort','invPaid','invInvoiced','invCollected','invOutstanding','qTot','cLine','fmt','escHtml','openDetail','setFinMonthWin',
    '_briefSection','_briefList','_briefRow','_briefRowLead','_briefMain','_briefDot','_briefEmpty','computeTodaysActions',
-   'renderTodaysActions','rSchedule','rQuotations',
+   'rSchedule','rQuotations',  // renderTodaysActions NOT pinned — quiet-mode per-user-path fix (dailyBrief.sim/quiet-mode.sim own it)
    /* rInvoices NOT pinned — P2-8 (overpayment credit) edits it; sim/p2-8.sim.js is the authority. */
    'rMessages','lCard','cardCTA'  // rClients removed (Phase 9 dead-code sweep)
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[7] unchanged: '+n));
