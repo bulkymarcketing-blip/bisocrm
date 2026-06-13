@@ -11,7 +11,7 @@
  *    #C8A55B / #DC2626 absent from the Schedule output;
  *  - legend slimmed (no var(--bg) box);
  *  - action chips stay ink/navy: Reschedule navy-filled, "Did come" navy ghost — NO green;
- *  - regression: computeTodaysActions, the _brief helpers, rDailyBrief, renderTodaysActions,
+ *  - regression: computeTodaysActions, the _brief helpers, rDailyBrief,
  *    rPipeline, lCard, cardCTA, setSchedMode byte-identical vs HEAD.
  *
  * Run: node sim/schedule.sim.js   (exit 0 = pass)
@@ -108,7 +108,7 @@ console.log('\n=== Schedule restyle sim ===');
 (function(){
   console.log('\n[6] regression: untouched fns byte-identical vs HEAD');
   ['computeTodaysActions','_briefAppointments','_briefSinceLastVisit','_briefNeedsAttention',
-   'renderTodaysActions','lCard','cardCTA','setSchedMode']
+   'lCard','cardCTA','setSchedMode']  // renderTodaysActions NOT pinned — quiet-mode per-user-path fix (dailyBrief.sim/quiet-mode.sim own it)
     .forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[6] unchanged: '+n));
 })();
 

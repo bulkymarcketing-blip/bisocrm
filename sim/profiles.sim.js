@@ -134,7 +134,7 @@ console.log('\n=== Profiles (rCustomers) restyle sim ===');
   ['cA','openCust','openNC','openDetail',
    '_briefAppointments','_briefSinceLastVisit','_briefNeedsAttention','_briefLastVisit','_humanAgo',
    '_briefSection','_briefList','_briefRow','_briefMain','_briefDot','_briefEmpty',
-   'computeTodaysActions','renderTodaysActions','rSchedule','rQuotations',
+   'computeTodaysActions','rSchedule','rQuotations',  // renderTodaysActions NOT pinned — quiet-mode per-user-path fix (dailyBrief.sim/quiet-mode.sim own it)
    'rMessages','lCard','cardCTA','qTot'  // rClients removed (Phase 9 dead-code sweep)
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[6] unchanged: '+n));
 })();

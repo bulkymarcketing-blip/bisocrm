@@ -79,7 +79,7 @@ console.log('\n=== Retire Confirmed Clients (rClients) sim ===');
   console.log('\n[7] regression vs HEAD');
   // rInvoices + buildPaymentTab NOT pinned — P2-8 (overpayment credit) edits both; sim/p2-8.sim.js is the authority.
   // rFinance NOT pinned — P2-7 (Cycle D, monthly cash-collected) edits it; finance.sim + cycle-d-p1-3-p2-7.sim are the authority.
-  ['renderTodaysActions','rSchedule','rQuotations','rAnalytics',
+  [/* renderTodaysActions NOT pinned — quiet-mode per-user-path fix */ 'rSchedule','rQuotations','rAnalytics',
    'rMessages','lCard','cardCTA','aLeadSourcePerf','aConversionFunnel',  // rClients removed (Phase 9 dead-code sweep)
    'buildOverviewTab','buildStageCta','openDetail','computeTodaysActions',
    '_briefSection','_briefList','_briefRow','_briefRowLead','_briefMain','_briefDot','_briefEmpty',

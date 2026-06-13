@@ -154,7 +154,9 @@ console.log('\n=== Pipeline redesign sim ===');
   console.log('\n[8] regression (b): Daily Brief untouched (shared .fpills)');
   // rDailyBrief intentionally NOT byte-pinned here — the wedding-nears feature legitimately
   // edits it + _briefWeddings; dailyBrief.sim is the authority for the Brief now.
-  ok(extractFn(HEAD,'renderTodaysActions')===extractFn(WORK,'renderTodaysActions'), '[8] renderTodaysActions byte-identical to HEAD');
+  // renderTodaysActions NOT byte-pinned — the quiet-mode → per-user-path fix legitimately edits its quiet banner
+  // (dailyBrief.sim + quiet-mode.sim own it); Pipeline's concern (widget absent from Pipeline) is proven in [3].
+  ok(extractFn(WORK,'renderTodaysActions').indexOf('quietUntilVal()')>=0, '[8] renderTodaysActions changed only by the quiet-mode per-user-path swap');
   ok(WORK.indexOf('.fpills{display:flex;gap:8px;margin:2px 0 18px;flex-wrap:wrap}')>=0, '[8] Brief .fpills rule unchanged (filter pills still wrap)');
 })();
 

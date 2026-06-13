@@ -82,7 +82,7 @@ const LIVE_FNS = [
   '_apptTypeDot', '_briefMatchesQ', '_briefSection', '_briefList', '_briefEmpty', '_briefDot', '_briefMain', '_briefRow',
   // untouched compute helpers that feed the render
   'computeTodaysActions', '_briefWeddings', '_briefAppointments', '_briefSinceLastVisit',
-  '_briefNeedsAttention', '_briefLastVisit', '_humanAgo', 'isQuietMode'
+  '_briefNeedsAttention', '_briefLastVisit', '_humanAgo', 'isQuietMode', 'quietUntilVal'
 ];
 const LIVE_VARS = ['_icoWA', '_icoCall'];
 
@@ -224,7 +224,8 @@ const SRC = buildSource(WORK);
   console.log('\n[D] quiet mode');
   const ctx = makeSandbox();
   ctx.brides = richBrides();
-  ctx._settings = { quietUntil: new Date(Date.now() + 4*3600000).toISOString() };
+  // P-lockdown: quietUntil now lives on the per-user notif-prefs cache (window._notif.prefs), not /settings.
+  ctx.window._notif = { prefs: { quietUntil: new Date(Date.now() + 4*3600000).toISOString() } };
   const html = render(ctx, SRC);
   sane(html, 'D');
   ok(html.indexOf('Quiet mode is on') >= 0, 'D: summary says quiet mode is on');
@@ -382,8 +383,10 @@ console.log('\n[REGRESSION] untouched functions vs git HEAD');
 const UNTOUCHED = [
   // _briefWeddings intentionally NOT pinned — the wedding-nears feature (60d window + outstanding/band)
   // legitimately edits it; the [W] scenarios below are its behavioral authority.
+  // isQuietMode + setQuietMode intentionally NOT pinned — the quiet-mode → per-user-path fix legitimately
+  // edits them (+ adds quietUntilVal, + the renderTodaysActions banner read); sim/quiet-mode.sim.js is the authority.
   'computeTodaysActions', '_briefAppointments', '_briefSinceLastVisit',
-  '_briefNeedsAttention', '_briefLastVisit', '_humanAgo', 'isQuietMode', 'setQuietMode',
+  '_briefNeedsAttention', '_briefLastVisit', '_humanAgo',
   'toggleActionGroup', 'openQuietPicker', 'applyQuiet', 'resumeReminders',
   'listIntake', 'listPendingRequests', 'describeRequest', '_intakeEvents', '_intakeWhenLabel',
   'acceptIntake', 'dismissIntake', 'escHtml', 'escAttr', 'escHtmlMultiline', 'timeAgo',

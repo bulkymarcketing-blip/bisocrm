@@ -167,7 +167,7 @@ console.log('\n=== Invoices restyle sim ===');
    /* openIDoc NOT pinned — P2-8 (overpayment credit) edits it; sim/p2-8.sim.js is the authority. */
    '_briefAppointments','_briefSinceLastVisit','_briefNeedsAttention','_briefLastVisit','_humanAgo',
    '_briefSection','_briefList','_briefRow','_briefRowLead','_briefMain','_briefDot','_briefEmpty',
-   'computeTodaysActions','renderTodaysActions','rSchedule','rQuotations',
+   'computeTodaysActions','rSchedule','rQuotations',  // renderTodaysActions NOT pinned — quiet-mode per-user-path fix (dailyBrief.sim/quiet-mode.sim own it)
    'rMessages','lCard','cardCTA'  // rClients removed (Phase 9 dead-code sweep)
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[6] unchanged: '+n));
 })();
