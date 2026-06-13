@@ -168,7 +168,7 @@ console.log('\n=== Invoices restyle sim ===');
    '_briefAppointments','_briefSinceLastVisit','_briefNeedsAttention','_briefLastVisit','_humanAgo',
    '_briefSection','_briefList','_briefRow','_briefRowLead','_briefMain','_briefDot','_briefEmpty',
    'computeTodaysActions','renderTodaysActions','rSchedule','rQuotations',
-   'rClients','rMessages','lCard','cardCTA'
+   'rMessages','lCard','cardCTA'  // rClients removed (Phase 9 dead-code sweep)
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[6] unchanged: '+n));
 })();
 

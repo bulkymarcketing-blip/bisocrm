@@ -151,7 +151,7 @@ const H=render(richBrides());
    '_briefSection','_briefList','_briefRow','_briefRowLead','_briefMain','_briefDot','_briefEmpty','computeTodaysActions',
    'renderTodaysActions','rSchedule','rQuotations',
    /* rInvoices NOT pinned — P2-8 (overpayment credit) edits it; sim/p2-8.sim.js is the authority. */
-   'rClients','rMessages','lCard','cardCTA'
+   'rMessages','lCard','cardCTA'  // rClients removed (Phase 9 dead-code sweep)
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[7] unchanged: '+n));
 })();
 

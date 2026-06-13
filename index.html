@@ -1468,7 +1468,6 @@ function overdueReason(l){
   return what+': '+sinceTxt+' since last activity (target: '+target+')'+urg+'.';
 }
 
-function dBadge(d){if(d===null)return '';var c=d<30?'ds':d<90?'dn':'dok';return '<span class="db '+c+'">'+d+'d</span>';}
 // Settings store: in-memory cache backed by Firebase /settings, with localStorage
 // as an offline mirror. gSet() stays SYNCHRONOUS (reads the cache) so all read
 // sites are unchanged. loadData() populates the cache from Firebase before first
@@ -1774,28 +1773,6 @@ window._pipeStage=window._pipeStage||0;
 function setPipeStage(i){window._pipeStage=i;render();}
 function setPipeSort(v){window._pipeSort=v;render();}
 function toggleMetrics(){window._showMetrics=!window._showMetrics;render();}
-// RETIRED screen (Confirmed Clients) — unreferenced; delete in the Phase-9 dead-code sweep.
-function rClients(){
-  var cl=lA().filter(function(l){return l.confirmed&&(q?l.name.toLowerCase().includes(q):true);});
-  var rows='';
-  cl.forEach(function(l){
-    var d=dU(l.weddingDate);
-    var tot=brideTotal(l);
-    var pct=tot>0?Math.round((brideCollected(l)/tot)*100):0;
-    var bc=tot===0?'bu':pct>=100?'bp':pct>0?'bpa':'bu';
-    var bl=tot===0?'—':pct>=100?'Paid':pct>0?pct+'%':'Pending';
-    rows+='<tr onclick="openDetail(\''+l.id+'\')">'
-      +'<td><div class="cn">'+escHtml(l.name)+'</div><div style="font-size:11px;color:var(--muted)">'+escHtml(l.phone||'')+'</div></td>'
-      +'<td>'+fmt(l.weddingDate)+dBadge(d)+'</td>'
-      +'<td class="hm" style="font-size:12px">'+escHtml(l.package||'—')+'</td>'
-      +'<td class="hm" style="text-align:center;font-weight:600">'+(l.bridesmaids||0)+'</td>'
-      +'<td class="hm" style="font-size:12px;color:var(--muted)">'+escHtml(l.venue||'—')+'</td>'
-      +'<td><span class="badge '+bc+'">'+bl+'</span></td></tr>';
-  });
-  var body=cl.length?'<div style="overflow-x:auto"><table><thead><tr><th>Bride</th><th>Wedding</th><th class="hm">Package</th><th class="hm">BMs</th><th class="hm">Venue</th><th>Payment</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
-    :'<div class="empty" style="padding:60px"><div class="ei">Crown</div><div class="et">No confirmed clients</div></div>';
-  document.getElementById('MC').innerHTML='<div class="card"><div class="card-hdr"><div class="card-title">Confirmed Brides</div><div style="font-size:12px;color:var(--muted)">'+cl.length+' client'+(cl.length!==1?'s':'')+'</div></div>'+body+'</div>';
-}
 function rCustomers(){
   var f = window._custFilter || 'all';
   var all = cA().filter(function(c){
@@ -5228,159 +5205,6 @@ function aConversionFunnel(from, to){
     html += '</span></div>';
     html += '<div style="background:var(--bg);height:18px;border-radius:5px;overflow:hidden;border:1px solid var(--border)">';
     html += '<div style="background:'+color+';height:100%;width:'+pct+'%;transition:width .3s;border-radius:5px"></div>';
-    html += '</div>';
-    html += '</div>';
-  });
-  html += '</div>';
-  return html;
-}
-
-// MODULE 3: Revenue Trends (by month + by event type)
-function aRevenueTrends(from, to){
-  var byMonth = {};
-  var byEventType = {wedding:0, homecoming:0, goingAway:0, engagement:0, other:0};
-  var totalRev = 0;
-  
-  Object.values(brides).forEach(function(b){
-    Object.values(b.invoices||{}).forEach(function(inv){
-      if(!aInRange(inv.date, from, to))return;
-      var tot = qTot(inv.items||{});
-      totalRev += tot;
-      var ym = (inv.date||'').slice(0,7); // YYYY-MM
-      byMonth[ym] = (byMonth[ym]||0) + tot;
-      // Distribute revenue across event types based on items
-      var items = inv.items||{};
-      Object.values(items).forEach(function(it){
-        var lt = it.linkedTo;
-        var lineVal = (it.qty||1) * (it.unit||0) * (1 - (it.disc||0)/100);
-        if(lt === 'wedding' || lt === 'bridesmaids' || lt === 'flowerGirls' || lt === 'littleMaids')byEventType.wedding += lineVal;
-        else if(lt === 'homecoming' || lt === 'discount')byEventType.homecoming += lineVal;
-        else if(lt === 'goingAway')byEventType.goingAway += lineVal;
-        else if(lt === 'engagement')byEventType.engagement += lineVal;
-        else byEventType.other += lineVal;
-      });
-    });
-  });
-  
-  if(totalRev === 0){
-    return '<div class="empty" style="padding:30px;text-align:center;color:var(--muted)">No revenue in this period</div>';
-  }
-  
-  // By month chart
-  var months = Object.keys(byMonth).sort();
-  var maxMonthRev = Math.max.apply(null, Object.values(byMonth)) || 1;
-  var html = '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:600;letter-spacing:.8px;margin-bottom:10px">By Month</div>';
-  html += '<div style="display:flex;align-items:flex-end;gap:6px;height:110px;padding:8px 4px;margin-bottom:18px;overflow-x:auto">';
-  months.forEach(function(ym){
-    var rev = byMonth[ym];
-    var hPct = Math.max(2, Math.round((rev/maxMonthRev) * 100));
-    var ymLabel = new Date(ym+'-01').toLocaleDateString('en-GB',{month:'short'});
-    html += '<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:32px;height:100%;gap:4px">';
-    html += '<div style="font-size:9px;font-weight:700;color:var(--navy);white-space:nowrap">'+fRshort(rev)+'</div>';
-    html += '<div style="flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center"><div style="background:var(--gold);width:70%;height:'+hPct+'%;border-radius:3px 3px 0 0;min-height:3px;transition:height .3s"></div></div>';
-    html += '<div style="font-size:9px;color:var(--muted);font-weight:600;text-transform:uppercase">'+ymLabel+'</div>';
-    html += '</div>';
-  });
-  html += '</div>';
-  
-  // By event type
-  html += '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:600;letter-spacing:.8px;margin-bottom:10px">By Event Type</div>';
-  var typeLabels = {wedding:'Wedding',homecoming:'Homecoming',goingAway:'Going Away',engagement:'Engagement',other:'Other'};
-  var typeColors = {wedding:'#C9A961',homecoming:'#0A1F44',goingAway:'#6B46C1',engagement:'#B0506A',other:'#6B7280'};
-  var typeMax = Math.max.apply(null, Object.values(byEventType)) || 1;
-  Object.keys(byEventType).forEach(function(t){
-    var v = byEventType[t];
-    if(v <= 0)return;
-    var pct = Math.round((v/typeMax)*100);
-    html += '<div style="margin-bottom:10px">';
-    html += '<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:4px"><span style="color:var(--navy)">'+typeLabels[t]+'</span><span style="color:var(--gold);font-weight:700">'+fRshort(v)+'</span></div>';
-    html += '<div style="background:var(--bg);height:10px;border-radius:5px;overflow:hidden"><div style="background:'+typeColors[t]+';height:100%;width:'+pct+'%;border-radius:5px;transition:width .3s"></div></div>';
-    html += '</div>';
-  });
-  
-  // Total — compact gradient card
-  html += '<div style="background:linear-gradient(135deg,var(--navy) 0%,var(--navy-lt) 100%);color:#fff;border-radius:10px;padding:14px 16px;margin-top:18px;display:flex;align-items:center;justify-content:space-between;gap:10px">';
-  html += '<div style="font-family:Cinzel,serif;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;opacity:.9">Total Revenue</div>';
-  html += '<div style="font-family:Cinzel,serif;font-size:18px;font-weight:600">'+fRshort(totalRev)+'</div>';
-  html += '</div>';
-  return html;
-}
-
-// MODULE 4: Time-in-Stage Analysis
-function aTimeInStage(from, to){
-  // For each bride, compute time spent in each stage by analyzing _history
-  // Simplification: use createdAt -> lastActivity as proxy when history is incomplete
-  var stages = ['New Lead','Contacted','Consult Booked','Consult Done','Quoted'];
-  var stageTimes = [[],[],[],[],[]]; // days spent in each stage
-  var stagedCount = [0,0,0,0,0];
-  
-  Object.values(brides).forEach(function(b){
-    if(!aInRange(b.createdAt, from, to))return;
-    var hist = b._history || {};
-    var historyEntries = Object.values(hist).sort(function(a,b){return new Date(a.at) - new Date(b.at);});
-    var created = new Date(b.createdAt);
-    var stageEntered = {0: created};
-    
-    historyEntries.forEach(function(h){
-      if(h.details && typeof h.details.stage === 'number'){
-        stageEntered[h.details.stage] = new Date(h.at);
-      }
-    });
-    
-    var curStage = Number(b.stage||0);
-    // Time in each stage that bride PASSED THROUGH
-    for(var s = 0; s < Math.min(curStage, 5); s++){
-      var entry = stageEntered[s];
-      var nextEntry = stageEntered[s+1];
-      if(entry && nextEntry){
-        var days = (nextEntry - entry) / 86400000;
-        if(days >= 0)stageTimes[s].push(days);
-      }
-    }
-    // Current stage if not Confirmed: time from entering to now
-    if(curStage < 5 && stageEntered[curStage]){
-      var nowDays = (new Date() - stageEntered[curStage]) / 86400000;
-      stagedCount[curStage] = (stagedCount[curStage]||0) + 1;
-    }
-  });
-  
-  var hasData = stageTimes.some(function(arr){return arr.length > 0;});
-  if(!hasData){
-    return '<div class="empty" style="padding:30px;text-align:center;color:var(--muted)">Not enough stage transition history yet. This module will populate as leads progress through stages.</div>';
-  }
-  
-  var html = '<div style="padding:4px 0">';
-  stages.forEach(function(label, i){
-    var times = stageTimes[i];
-    var avg = times.length > 0 ? times.reduce(function(a,b){return a+b;},0) / times.length : 0;
-    var stuck = stagedCount[i] || 0;
-    var color = avg < 3 ? 'var(--success)' : avg < 7 ? 'var(--gold)' : 'var(--danger)';
-    var mb = i < stages.length-1 ? 'margin-bottom:8px' : '';
-    
-    html += '<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;'+mb+'">';
-    
-    // Left: label + meta
-    html += '<div style="flex:1;min-width:0">';
-    html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><div style="font-size:13px;font-weight:600;color:var(--navy)">'+label+'</div>';
-    if(stuck > 0){
-      html += '<span style="background:rgba(229,62,62,0.1);color:var(--danger);font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:.3px">'+stuck+' STUCK</span>';
-    }
-    html += '</div>';
-    if(times.length > 0){
-      html += '<div style="font-size:10px;color:var(--muted)">Based on '+times.length+' transition'+(times.length===1?'':'s')+'</div>';
-    } else {
-      html += '<div style="font-size:10px;color:var(--muted)">No data yet</div>';
-    }
-    html += '</div>';
-    
-    // Right: big avg number
-    html += '<div style="text-align:right;flex-shrink:0">';
-    if(times.length > 0){
-      html += '<div style="font-family:Cinzel,serif;font-size:20px;font-weight:600;color:'+color+';line-height:1">'+avg.toFixed(1)+'</div>';
-      html += '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-top:2px">days avg</div>';
-    } else {
-      html += '<div style="font-size:14px;color:var(--muted)">—</div>';
-    }
     html += '</div>';
     html += '</div>';
   });

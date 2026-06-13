@@ -120,7 +120,7 @@ console.log('\n=== Overview Form restyle sim (Part A) ===');
    /* buildPaymentTab + openAddPay + rInvoices NOT pinned — P2-8 (overpayment credit) edits all three; sim/p2-8.sim.js is the authority.
       openCancelBooking + rFinance NOT pinned — P1-3/P2-7 (Cycle D) edit them; sim/cycle-d-p1-3-p2-7.sim.js (+ finance.sim) are the authority. */
    'renderTodaysActions','rSchedule','rQuotations','rAnalytics',
-   'rClients','rMessages','lCard','cardCTA'
+   'rMessages','lCard','cardCTA'  // rClients removed (Phase 9 dead-code sweep)
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[6] unchanged: '+n));
 })();
 

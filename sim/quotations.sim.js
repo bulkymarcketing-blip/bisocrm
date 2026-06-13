@@ -113,7 +113,7 @@ console.log('\n=== Quotations restyle sim ===');
    '_briefAppointments','_briefSinceLastVisit','_briefNeedsAttention','_briefLastVisit','_humanAgo',
    '_briefSection','_briefList','_briefRow','_briefMain','_briefDot','_briefEmpty',
    'computeTodaysActions','renderTodaysActions','rSchedule',
-   'rClients','rMessages','lCard','cardCTA'
+   'rMessages','lCard','cardCTA'  // rClients removed (Phase 9 dead-code sweep)
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[5] unchanged: '+n));
 })();
 

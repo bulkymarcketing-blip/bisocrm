@@ -239,7 +239,7 @@ console.log('\n=== Detail view restyle sim (Part 1 + Part 2) ===');
    '_briefSection','_briefList','_briefRow','_briefRowLead','_briefMain','_briefDot','_briefEmpty','computeTodaysActions',
    /* rFinance NOT pinned — P2-7 (monthly cash-collected) edits it; finance.sim + cycle-d-p1-3-p2-7.sim are the authority. */
    'renderTodaysActions','rSchedule','rQuotations','rAnalytics',
-   'aLeadSourcePerf','aConversionFunnel','rClients','rMessages','lCard','cardCTA'
+   'aLeadSourcePerf','aConversionFunnel','rMessages','lCard','cardCTA'  // rClients removed (Phase 9 dead-code sweep)
   ].forEach(n=>ok(extractFn(HEAD,n)===extractFn(WORK,n),'[10] unchanged: '+n));
 })();
 
